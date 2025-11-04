@@ -1,0 +1,94 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "VaultHub is a secure key management system for storing, managing and rotating encryption keys, API keys and other sensitive credentials.\n\n## 特性\n- 安全的密钥存储和管理\n- 密钥轮换支持\n- 细粒度的访问控制\n- 审计日志\n\n## 响应格式\n所有接口返回统一的响应格式，HTTP状态码均为200，错误码在响应体的code字段中：\n```json\n{\n\"code\": 0,\n\"message\": \"success\",\n\"data\": {},\n\"requestId\": \"xxx\",\n\"timestamp\": 1762269490888\n}\n```",
+        "title": "VaultHub API",
+        "termsOfService": "https://github.com/cuihe500/vaulthub",
+        "contact": {
+            "name": "API Support",
+            "email": "admin@thankseveryone.top"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "检查服务及其依赖（数据库等）的运行状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统"
+                ],
+                "summary": "健康检查",
+                "responses": {
+                    "200": {
+                        "description": "服务健康",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HealthResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handlers.HealthData": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "description": "数据库状态: connected, disconnected",
+                    "type": "string",
+                    "example": "connected"
+                },
+                "status": {
+                    "description": "服务状态: healthy, unhealthy",
+                    "type": "string",
+                    "example": "healthy"
+                }
+            }
+        },
+        "handlers.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "响应码，0表示成功",
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "description": "健康检查数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/handlers.HealthData"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "响应消息",
+                    "type": "string",
+                    "example": "success"
+                },
+                "requestId": {
+                    "description": "请求ID",
+                    "type": "string",
+                    "example": "b68c086f-db16-43f6-992e-bc391afbf24a"
+                },
+                "timestamp": {
+                    "description": "时间戳（毫秒）",
+                    "type": "integer",
+                    "example": 1762269490888
+                }
+            }
+        }
+    }
+}

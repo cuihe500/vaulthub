@@ -1,0 +1,17 @@
+-- 初始化数据库 schema
+-- 此文件作为示例，当前为空，等待实际业务模型添加
+-- 迁移格式：{version}_{name}.up.sql / {version}_{name}.down.sql
+
+-- 示例：创建用户表（未启用，仅作参考）
+-- CREATE TABLE IF NOT EXISTS users (
+--     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+--     username VARCHAR(255) NOT NULL UNIQUE,
+--     email VARCHAR(255) NOT NULL UNIQUE,
+--     password_hash VARCHAR(255) NOT NULL,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--     deleted_at TIMESTAMP NULL,
+--     INDEX idx_username (username),
+--     INDEX idx_email (email),
+--     INDEX idx_deleted_at (deleted_at)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
