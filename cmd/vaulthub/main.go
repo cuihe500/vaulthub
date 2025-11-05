@@ -29,6 +29,12 @@ import (
 // @description - 细粒度的访问控制
 // @description - 审计日志
 // @description
+// @description ## 认证
+// @description 大部分接口需要JWT Bearer Token认证。
+// @description 1. 调用 /api/v1/auth/register 注册账号
+// @description 2. 调用 /api/v1/auth/login 获取 token
+// @description 3. 在请求头中添加 Authorization: Bearer {token}
+// @description
 // @description ## 响应格式
 // @description 所有接口返回统一的响应格式，HTTP状态码均为200，错误码在响应体的code字段中：
 // @description ```json
@@ -47,6 +53,10 @@ import (
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:8080
 // @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 var (
 	// 配置文件路径

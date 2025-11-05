@@ -23,8 +23,8 @@ type Migrator struct {
 
 // NewMigrator 创建迁移管理器
 func NewMigrator(cfg config.DatabaseConfig) (*Migrator, error) {
-	// 打开数据库连接
-	db, err := sql.Open("mysql", cfg.DSN())
+	// 使用MigrationDSN以支持迁移文件中的多条SQL语句
+	db, err := sql.Open("mysql", cfg.MigrationDSN())
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
@@ -46,46 +46,157 @@ func NewMigrator(cfg config.DatabaseConfig) (*Migrator, error) {
 
 // Up 执行所有未应用的迁移
 func (mg *Migrator) Up() error {
-	if err := mg.m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("migration up failed: %w", err)
-	}
-
-	version, dirty, err := mg.m.Version()
+	// 获取升级前的版本
+	oldVersion, _, err := mg.m.Version()
 	if err != nil && err != migrate.ErrNilVersion {
-		return fmt.Errorf("failed to get version: %w", err)
+		return fmt.Errorf("获取当前版本失败: %w", err)
 	}
 
-	logger.Info("迁移完成", logger.Uint("version", version), logger.Bool("dirty", dirty))
+	// 执行升级
+	if err := mg.m.Up(); err != nil {
+		if err == migrate.ErrNoChange {
+			// 已经是最新版本，无需升级
+			if err == migrate.ErrNilVersion || oldVersion == 0 {
+				logger.Info("数据库版本已是最新，无需升级")
+			} else {
+				logger.Info("数据库版本已是最新，无需升级", logger.Uint("当前版本", oldVersion))
+			}
+			return nil
+		}
+		return fmt.Errorf("数据库升级执行失败: %w", err)
+	}
+
+	// 获取升级后的版本
+	newVersion, newDirty, err := mg.m.Version()
+	if err != nil && err != migrate.ErrNilVersion {
+		return fmt.Errorf("获取升级后版本失败: %w", err)
+	}
+
+	// 检查是否处于dirty状态
+	if newDirty {
+		logger.Warn("数据库升级完成但处于不一致状态",
+			logger.Uint("目标版本", newVersion),
+			logger.String("提示", "请检查迁移文件或使用force命令修复"))
+		return nil
+	}
+
+	// 打印升级路径
+	if err == migrate.ErrNilVersion || oldVersion == 0 {
+		logger.Info("数据库初始化成功",
+			logger.String("操作", fmt.Sprintf("创建数据库结构并升级到版本%d", newVersion)),
+			logger.Uint("当前版本", newVersion))
+	} else {
+		logger.Info("数据库升级成功",
+			logger.String("升级路径", fmt.Sprintf("版本%d -> 版本%d", oldVersion, newVersion)),
+			logger.Uint("当前版本", newVersion))
+	}
+
 	return nil
 }
 
 // Down 回滚最后一次迁移
 func (mg *Migrator) Down() error {
-	if err := mg.m.Down(); err != nil {
-		return fmt.Errorf("migration down failed: %w", err)
-	}
-
-	version, dirty, err := mg.m.Version()
+	// 获取回滚前的版本
+	oldVersion, _, err := mg.m.Version()
 	if err != nil && err != migrate.ErrNilVersion {
-		return fmt.Errorf("failed to get version: %w", err)
+		return fmt.Errorf("获取当前版本失败: %w", err)
 	}
 
-	logger.Info("回滚完成", logger.Uint("version", version), logger.Bool("dirty", dirty))
+	// 执行回滚
+	if err := mg.m.Down(); err != nil {
+		if err == migrate.ErrNoChange {
+			logger.Info("数据库已是初始状态，无需回滚")
+			return nil
+		}
+		return fmt.Errorf("数据库回滚执行失败: %w", err)
+	}
+
+	// 获取回滚后的版本
+	newVersion, newDirty, err := mg.m.Version()
+	if err != nil && err != migrate.ErrNilVersion {
+		return fmt.Errorf("获取回滚后版本失败: %w", err)
+	}
+
+	// 检查是否处于dirty状态
+	if newDirty {
+		logger.Warn("数据库回滚完成但处于不一致状态",
+			logger.Uint("目标版本", newVersion),
+			logger.String("提示", "请检查迁移文件或使用force命令修复"))
+		return nil
+	}
+
+	// 打印回滚路径
+	if err == migrate.ErrNilVersion || newVersion == 0 {
+		logger.Info("数据库回滚成功完成",
+			logger.String("回滚路径", fmt.Sprintf("版本%d -> 初始状态", oldVersion)),
+			logger.String("当前状态", "初始状态"))
+	} else {
+		logger.Info("数据库回滚成功完成",
+			logger.String("回滚路径", fmt.Sprintf("版本%d -> 版本%d", oldVersion, newVersion)),
+			logger.Uint("当前版本", newVersion))
+	}
+
 	return nil
 }
 
 // Steps 执行指定步数的迁移（正数向上，负数向下）
 func (mg *Migrator) Steps(n int) error {
-	if err := mg.m.Steps(n); err != nil {
-		return fmt.Errorf("migration steps failed: %w", err)
+	if n == 0 {
+		logger.Info("步数为0，无需执行")
+		return nil
 	}
 
-	version, dirty, err := mg.m.Version()
+	// 获取操作前的版本
+	oldVersion, _, err := mg.m.Version()
 	if err != nil && err != migrate.ErrNilVersion {
-		return fmt.Errorf("failed to get version: %w", err)
+		return fmt.Errorf("获取当前版本失败: %w", err)
 	}
 
-	logger.Info("迁移步骤完成", logger.Int("steps", n), logger.Uint("version", version), logger.Bool("dirty", dirty))
+	// 执行步进操作
+	if err := mg.m.Steps(n); err != nil {
+		if err == migrate.ErrNoChange {
+			logger.Info("数据库版本已是目标状态，无需操作", logger.Int("步数", n))
+			return nil
+		}
+		if n > 0 {
+			return fmt.Errorf("数据库升级执行失败: %w", err)
+		}
+		return fmt.Errorf("数据库回滚执行失败: %w", err)
+	}
+
+	// 获取操作后的版本
+	newVersion, newDirty, err := mg.m.Version()
+	if err != nil && err != migrate.ErrNilVersion {
+		return fmt.Errorf("获取操作后版本失败: %w", err)
+	}
+
+	// 检查是否处于dirty状态
+	if newDirty {
+		if n > 0 {
+			logger.Warn("数据库升级完成但处于不一致状态",
+				logger.Uint("目标版本", newVersion),
+				logger.String("提示", "请检查迁移文件或使用force命令修复"))
+		} else {
+			logger.Warn("数据库回滚完成但处于不一致状态",
+				logger.Uint("目标版本", newVersion),
+				logger.String("提示", "请检查迁移文件或使用force命令修复"))
+		}
+		return nil
+	}
+
+	// 打印操作结果
+	if n > 0 {
+		logger.Info("数据库升级成功",
+			logger.Int("升级步数", n),
+			logger.String("版本变化", fmt.Sprintf("版本%d -> 版本%d", oldVersion, newVersion)),
+			logger.Uint("当前版本", newVersion))
+	} else {
+		logger.Info("数据库回滚成功",
+			logger.Int("回滚步数", -n),
+			logger.String("版本变化", fmt.Sprintf("版本%d -> 版本%d", oldVersion, newVersion)),
+			logger.Uint("当前版本", newVersion))
+	}
+
 	return nil
 }
 

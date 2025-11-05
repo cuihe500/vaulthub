@@ -24,7 +24,7 @@ VaultHub 是一个密钥管理系统，旨在安全地存储、管理和轮换�
 ```bash
 # 克隆代码库
 git clone https://github.com/cuihe500/vaulthub.git
-cd vaulthub/backend
+cd vaulthub
 
 # 安装依赖
 make deps
@@ -287,13 +287,6 @@ make build-prod
 - 目标平台：Linux/amd64
 - 注入完整版本信息
 - 优化二进制大小
-
-### 构建 Docker 镜像
-
-```bash
-# 在项目根目录执行
-docker build -t vaulthub:latest -f backend/Dockerfile .
-```
 
 ### 部署建议
 

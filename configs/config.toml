@@ -17,7 +17,15 @@ password = "Ch870219176!"
 
 [security]
 jwt_secret = "change-me-in-production"
+jwt_expiration = 24  # JWT token expiration in hours
 encryption_key = "change-me-in-production-must-be-32-bytes"
+casbin_model_path = "/root/project/vaulthub/configs/rbac_model.conf"
+
+[redis]
+host = "10.0.2.104"
+port = 6379
+password = ""  # Redis password, leave empty if no password
+db = 0  # Redis database number
 
 [logger]
 level = "info"  # debug, info, warn, error, fatal

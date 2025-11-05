@@ -2,18 +2,25 @@ package app
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/casbin/casbin/v2"
+	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/cuihe500/vaulthub/internal/config"
 	"github.com/cuihe500/vaulthub/internal/database"
+	"github.com/cuihe500/vaulthub/pkg/jwt"
 	"github.com/cuihe500/vaulthub/pkg/logger"
+	redisClient "github.com/cuihe500/vaulthub/pkg/redis"
 	"gorm.io/gorm"
 )
 
 // Manager 管理应用的所有外部连接
 // 所有连接在应用启动时初始化一次，之后复用
 type Manager struct {
-	DB *gorm.DB
-	// Redis *redis.Client // 未来添加 Redis
+	DB       *gorm.DB
+	Enforcer *casbin.Enforcer     // Casbin权限enforcer
+	JWT      *jwt.Manager         // JWT管理器
+	Redis    *redisClient.Client  // Redis客户端
 	// Cache *cache.Client // 未来添加其他连接
 }
 
@@ -25,10 +32,22 @@ func (m *Manager) Initialize(cfg *config.Config) error {
 		return fmt.Errorf("初始化数据库连接失败: %w", err)
 	}
 
+	// 初始化JWT管理器
+	if err := m.initJWT(cfg.Security); err != nil {
+		return fmt.Errorf("初始化JWT管理器失败: %w", err)
+	}
+
+	// 初始化Casbin enforcer
+	if err := m.initCasbin(cfg.Security); err != nil {
+		return fmt.Errorf("初始化Casbin失败: %w", err)
+	}
+
+	// 初始化Redis连接
+	if err := m.initRedis(cfg.Redis); err != nil {
+		return fmt.Errorf("初始化Redis连接失败: %w", err)
+	}
+
 	// 未来在这里添加其他连接的初始化
-	// if err := m.initRedis(cfg.Redis); err != nil {
-	//     return fmt.Errorf("初始化Redis连接失败: %w", err)
-	// }
 
 	return nil
 }
@@ -50,12 +69,16 @@ func (m *Manager) Close() error {
 		}
 	}
 
+	// 关闭Redis连接
+	if m.Redis != nil {
+		if err := m.Redis.Close(); err != nil {
+			logger.Error("关闭Redis连接失败", logger.Err(err))
+		} else {
+			logger.Info("Redis连接已关闭")
+		}
+	}
+
 	// 未来在这里添加其他连接的关闭逻辑
-	// if m.Redis != nil {
-	//     if err := m.Redis.Close(); err != nil {
-	//         logger.Error("关闭Redis连接失败", logger.Err(err))
-	//     }
-	// }
 
 	return nil
 }
@@ -70,8 +93,46 @@ func (m *Manager) initDatabase(cfg config.DatabaseConfig) error {
 	return nil
 }
 
+// initJWT 初始化JWT管理器
+func (m *Manager) initJWT(cfg config.SecurityConfig) error {
+	expiration := time.Duration(cfg.JWTExpiration) * time.Hour
+	m.JWT = jwt.NewManager(cfg.JWTSecret, expiration)
+	logger.Info("JWT管理器初始化成功", logger.Int("expiration_hours", cfg.JWTExpiration))
+	return nil
+}
+
+// initCasbin 初始化Casbin enforcer
+func (m *Manager) initCasbin(cfg config.SecurityConfig) error {
+	// 使用GORM adapter，自动创建casbin_rule表
+	adapter, err := gormadapter.NewAdapterByDB(m.DB)
+	if err != nil {
+		return fmt.Errorf("创建Casbin adapter失败: %w", err)
+	}
+
+	// 加载模型配置
+	enforcer, err := casbin.NewEnforcer(cfg.CasbinModelPath, adapter)
+	if err != nil {
+		return fmt.Errorf("创建Casbin enforcer失败: %w", err)
+	}
+
+	// 从数据库加载策略
+	if err := enforcer.LoadPolicy(); err != nil {
+		return fmt.Errorf("加载Casbin策略失败: %w", err)
+	}
+
+	m.Enforcer = enforcer
+	logger.Info("Casbin初始化成功", logger.String("model_path", cfg.CasbinModelPath))
+	return nil
+}
+
+// initRedis 初始化Redis连接
+func (m *Manager) initRedis(cfg config.RedisConfig) error {
+	client, err := redisClient.NewClient(cfg)
+	if err != nil {
+		return fmt.Errorf("创建Redis客户端失败: %w", err)
+	}
+	m.Redis = client
+	return nil
+}
+
 // 未来添加其他连接的初始化方法
-// func (m *Manager) initRedis(cfg config.RedisConfig) error {
-//     // Redis 初始化逻辑
-//     return nil
-// }

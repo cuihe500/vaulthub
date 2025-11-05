@@ -3,6 +3,16 @@ BINARY_NAME=vaulthub
 BUILD_DIR=build
 CMD_DIR=cmd/vaulthub
 
+# 配置文件路径（可选，默认使用应用内置的 configs/config.toml）
+CONFIG ?=
+
+# 构建配置参数
+ifneq ($(CONFIG),)
+    CONFIG_FLAG=--config $(CONFIG)
+else
+    CONFIG_FLAG=
+endif
+
 # 版本信息
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -39,7 +49,7 @@ build-prod:
 .PHONY: run
 run: build
 	@echo "Running $(BINARY_NAME)..."
-	./$(BUILD_DIR)/$(BINARY_NAME) serve
+	./$(BUILD_DIR)/$(BINARY_NAME) serve $(CONFIG_FLAG)
 
 # 清理
 .PHONY: clean
@@ -92,19 +102,87 @@ version:
 	@echo "Build Time: $(BUILD_TIME)"
 	@echo "Go Version: $(GO_VERSION)"
 
+# 数据库迁移
+.PHONY: migrate-up
+migrate-up: build
+	@echo "Applying all pending migrations..."
+	./$(BUILD_DIR)/$(BINARY_NAME) migrate up $(CONFIG_FLAG)
+	@echo "Migration complete"
+
+.PHONY: migrate-down
+migrate-down: build
+	@echo "Rolling back last migration..."
+	./$(BUILD_DIR)/$(BINARY_NAME) migrate down $(CONFIG_FLAG)
+	@echo "Rollback complete"
+
+.PHONY: migrate-version
+migrate-version: build
+	@echo "Getting current migration version..."
+	./$(BUILD_DIR)/$(BINARY_NAME) migrate version $(CONFIG_FLAG)
+
+.PHONY: migrate-steps
+migrate-steps: build
+	@if [ -z "$(STEPS)" ]; then \
+		echo "Error: STEPS parameter is required"; \
+		echo "Usage: make migrate-steps STEPS=N (positive for up, negative for down)"; \
+		exit 1; \
+	fi
+	@echo "Migrating $(STEPS) steps..."
+	./$(BUILD_DIR)/$(BINARY_NAME) migrate steps -n $(STEPS) $(CONFIG_FLAG)
+	@echo "Migration complete"
+
+.PHONY: migrate-force
+migrate-force: build
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION parameter is required"; \
+		echo "Usage: make migrate-force VERSION=N"; \
+		exit 1; \
+	fi
+	@echo "WARNING: Force setting migration version to $(VERSION)"
+	@echo "This may cause data inconsistency. Continue? [y/N] " && read ans && [ $${ans:-N} = y ]
+	./$(BUILD_DIR)/$(BINARY_NAME) migrate force -v $(VERSION) $(CONFIG_FLAG)
+	@echo "Version forced to $(VERSION)"
+
+.PHONY: migrate-reset
+migrate-reset: build
+	@echo "WARNING: This will reset the database and destroy all data!"
+	@echo "Continue? [y/N] " && read ans && [ $${ans:-N} = y ]
+	@echo "Rolling back all migrations..."
+	./$(BUILD_DIR)/$(BINARY_NAME) migrate steps -n -9999 $(CONFIG_FLAG) || true
+	@echo "Applying all migrations..."
+	./$(BUILD_DIR)/$(BINARY_NAME) migrate up $(CONFIG_FLAG)
+	@echo "Database reset complete"
+
 # 帮助
 .PHONY: help
 help:
 	@echo "VaultHub Makefile Commands:"
 	@echo ""
+	@echo "Build & Run:"
 	@echo "  make build       - Build the binary"
 	@echo "  make build-prod  - Build for production (Linux/amd64)"
 	@echo "  make run         - Build and run the application"
 	@echo "  make clean       - Remove build artifacts"
+	@echo ""
+	@echo "Testing & Quality:"
 	@echo "  make test        - Run tests"
 	@echo "  make coverage    - Generate test coverage report"
 	@echo "  make fmt         - Format code"
 	@echo "  make lint        - Run linter"
+	@echo ""
+	@echo "Database Migration:"
+	@echo "  make migrate-up      - Apply all pending migrations"
+	@echo "  make migrate-down    - Rollback last migration"
+	@echo "  make migrate-version - Show current migration version"
+	@echo "  make migrate-steps STEPS=N - Migrate N steps (positive=up, negative=down)"
+	@echo "  make migrate-force VERSION=N - Force set migration version (use with caution)"
+	@echo "  make migrate-reset   - Reset database (WARNING: destroys all data)"
+	@echo ""
+	@echo "Others:"
 	@echo "  make deps        - Install dependencies"
 	@echo "  make version     - Show version information"
 	@echo "  make help        - Show this help message"
+	@echo ""
+	@echo "Global Parameters:"
+	@echo "  CONFIG=path/to/config.toml - Specify custom config file path"
+	@echo "  Example: make run CONFIG=/etc/vaulthub/production.toml"
