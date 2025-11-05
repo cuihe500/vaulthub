@@ -35,7 +35,6 @@ func NewAuthService(db *gorm.DB, jwtManager *jwt.Manager, redis *redisClient.Cli
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=32"`
 	Password string `json:"password" binding:"required,min=8"`
-	Role     string `json:"role,omitempty"` // 可选，默认为user
 }
 
 // RegisterResponse 注册响应
@@ -67,19 +66,13 @@ func (s *AuthService) Register(req *RegisterRequest) (*RegisterResponse, error) 
 		return nil, errors.Wrap(errors.CodeCryptoError, err)
 	}
 
-	// 设置默认角色
-	role := req.Role
-	if role == "" {
-		role = "user"
-	}
-
-	// 创建用户
+	// 创建用户,强制设置角色为普通用户,只有管理员才能提权
 	user := &models.User{
 		UUID:         uuid.New().String(),
 		Username:     req.Username,
 		PasswordHash: passwordHash,
 		Status:       models.UserStatusActive,
-		Role:         role,
+		Role:         "user",
 	}
 
 	if err := s.db.Create(user).Error; err != nil {

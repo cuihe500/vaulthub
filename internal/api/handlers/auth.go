@@ -8,6 +8,7 @@ import (
 	"github.com/cuihe500/vaulthub/pkg/errors"
 	"github.com/cuihe500/vaulthub/pkg/logger"
 	"github.com/cuihe500/vaulthub/pkg/response"
+	"github.com/cuihe500/vaulthub/pkg/validator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,7 +26,7 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 
 // Register 用户注册
 // @Summary 用户注册
-// @Description 注册新用户账号
+// @Description 注册新用户账号,所有新用户默认为普通用户角色,只有管理员才能提权
 // @Tags 认证
 // @Accept json
 // @Produce json
@@ -36,7 +37,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	var req service.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Warn("注册请求参数无效", logger.Err(err))
-		response.ValidationError(c, err.Error())
+		response.ValidationError(c, validator.TranslateError(err))
 		return
 	}
 
@@ -46,7 +47,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			response.AppError(c, appErr)
 		} else {
 			logger.Error("注册失败", logger.Err(err))
-			response.InternalError(c, "registration failed")
+			response.InternalError(c, "注册失败")
 		}
 		return
 	}
@@ -67,7 +68,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var req service.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Warn("登录请求参数无效", logger.Err(err))
-		response.ValidationError(c, err.Error())
+		response.ValidationError(c, validator.TranslateError(err))
 		return
 	}
 
@@ -77,7 +78,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			response.AppError(c, appErr)
 		} else {
 			logger.Error("登录失败", logger.Err(err))
-			response.InternalError(c, "login failed")
+			response.InternalError(c, "登录失败")
 		}
 		return
 	}
@@ -92,12 +93,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} response.Response{data=models.SafeUser}
+// @Success 200 {object} response.Response{data=github_com_cuihe500_vaulthub_internal_database_models.SafeUser}
 // @Router /api/v1/auth/me [get]
 func (h *AuthHandler) GetMe(c *gin.Context) {
 	user, exists := middleware.GetCurrentUser(c)
 	if !exists {
-		response.Unauthorized(c, "user not found in context")
+		response.Unauthorized(c, "上下文中未找到用户信息")
 		return
 	}
 
@@ -117,14 +118,14 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	// 从请求头获取token
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
-		response.Unauthorized(c, "missing authorization header")
+		response.Unauthorized(c, "缺少授权头")
 		return
 	}
 
 	// 解析Bearer token
 	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) != 2 || parts[0] != "Bearer" {
-		response.Unauthorized(c, "invalid authorization header format")
+		response.Unauthorized(c, "授权头格式无效")
 		return
 	}
 
@@ -136,7 +137,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 			response.AppError(c, appErr)
 		} else {
 			logger.Error("登出失败", logger.Err(err))
-			response.InternalError(c, "logout failed")
+			response.InternalError(c, "登出失败")
 		}
 		return
 	}

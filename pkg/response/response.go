@@ -34,7 +34,7 @@ func getTimestamp() int64 {
 func Success(c *gin.Context, data interface{}) {
 	c.JSON(200, Response{
 		Code:      errors.CodeSuccess,
-		Message:   "success",
+		Message:   "成功",
 		Data:      data,
 		RequestID: getRequestID(c),
 		Timestamp: getTimestamp(),

@@ -1,0 +1,71 @@
+# VaultHub 配置文件
+# 环境变量可以覆盖下面的任何设置
+# 格式: 节名_键名大写，使用下划线分隔 (例如: SERVER_HOST, DATABASE_PORT)
+
+[server]
+# 服务器监听地址，0.0.0.0表示监听所有网络接口
+host = "0.0.0.0"
+# 服务器监听端口
+port = 8080
+# 运行模式：debug(开发模式，详细日志), release(生产模式，性能优化), test(测试模式)
+mode = "debug"
+
+[database]
+# 数据库驱动类型：mysql, postgres
+driver = "mysql"
+# 数据库服务器地址
+host = "localhost"
+# 数据库服务器端口
+port = 3306
+# 数据库名称
+name = "vaulthub"
+# 数据库用户名
+user = "root"
+# 数据库密码
+password = "your-database-password"
+
+[security]
+# JWT签名密钥，生产环境必须修改为强随机字符串
+jwt_secret = "change-me-in-production"
+# JWT令牌过期时间，单位：小时
+jwt_expiration = 24
+# 数据加密密钥，必须是32字节长度，生产环境必须修改
+encryption_key = "change-me-in-production-must-be-32-bytes"
+# Casbin权限模型文件路径
+casbin_model_path = "./configs/rbac_model.conf"
+
+[redis]
+# Redis部署模式：standalone(单机), sentinel(哨兵), cluster(集群)
+mode = "standalone"
+
+# 单机模式配置（仅在mode=standalone时生效）
+# Redis服务器地址
+host = "localhost"
+# Redis服务器端口
+port = 6379
+# Redis密码，为空表示无密码
+password = ""
+# Redis数据库编号，范围0-15（仅单机和哨兵模式有效，集群模式固定使用db0）
+db = 0
+
+# 哨兵模式配置（仅在mode=sentinel时生效）
+# 主节点名称，必须与哨兵配置中的master名称一致
+# master_name = "mymaster"
+# 哨兵节点地址列表，至少配置3个节点以保证高可用
+# sentinels = ["localhost:26379", "localhost:26380", "localhost:26381"]
+# 哨兵节点密码，为空表示无密码
+# sentinel_password = ""
+
+# 集群模式配置（仅在mode=cluster时生效）
+# 集群节点地址列表，至少配置3个主节点
+# addrs = ["localhost:7000", "localhost:7001", "localhost:7002"]
+
+[logger]
+# 日志级别：debug(调试), info(信息), warn(警告), error(错误), fatal(致命错误)
+level = "info"
+# 日志编码格式：json(JSON格式，便于日志收集), console(控制台格式，便于阅读)
+encoding = "console"
+# 日志输出路径，stdout表示标准输出，也可以指定文件路径如 ["stdout", "/var/log/vaulthub/app.log"]
+output_paths = ["stdout"]
+# 错误日志输出路径，stderr表示标准错误输出
+error_output_paths = ["stderr"]

@@ -55,50 +55,50 @@ const (
 )
 
 var codeMessages = map[int]string{
-	CodeSuccess: "success",
+	CodeSuccess: "成功",
 
-	CodeInvalidParam:     "invalid parameter",
-	CodeMissingParam:     "missing required parameter",
-	CodeInvalidFormat:    "invalid format",
-	CodeParamOutOfRange:  "parameter out of range",
-	CodeInvalidJSON:      "invalid JSON format",
-	CodeValidationFailed: "validation failed",
+	CodeInvalidParam:     "参数无效",
+	CodeMissingParam:     "缺少必需参数",
+	CodeInvalidFormat:    "格式无效",
+	CodeParamOutOfRange:  "参数超出范围",
+	CodeInvalidJSON:      "JSON格式无效",
+	CodeValidationFailed: "验证失败",
 
-	CodeUnauthorized:        "unauthorized",
-	CodeInvalidToken:        "invalid token",
-	CodeTokenExpired:        "token expired",
-	CodeInvalidCredentials:  "invalid credentials",
-	CodeAccountLocked:       "account locked",
-	CodeAccountNotActivated: "account not activated",
-	CodeAccountDisabled:     "account disabled",
-	CodeWeakPassword:        "password does not meet security requirements",
-	CodeUsernameExists:      "username already exists",
+	CodeUnauthorized:        "未授权",
+	CodeInvalidToken:        "令牌无效",
+	CodeTokenExpired:        "令牌已过期",
+	CodeInvalidCredentials:  "凭证无效",
+	CodeAccountLocked:       "账户已锁定",
+	CodeAccountNotActivated: "账户未激活",
+	CodeAccountDisabled:     "账户已禁用",
+	CodeWeakPassword:        "密码不符合安全要求",
+	CodeUsernameExists:      "用户名已存在",
 
-	CodeForbidden:              "forbidden",
-	CodeInsufficientPermission: "insufficient permission",
-	CodeOperationNotAllowed:    "operation not allowed",
-	CodeResourceLocked:         "resource locked",
+	CodeForbidden:              "禁止访问",
+	CodeInsufficientPermission: "权限不足",
+	CodeOperationNotAllowed:    "操作不被允许",
+	CodeResourceLocked:         "资源已锁定",
 
-	CodeResourceNotFound:      "resource not found",
-	CodeResourceAlreadyExists: "resource already exists",
-	CodeResourceConflict:      "resource conflict",
-	CodeResourceDeleted:       "resource deleted",
+	CodeResourceNotFound:      "资源未找到",
+	CodeResourceAlreadyExists: "资源已存在",
+	CodeResourceConflict:      "资源冲突",
+	CodeResourceDeleted:       "资源已删除",
 
-	CodeInternalError: "internal error",
-	CodeDatabaseError: "database error",
-	CodeCacheError:    "cache error",
-	CodeConfigError:   "configuration error",
-	CodeCryptoError:   "cryptography error",
-	CodeUnknownError:  "unknown error",
+	CodeInternalError: "内部错误",
+	CodeDatabaseError: "数据库错误",
+	CodeCacheError:    "缓存错误",
+	CodeConfigError:   "配置错误",
+	CodeCryptoError:   "加密错误",
+	CodeUnknownError:  "未知错误",
 
-	CodeExternalServiceError:       "external service error",
-	CodeExternalServiceTimeout:     "external service timeout",
-	CodeExternalServiceUnavailable: "external service unavailable",
+	CodeExternalServiceError:       "外部服务错误",
+	CodeExternalServiceTimeout:     "外部服务超时",
+	CodeExternalServiceUnavailable: "外部服务不可用",
 }
 
 func GetMessage(code int) string {
 	if msg, ok := codeMessages[code]; ok {
 		return msg
 	}
-	return "unknown error"
+	return "未知错误"
 }

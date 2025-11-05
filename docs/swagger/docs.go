@@ -43,7 +43,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.LoginRequest"
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.LoginRequest"
                         }
                     }
                 ],
@@ -53,13 +53,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/service.LoginResponse"
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.LoginResponse"
                                         }
                                     }
                                 }
@@ -91,7 +91,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.Response"
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
                         }
                     }
                 }
@@ -121,13 +121,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/models.SafeUser"
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser"
                                         }
                                     }
                                 }
@@ -139,7 +139,7 @@ const docTemplate = `{
         },
         "/api/v1/auth/register": {
             "post": {
-                "description": "注册新用户账号",
+                "description": "注册新用户账号,所有新用户默认为普通用户角色,只有管理员才能提权",
                 "consumes": [
                     "application/json"
                 ],
@@ -157,7 +157,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.RegisterRequest"
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.RegisterRequest"
                         }
                     }
                 ],
@@ -167,13 +167,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/service.RegisterResponse"
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.RegisterResponse"
                                         }
                                     }
                                 }
@@ -245,13 +245,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/service.ListUsersResponse"
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.ListUsersResponse"
                                         }
                                     }
                                 }
@@ -294,13 +294,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/models.SafeUser"
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser"
                                         }
                                     }
                                 }
@@ -342,7 +342,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.UpdateUserRoleRequest"
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateUserRoleRequest"
                         }
                     }
                 ],
@@ -352,13 +352,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/models.SafeUser"
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser"
                                         }
                                     }
                                 }
@@ -400,7 +400,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.UpdateUserStatusRequest"
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateUserStatusRequest"
                         }
                     }
                 ],
@@ -410,13 +410,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/models.SafeUser"
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser"
                                         }
                                     }
                                 }
@@ -443,7 +443,7 @@ const docTemplate = `{
                     "200": {
                         "description": "服务健康",
                         "schema": {
-                            "$ref": "#/definitions/handlers.HealthResponse"
+                            "$ref": "#/definitions/internal_api_handlers.HealthResponse"
                         }
                     }
                 }
@@ -451,55 +451,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.HealthData": {
-            "type": "object",
-            "properties": {
-                "database": {
-                    "description": "数据库状态: connected, disconnected",
-                    "type": "string",
-                    "example": "connected"
-                },
-                "status": {
-                    "description": "服务状态: healthy, unhealthy",
-                    "type": "string",
-                    "example": "healthy"
-                }
-            }
-        },
-        "handlers.HealthResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "响应码，0表示成功",
-                    "type": "integer",
-                    "example": 0
-                },
-                "data": {
-                    "description": "健康检查数据",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/handlers.HealthData"
-                        }
-                    ]
-                },
-                "message": {
-                    "description": "响应消息",
-                    "type": "string",
-                    "example": "success"
-                },
-                "requestId": {
-                    "description": "请求ID",
-                    "type": "string",
-                    "example": "b68c086f-db16-43f6-992e-bc391afbf24a"
-                },
-                "timestamp": {
-                    "description": "时间戳（毫秒）",
-                    "type": "integer",
-                    "example": 1762269490888
-                }
-            }
-        },
-        "models.SafeUser": {
+        "github_com_cuihe500_vaulthub_internal_database_models.SafeUser": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -515,7 +467,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/models.UserStatus"
+                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.UserStatus"
                 },
                 "updated_at": {
                     "type": "string"
@@ -528,7 +480,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UserStatus": {
+        "github_com_cuihe500_vaulthub_internal_database_models.UserStatus": {
             "type": "integer",
             "enum": [
                 1,
@@ -551,25 +503,7 @@ const docTemplate = `{
                 "UserStatusLocked"
             ]
         },
-        "response.Response": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {},
-                "message": {
-                    "type": "string"
-                },
-                "requestId": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
-        "service.ListUsersResponse": {
+        "github_com_cuihe500_vaulthub_internal_service.ListUsersResponse": {
             "type": "object",
             "properties": {
                 "page": {
@@ -587,12 +521,12 @@ const docTemplate = `{
                 "users": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.SafeUser"
+                        "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser"
                     }
                 }
             }
         },
-        "service.LoginRequest": {
+        "github_com_cuihe500_vaulthub_internal_service.LoginRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -607,18 +541,18 @@ const docTemplate = `{
                 }
             }
         },
-        "service.LoginResponse": {
+        "github_com_cuihe500_vaulthub_internal_service.LoginResponse": {
             "type": "object",
             "properties": {
                 "token": {
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/models.SafeUser"
+                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser"
                 }
             }
         },
-        "service.RegisterRequest": {
+        "github_com_cuihe500_vaulthub_internal_service.RegisterRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -629,10 +563,6 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 8
                 },
-                "role": {
-                    "description": "可选，默认为user",
-                    "type": "string"
-                },
                 "username": {
                     "type": "string",
                     "maxLength": 32,
@@ -640,15 +570,15 @@ const docTemplate = `{
                 }
             }
         },
-        "service.RegisterResponse": {
+        "github_com_cuihe500_vaulthub_internal_service.RegisterResponse": {
             "type": "object",
             "properties": {
                 "user": {
-                    "$ref": "#/definitions/models.SafeUser"
+                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser"
                 }
             }
         },
-        "service.UpdateUserRoleRequest": {
+        "github_com_cuihe500_vaulthub_internal_service.UpdateUserRoleRequest": {
             "type": "object",
             "required": [
                 "role"
@@ -664,7 +594,7 @@ const docTemplate = `{
                 }
             }
         },
-        "service.UpdateUserStatusRequest": {
+        "github_com_cuihe500_vaulthub_internal_service.UpdateUserStatusRequest": {
             "type": "object",
             "required": [
                 "status"
@@ -675,16 +605,82 @@ const docTemplate = `{
                     "minimum": 1,
                     "allOf": [
                         {
-                            "$ref": "#/definitions/models.UserStatus"
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.UserStatus"
                         }
                     ]
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_pkg_response.Response": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers.HealthData": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "description": "数据库状态: connected, disconnected",
+                    "type": "string",
+                    "example": "connected"
+                },
+                "status": {
+                    "description": "服务状态: healthy, unhealthy",
+                    "type": "string",
+                    "example": "healthy"
+                }
+            }
+        },
+        "internal_api_handlers.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "响应码，0表示成功",
+                    "type": "integer",
+                    "example": 0
+                },
+                "data": {
+                    "description": "健康检查数据",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/internal_api_handlers.HealthData"
+                        }
+                    ]
+                },
+                "message": {
+                    "description": "响应消息",
+                    "type": "string",
+                    "example": "success"
+                },
+                "requestId": {
+                    "description": "请求ID",
+                    "type": "string",
+                    "example": "b68c086f-db16-43f6-992e-bc391afbf24a"
+                },
+                "timestamp": {
+                    "description": "时间戳（毫秒）",
+                    "type": "integer",
+                    "example": 1762269490888
                 }
             }
         }
     },
     "securityDefinitions": {
         "BearerAuth": {
-            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "description": "输入 \"Bearer\" 后跟一个空格和 JWT token。",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

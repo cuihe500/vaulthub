@@ -1,40 +1,6 @@
 basePath: /
 definitions:
-  handlers.HealthData:
-    properties:
-      database:
-        description: '数据库状态: connected, disconnected'
-        example: connected
-        type: string
-      status:
-        description: '服务状态: healthy, unhealthy'
-        example: healthy
-        type: string
-    type: object
-  handlers.HealthResponse:
-    properties:
-      code:
-        description: 响应码，0表示成功
-        example: 0
-        type: integer
-      data:
-        allOf:
-        - $ref: '#/definitions/handlers.HealthData'
-        description: 健康检查数据
-      message:
-        description: 响应消息
-        example: success
-        type: string
-      requestId:
-        description: 请求ID
-        example: b68c086f-db16-43f6-992e-bc391afbf24a
-        type: string
-      timestamp:
-        description: 时间戳（毫秒）
-        example: 1762269490888
-        type: integer
-    type: object
-  models.SafeUser:
+  github_com_cuihe500_vaulthub_internal_database_models.SafeUser:
     properties:
       created_at:
         type: string
@@ -45,7 +11,7 @@ definitions:
       role:
         type: string
       status:
-        $ref: '#/definitions/models.UserStatus'
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.UserStatus'
       updated_at:
         type: string
       username:
@@ -53,7 +19,7 @@ definitions:
       uuid:
         type: string
     type: object
-  models.UserStatus:
+  github_com_cuihe500_vaulthub_internal_database_models.UserStatus:
     enum:
     - 1
     - 2
@@ -71,19 +37,7 @@ definitions:
     - UserStatusActive
     - UserStatusDisabled
     - UserStatusLocked
-  response.Response:
-    properties:
-      code:
-        type: integer
-      data: {}
-      message:
-        type: string
-      requestId:
-        type: string
-      timestamp:
-        type: integer
-    type: object
-  service.ListUsersResponse:
+  github_com_cuihe500_vaulthub_internal_service.ListUsersResponse:
     properties:
       page:
         type: integer
@@ -95,10 +49,10 @@ definitions:
         type: integer
       users:
         items:
-          $ref: '#/definitions/models.SafeUser'
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
         type: array
     type: object
-  service.LoginRequest:
+  github_com_cuihe500_vaulthub_internal_service.LoginRequest:
     properties:
       password:
         type: string
@@ -108,20 +62,17 @@ definitions:
     - password
     - username
     type: object
-  service.LoginResponse:
+  github_com_cuihe500_vaulthub_internal_service.LoginResponse:
     properties:
       token:
         type: string
       user:
-        $ref: '#/definitions/models.SafeUser'
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
     type: object
-  service.RegisterRequest:
+  github_com_cuihe500_vaulthub_internal_service.RegisterRequest:
     properties:
       password:
         minLength: 8
-        type: string
-      role:
-        description: 可选，默认为user
         type: string
       username:
         maxLength: 32
@@ -131,12 +82,12 @@ definitions:
     - password
     - username
     type: object
-  service.RegisterResponse:
+  github_com_cuihe500_vaulthub_internal_service.RegisterResponse:
     properties:
       user:
-        $ref: '#/definitions/models.SafeUser'
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
     type: object
-  service.UpdateUserRoleRequest:
+  github_com_cuihe500_vaulthub_internal_service.UpdateUserRoleRequest:
     properties:
       role:
         enum:
@@ -147,15 +98,61 @@ definitions:
     required:
     - role
     type: object
-  service.UpdateUserStatusRequest:
+  github_com_cuihe500_vaulthub_internal_service.UpdateUserStatusRequest:
     properties:
       status:
         allOf:
-        - $ref: '#/definitions/models.UserStatus'
+        - $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.UserStatus'
         maximum: 3
         minimum: 1
     required:
     - status
+    type: object
+  github_com_cuihe500_vaulthub_pkg_response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+      requestId:
+        type: string
+      timestamp:
+        type: integer
+    type: object
+  internal_api_handlers.HealthData:
+    properties:
+      database:
+        description: '数据库状态: connected, disconnected'
+        example: connected
+        type: string
+      status:
+        description: '服务状态: healthy, unhealthy'
+        example: healthy
+        type: string
+    type: object
+  internal_api_handlers.HealthResponse:
+    properties:
+      code:
+        description: 响应码，0表示成功
+        example: 0
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/internal_api_handlers.HealthData'
+        description: 健康检查数据
+      message:
+        description: 响应消息
+        example: success
+        type: string
+      requestId:
+        description: 请求ID
+        example: b68c086f-db16-43f6-992e-bc391afbf24a
+        type: string
+      timestamp:
+        description: 时间戳（毫秒）
+        example: 1762269490888
+        type: integer
     type: object
 host: localhost:8080
 info:
@@ -206,7 +203,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/service.LoginRequest'
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.LoginRequest'
       produces:
       - application/json
       responses:
@@ -214,10 +211,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Response'
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/service.LoginResponse'
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.LoginResponse'
               type: object
       summary: 用户登录
       tags:
@@ -233,7 +230,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.Response'
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
       security:
       - BearerAuth: []
       summary: 用户登出
@@ -251,10 +248,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Response'
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/models.SafeUser'
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
               type: object
       security:
       - BearerAuth: []
@@ -265,14 +262,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: 注册新用户账号
+      description: 注册新用户账号,所有新用户默认为普通用户角色,只有管理员才能提权
       parameters:
       - description: 注册请求
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/service.RegisterRequest'
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.RegisterRequest'
       produces:
       - application/json
       responses:
@@ -280,10 +277,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Response'
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/service.RegisterResponse'
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.RegisterResponse'
               type: object
       summary: 用户注册
       tags:
@@ -327,10 +324,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Response'
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/service.ListUsersResponse'
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ListUsersResponse'
               type: object
       security:
       - BearerAuth: []
@@ -355,10 +352,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Response'
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/models.SafeUser'
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
               type: object
       security:
       - BearerAuth: []
@@ -381,7 +378,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/service.UpdateUserRoleRequest'
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateUserRoleRequest'
       produces:
       - application/json
       responses:
@@ -389,10 +386,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Response'
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/models.SafeUser'
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
               type: object
       security:
       - BearerAuth: []
@@ -415,7 +412,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/service.UpdateUserStatusRequest'
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateUserStatusRequest'
       produces:
       - application/json
       responses:
@@ -423,10 +420,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/response.Response'
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/models.SafeUser'
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
               type: object
       security:
       - BearerAuth: []
@@ -444,13 +441,13 @@ paths:
         "200":
           description: 服务健康
           schema:
-            $ref: '#/definitions/handlers.HealthResponse'
+            $ref: '#/definitions/internal_api_handlers.HealthResponse'
       summary: 健康检查
       tags:
       - 系统
 securityDefinitions:
   BearerAuth:
-    description: Type "Bearer" followed by a space and JWT token.
+    description: 输入 "Bearer" 后跟一个空格和 JWT token。
     in: header
     name: Authorization
     type: apiKey

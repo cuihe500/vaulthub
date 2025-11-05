@@ -15,37 +15,37 @@ var (
 
 var migrateCmd = &cobra.Command{
 	Use:   "migrate",
-	Short: "Database migration operations",
-	Long:  `Run database migrations using golang-migrate. Supports up, down, version, force and steps.`,
+	Short: "数据库迁移操作",
+	Long:  `使用 golang-migrate 运行数据库迁移。支持 up、down、version、force 和 steps 操作。`,
 }
 
 var migrateUpCmd = &cobra.Command{
 	Use:   "up",
-	Short: "Apply all pending migrations",
+	Short: "应用所有待执行的迁移",
 	Run:   runMigrateUp,
 }
 
 var migrateDownCmd = &cobra.Command{
 	Use:   "down",
-	Short: "Rollback the last migration",
+	Short: "回滚最后一次迁移",
 	Run:   runMigrateDown,
 }
 
 var migrateVersionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Show current migration version",
+	Short: "显示当前迁移版本",
 	Run:   runMigrateVersion,
 }
 
 var migrateStepsCmd = &cobra.Command{
 	Use:   "steps",
-	Short: "Apply N migrations (positive for up, negative for down)",
+	Short: "应用 N 次迁移（正数升级，负数降级）",
 	Run:   runMigrateSteps,
 }
 
 var migrateForceCmd = &cobra.Command{
 	Use:   "force",
-	Short: "Force set migration version (use with caution)",
+	Short: "强制设置迁移版本（谨慎使用）",
 	Run:   runMigrateForce,
 }
 
@@ -58,13 +58,13 @@ func init() {
 	migrateCmd.AddCommand(migrateForceCmd)
 
 	// 配置文件路径（所有子命令共用）
-	migrateCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "config file path")
+	migrateCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "配置文件路径")
 
 	// steps 命令参数
-	migrateStepsCmd.Flags().IntVarP(&migrateSteps, "number", "n", 1, "number of steps to migrate")
+	migrateStepsCmd.Flags().IntVarP(&migrateSteps, "number", "n", 1, "迁移步数")
 
 	// force 命令参数
-	migrateForceCmd.Flags().IntVarP(&forceVersion, "version", "v", 0, "version to force set")
+	migrateForceCmd.Flags().IntVarP(&forceVersion, "version", "v", 0, "要强制设置的版本号")
 	migrateForceCmd.MarkFlagRequired("version")
 
 	// 添加到根命令
@@ -128,12 +128,12 @@ func runMigrateVersion(cmd *cobra.Command, args []string) {
 		logger.Fatal("获取版本失败", logger.Err(err))
 	}
 
-	status := "clean"
+	status := "正常"
 	if dirty {
-		status = "dirty"
+		status = "异常"
 	}
 
-	fmt.Printf("Current version: %d (%s)\n", version, status)
+	fmt.Printf("当前版本: %d (%s)\n", version, status)
 	logger.Info("版本信息", logger.Uint("version", version), logger.Bool("dirty", dirty))
 }
 

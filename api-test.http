@@ -22,49 +22,30 @@ Content-Type: application/json
 ### 2. 认证接口
 ### ============================================
 
-### 2.1 用户注册（管理员账号）
+### 2.1 用户注册
 POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "admin123456",
-  "role": "admin"
+  "username": "cuihe500",
+  "password": "Ch870219176!"
 }
 
-### 2.2 用户注册（普通用户）
-POST {{baseUrl}}/api/v1/auth/register
-Content-Type: application/json
-
-{
-  "username": "testuser",
-  "password": "testpass123456"
-}
-
-### 2.3 用户登录（管理员）
+### 2.2 用户登录
 POST {{baseUrl}}/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "password": "admin123456"
+  "username": "cuihe500",
+  "password": "Ch870219176!"
 }
 
-### 2.4 用户登录（普通用户）
-POST {{baseUrl}}/api/v1/auth/login
-Content-Type: application/json
-
-{
-  "username": "testuser",
-  "password": "testpass123456"
-}
-
-### 2.5 获取当前用户信息
+### 2.3 获取当前用户信息
 GET {{baseUrl}}/api/v1/auth/me
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-### 2.6 用户登出
+### 2.4 用户登出
 POST {{baseUrl}}/api/v1/auth/logout
 Content-Type: application/json
 Authorization: Bearer {{token}}

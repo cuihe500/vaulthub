@@ -15,7 +15,7 @@ func PermissionMiddleware(enforcer *casbin.Enforcer, resource, action string) gi
 		role, exists := GetCurrentUserRole(c)
 		if !exists {
 			logger.Error("权限检查失败：无法获取用户角色")
-			response.Unauthorized(c, "unauthorized")
+			response.Unauthorized(c, "未授权")
 			c.Abort()
 			return
 		}
@@ -28,7 +28,7 @@ func PermissionMiddleware(enforcer *casbin.Enforcer, resource, action string) gi
 				logger.String("resource", resource),
 				logger.String("action", action),
 				logger.Err(err))
-			response.InternalError(c, "permission check failed")
+			response.InternalError(c, "权限检查失败")
 			c.Abort()
 			return
 		}
@@ -38,7 +38,7 @@ func PermissionMiddleware(enforcer *casbin.Enforcer, resource, action string) gi
 				logger.String("role", role),
 				logger.String("resource", resource),
 				logger.String("action", action))
-			response.InsufficientPermission(c, "insufficient permission")
+			response.InsufficientPermission(c, "权限不足")
 			c.Abort()
 			return
 		}

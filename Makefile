@@ -153,6 +153,14 @@ migrate-reset: build
 	./$(BUILD_DIR)/$(BINARY_NAME) migrate up $(CONFIG_FLAG)
 	@echo "Database reset complete"
 
+# 生成 swagger 文档
+.PHONY: swag
+swag:
+	@echo "Generating swagger documentation..."
+	@which swag > /dev/null || (echo "Error: swag not installed. Install it with: go install github.com/swaggo/swag/cmd/swag@latest" && exit 1)
+	swag init -g $(CMD_DIR)/main.go -o docs/swagger --parseDependency --parseInternal
+	@echo "Swagger documentation generated in docs/swagger/"
+
 # 帮助
 .PHONY: help
 help:
@@ -177,6 +185,9 @@ help:
 	@echo "  make migrate-steps STEPS=N - Migrate N steps (positive=up, negative=down)"
 	@echo "  make migrate-force VERSION=N - Force set migration version (use with caution)"
 	@echo "  make migrate-reset   - Reset database (WARNING: destroys all data)"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  make swag        - Generate swagger documentation"
 	@echo ""
 	@echo "Others:"
 	@echo "  make deps        - Install dependencies"

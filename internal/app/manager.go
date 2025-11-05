@@ -18,9 +18,9 @@ import (
 // 所有连接在应用启动时初始化一次，之后复用
 type Manager struct {
 	DB       *gorm.DB
-	Enforcer *casbin.Enforcer     // Casbin权限enforcer
-	JWT      *jwt.Manager         // JWT管理器
-	Redis    *redisClient.Client  // Redis客户端
+	Enforcer *casbin.Enforcer    // Casbin权限enforcer
+	JWT      *jwt.Manager        // JWT管理器
+	Redis    *redisClient.Client // Redis客户端
 	// Cache *cache.Client // 未来添加其他连接
 }
 

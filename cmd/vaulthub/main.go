@@ -14,6 +14,7 @@ import (
 	"github.com/cuihe500/vaulthub/internal/config"
 	"github.com/cuihe500/vaulthub/internal/database"
 	"github.com/cuihe500/vaulthub/pkg/logger"
+	"github.com/cuihe500/vaulthub/pkg/validator"
 	"github.com/cuihe500/vaulthub/pkg/version"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
@@ -56,7 +57,7 @@ import (
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+// @description 输入 "Bearer" 后跟一个空格和 JWT token。
 
 var (
 	// 配置文件路径
@@ -65,19 +66,19 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "vaulthub",
-	Short: "VaultHub - Secure Key Management System",
-	Long:  `VaultHub is a secure key management system for storing, managing and rotating encryption keys, API keys and other sensitive credentials.`,
+	Short: "VaultHub - 安全密钥管理系统",
+	Long:  `VaultHub 是一个密钥管理系统，旨在安全地存储、管理和轮换加密密钥、API 密钥及其他敏感凭证。`,
 }
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Start the VaultHub API server",
+	Short: "启动 VaultHub API 服务器",
 	Run:   runServer,
 }
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print version information",
+	Short: "打印版本信息",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(version.Get().String())
 	},
@@ -89,7 +90,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 
 	// 添加配置文件路径 flag
-	serveCmd.Flags().StringVarP(&configPath, "config", "c", "", "config file path")
+	serveCmd.Flags().StringVarP(&configPath, "config", "c", "", "配置文件路径")
 }
 
 func main() {
@@ -109,35 +110,40 @@ func runServer(cmd *cobra.Command, args []string) {
 	}
 	defer logger.Sync()
 
-	// 3. 打印版本信息
+	// 3. 初始化参数校验翻译器
+	if err := validator.Init(); err != nil {
+		logger.Fatal("初始化参数校验翻译器失败", logger.Err(err))
+	}
+
+	// 4. 打印版本信息
 	logger.Info("启动 VaultHub",
 		logger.String("version", version.Version),
 		logger.String("commit", version.GitCommit),
 		logger.String("build_time", version.BuildTime),
 	)
 
-	// 4. 初始化 Manager（包含所有外部连接）
+	// 5. 初始化 Manager（包含所有外部连接）
 	mgr := &app.Manager{}
 	if err := mgr.Initialize(cfg); err != nil {
 		logger.Fatal("初始化连接管理器失败", logger.Err(err))
 	}
 	defer mgr.Close()
 
-	// 5. 自动执行数据库迁移
+	// 6. 自动执行数据库迁移
 	if err := runAutoMigrate(cfg); err != nil {
 		logger.Fatal("数据库迁移失败", logger.Err(err))
 	}
 
-	// 6. 初始化路由
+	// 7. 初始化路由
 	router := initRouter(cfg, mgr)
 
-	// 7. 创建 HTTP 服务器
+	// 8. 创建 HTTP 服务器
 	srv := &http.Server{
 		Addr:    cfg.Server.Address(),
 		Handler: router,
 	}
 
-	// 8. 启动服务器（非阻塞）
+	// 9. 启动服务器（非阻塞）
 	go func() {
 		logger.Info("启动服务器",
 			logger.String("host", cfg.Server.Host),
@@ -148,7 +154,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	// 9. 优雅关闭
+	// 10. 优雅关闭
 	gracefulShutdown(srv)
 }
 
@@ -182,7 +188,7 @@ func runAutoMigrate(cfg *config.Config) error {
 		return fmt.Errorf("迁移失败: %w", err)
 	}
 
-	logger.Info("数据库迁移完成")
+	logger.Info("数据库操作执行完毕")
 	return nil
 }
 
@@ -191,12 +197,19 @@ func initRouter(cfg *config.Config, mgr *app.Manager) *gin.Engine {
 	// 设置 Gin 运行模式
 	gin.SetMode(cfg.Server.Mode)
 
+	// 禁用Gin默认的控制台颜色输出，使用统一日志接口
+	gin.DisableConsoleColor()
+
+	// 将Gin的默认输出重定向到项目日志
+	gin.DefaultWriter = &logger.GinWriter{}
+	gin.DefaultErrorWriter = &logger.GinWriter{}
+
 	// 创建路由引擎
 	router := gin.New()
 
-	// 使用 Gin 内置中间件
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	// 使用项目统一日志中间件，替代gin.Logger()和gin.Recovery()
+	router.Use(logger.GinLogger())
+	router.Use(logger.GinRecovery())
 
 	// 注册业务路由，传入 Manager
 	routes.Setup(router, mgr)

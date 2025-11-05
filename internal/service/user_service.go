@@ -98,7 +98,7 @@ func (s *UserService) GetUserByUUID(userUUID string) (*models.SafeUser, error) {
 	var user models.User
 	if err := s.db.Where("uuid = ?", userUUID).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, errors.New(errors.CodeResourceNotFound, "user not found")
+			return nil, errors.New(errors.CodeResourceNotFound, "用户不存在")
 		}
 		logger.Error("查询用户失败", logger.String("uuid", userUUID), logger.Err(err))
 		return nil, errors.Wrap(errors.CodeDatabaseError, err)
@@ -117,7 +117,7 @@ func (s *UserService) UpdateUserStatus(userUUID string, req *UpdateUserStatusReq
 	var user models.User
 	if err := s.db.Where("uuid = ?", userUUID).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, errors.New(errors.CodeResourceNotFound, "user not found")
+			return nil, errors.New(errors.CodeResourceNotFound, "用户不存在")
 		}
 		logger.Error("查询用户失败", logger.String("uuid", userUUID), logger.Err(err))
 		return nil, errors.Wrap(errors.CodeDatabaseError, err)
@@ -145,7 +145,7 @@ func (s *UserService) UpdateUserRole(userUUID string, req *UpdateUserRoleRequest
 	var user models.User
 	if err := s.db.Where("uuid = ?", userUUID).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, errors.New(errors.CodeResourceNotFound, "user not found")
+			return nil, errors.New(errors.CodeResourceNotFound, "用户不存在")
 		}
 		logger.Error("查询用户失败", logger.String("uuid", userUUID), logger.Err(err))
 		return nil, errors.Wrap(errors.CodeDatabaseError, err)

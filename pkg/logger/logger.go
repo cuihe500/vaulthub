@@ -35,26 +35,44 @@ func newLogger(cfg Config) (*Logger, error) {
 	// 解析日志级别
 	level := parseLevel(cfg.Level)
 
-	// 构建encoder配置
-	encoderCfg := zapcore.EncoderConfig{
-		TimeKey:        "time",
-		LevelKey:       "level",
-		NameKey:        "logger",
-		CallerKey:      "caller",
-		MessageKey:     "msg",
-		StacktraceKey:  "stacktrace",
-		LineEnding:     zapcore.DefaultLineEnding,
-		EncodeLevel:    zapcore.LowercaseLevelEncoder,
-		EncodeTime:     zapcore.ISO8601TimeEncoder,
-		EncodeDuration: zapcore.SecondsDurationEncoder,
-		EncodeCaller:   zapcore.ShortCallerEncoder,
-	}
-
 	// 选择encoder
 	var encoder zapcore.Encoder
 	if cfg.Encoding == "json" {
+		// JSON模式：机器友好，无颜色
+		encoderCfg := zapcore.EncoderConfig{
+			TimeKey:        "time",
+			LevelKey:       "level",
+			NameKey:        "logger",
+			CallerKey:      "caller",
+			MessageKey:     "msg",
+			StacktraceKey:  "stacktrace",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeLevel:    zapcore.LowercaseLevelEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeDuration: zapcore.SecondsDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		}
 		encoder = zapcore.NewJSONEncoder(encoderCfg)
 	} else {
+		// Console模式：人类友好，彩色输出
+		encoderCfg := zapcore.EncoderConfig{
+			TimeKey:       "时间",
+			LevelKey:      "级别",
+			NameKey:       "日志器",
+			CallerKey:     "位置",
+			FunctionKey:   zapcore.OmitKey,
+			MessageKey:    "消息",
+			StacktraceKey: "堆栈",
+			LineEnding:    zapcore.DefaultLineEnding,
+			// 彩色大写级别，Console专用
+			EncodeLevel: zapcore.CapitalColorLevelEncoder,
+			// 友好的时间格式：2006-01-02 15:04:05
+			EncodeTime: zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05"),
+			// 人类可读的时长格式：1.5s 而不是 1.500000
+			EncodeDuration: zapcore.StringDurationEncoder,
+			// 短路径调用位置
+			EncodeCaller: zapcore.ShortCallerEncoder,
+		}
 		encoder = zapcore.NewConsoleEncoder(encoderCfg)
 	}
 

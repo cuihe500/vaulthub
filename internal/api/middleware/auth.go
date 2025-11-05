@@ -32,7 +32,7 @@ func AuthMiddleware(jwtManager *jwt.Manager, db *gorm.DB, redis *redisClient.Cli
 		// 从请求头获取token
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			response.Unauthorized(c, "missing authorization header")
+			response.Unauthorized(c, "缺少授权头")
 			c.Abort()
 			return
 		}
@@ -40,7 +40,7 @@ func AuthMiddleware(jwtManager *jwt.Manager, db *gorm.DB, redis *redisClient.Cli
 		// 解析Bearer token
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			response.Unauthorized(c, "invalid authorization header format")
+			response.Unauthorized(c, "授权头格式无效")
 			c.Abort()
 			return
 		}
@@ -51,7 +51,7 @@ func AuthMiddleware(jwtManager *jwt.Manager, db *gorm.DB, redis *redisClient.Cli
 		claims, err := jwtManager.ParseToken(tokenString)
 		if err != nil {
 			logger.Warn("JWT token验证失败", logger.Err(err))
-			response.InvalidToken(c, "invalid or expired token")
+			response.InvalidToken(c, "token无效或已过期")
 			c.Abort()
 			return
 		}
@@ -67,7 +67,7 @@ func AuthMiddleware(jwtManager *jwt.Manager, db *gorm.DB, redis *redisClient.Cli
 				// Redis中不存在token，可能已登出或过期
 				logger.Warn("Token在Redis中不存在，可能已失效",
 					logger.String("uuid", claims.UserUUID))
-				response.InvalidToken(c, "token has been invalidated")
+				response.InvalidToken(c, "token已失效")
 				c.Abort()
 				return
 			}
@@ -81,7 +81,7 @@ func AuthMiddleware(jwtManager *jwt.Manager, db *gorm.DB, redis *redisClient.Cli
 				logger.Error("Token与用户UUID不匹配",
 					logger.String("expected", claims.UserUUID),
 					logger.String("actual", userUUID))
-				response.InvalidToken(c, "invalid token")
+				response.InvalidToken(c, "token无效")
 				c.Abort()
 				return
 			}
@@ -91,10 +91,10 @@ func AuthMiddleware(jwtManager *jwt.Manager, db *gorm.DB, redis *redisClient.Cli
 		var user models.User
 		if err := db.Where("uuid = ?", claims.UserUUID).First(&user).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
-				response.Unauthorized(c, "user not found")
+				response.Unauthorized(c, "用户不存在")
 			} else {
 				logger.Error("查询用户失败", logger.String("uuid", claims.UserUUID), logger.Err(err))
-				response.InternalError(c, "failed to query user")
+				response.InternalError(c, "查询用户失败")
 			}
 			c.Abort()
 			return

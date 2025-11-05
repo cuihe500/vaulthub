@@ -26,19 +26,19 @@ func NewMigrator(cfg config.DatabaseConfig) (*Migrator, error) {
 	// 使用MigrationDSN以支持迁移文件中的多条SQL语句
 	db, err := sql.Open("mysql", cfg.MigrationDSN())
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, fmt.Errorf("打开数据库失败: %w", err)
 	}
 
 	// 创建 MySQL driver
 	driver, err := mysql.WithInstance(db, &mysql.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create driver: %w", err)
+		return nil, fmt.Errorf("创建驱动失败: %w", err)
 	}
 
 	// 创建 migrate 实例
 	m, err := migrate.NewWithDatabaseInstance(MigrationPath, "mysql", driver)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create migrator: %w", err)
+		return nil, fmt.Errorf("创建迁移器失败: %w", err)
 	}
 
 	return &Migrator{m: m}, nil
@@ -207,7 +207,7 @@ func (mg *Migrator) Version() (uint, bool, error) {
 		return 0, false, nil
 	}
 	if err != nil {
-		return 0, false, fmt.Errorf("failed to get version: %w", err)
+		return 0, false, fmt.Errorf("获取版本失败: %w", err)
 	}
 	return version, dirty, nil
 }
@@ -215,7 +215,7 @@ func (mg *Migrator) Version() (uint, bool, error) {
 // Force 强制设置版本（仅在 dirty 状态下使用）
 func (mg *Migrator) Force(version int) error {
 	if err := mg.m.Force(version); err != nil {
-		return fmt.Errorf("force version failed: %w", err)
+		return fmt.Errorf("强制设置版本失败: %w", err)
 	}
 	logger.Info("强制设置版本完成", logger.Int("version", version))
 	return nil
@@ -225,10 +225,10 @@ func (mg *Migrator) Force(version int) error {
 func (mg *Migrator) Close() error {
 	srcErr, dbErr := mg.m.Close()
 	if srcErr != nil {
-		return fmt.Errorf("failed to close source: %w", srcErr)
+		return fmt.Errorf("关闭源失败: %w", srcErr)
 	}
 	if dbErr != nil {
-		return fmt.Errorf("failed to close database: %w", dbErr)
+		return fmt.Errorf("关闭数据库失败: %w", dbErr)
 	}
 	return nil
 }
