@@ -20,6 +20,9 @@ const (
 	CodeInvalidCredentials  = 20004
 	CodeAccountLocked       = 20005
 	CodeAccountNotActivated = 20006
+	CodeAccountDisabled     = 20007
+	CodeWeakPassword        = 20008
+	CodeUsernameExists      = 20009
 )
 
 const (
@@ -67,6 +70,9 @@ var codeMessages = map[int]string{
 	CodeInvalidCredentials:  "invalid credentials",
 	CodeAccountLocked:       "account locked",
 	CodeAccountNotActivated: "account not activated",
+	CodeAccountDisabled:     "account disabled",
+	CodeWeakPassword:        "password does not meet security requirements",
+	CodeUsernameExists:      "username already exists",
 
 	CodeForbidden:              "forbidden",
 	CodeInsufficientPermission: "insufficient permission",

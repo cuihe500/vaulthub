@@ -86,10 +86,8 @@ func runMigrateUp(cmd *cobra.Command, args []string) {
 	defer migrator.Close()
 
 	if err := migrator.Up(); err != nil {
-		logger.Fatal("迁移失败", logger.Err(err))
+		logger.Fatal("数据库升级失败", logger.Err(err))
 	}
-
-	logger.Info("迁移成功完成")
 }
 
 // runMigrateDown 回滚最后一次迁移
@@ -109,8 +107,6 @@ func runMigrateDown(cmd *cobra.Command, args []string) {
 	if err := migrator.Down(); err != nil {
 		logger.Fatal("回滚失败", logger.Err(err))
 	}
-
-	logger.Info("回滚成功完成")
 }
 
 // runMigrateVersion 显示当前迁移版本
@@ -156,10 +152,8 @@ func runMigrateSteps(cmd *cobra.Command, args []string) {
 	defer migrator.Close()
 
 	if err := migrator.Steps(migrateSteps); err != nil {
-		logger.Fatal("执行迁移步骤失败", logger.Err(err))
+		logger.Fatal("数据库操作失败", logger.Err(err))
 	}
-
-	logger.Info("迁移步骤成功完成", logger.Int("steps", migrateSteps))
 }
 
 // runMigrateForce 强制设置迁移版本

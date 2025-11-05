@@ -15,14 +15,18 @@ VaultHub 是一个密钥管理系统，旨在安全地存储、管理和轮换�
 - **Web 框架**: Gin
 - **ORM**: GORM
 - **数据库**: MariaDB/MySQL
-- **配置管理**: Viper
+- **配置管理**: Viper (TOML格式)
 - **CLI**: Cobra
-- **接口文档**: swagger
+- **权限控制**: Casbin
+- **认证**: JWT (golang-jwt/jwt/v5)
+- **缓存**: Redis (go-redis/v9)
+- **日志**: Zap
+- **接口文档**: Swagger
 
 ## 项目结构
 
 ```
-backend/
+vaulthub/
 ├── cmd/
 │   └── vaulthub/          # 应用程序入口
 │       └── main.go        # 主程序
@@ -31,6 +35,7 @@ backend/
 │   │   ├── handlers/      # HTTP 请求处理器
 │   │   ├── middleware/    # 中间件
 │   │   └── routes/        # 路由定义
+│   ├── app/               # 应用管理器
 │   ├── config/            # 配置管理
 │   ├── database/          # 数据库连接和操作
 │   │   ├── migrations/    # 数据库迁移
@@ -38,13 +43,21 @@ backend/
 │   └── service/           # 业务逻辑层
 ├── pkg/                   # 可公开使用的库代码
 │   ├── crypto/            # 加密工具
+│   ├── errors/            # 统一错误处理
+│   ├── jwt/               # JWT工具
 │   ├── logger/            # 日志工具
-│   └── response/          # 统一响应格式
+│   ├── redis/             # Redis工具
+│   ├── response/          # 统一响应格式
+│   └── version/           # 版本信息
 ├── configs/               # 配置文件
-│   ├── config.yaml        # 主配置文件
+│   ├── config.toml        # 主配置文件
+│   ├── rbac_model.conf    # Casbin权限模型
 │   └── .env.example       # 环境变量示例
-├── scripts/               # 构建和部署脚本
+├── build/                 # 构建输出目录
 ├── docs/                  # 文档
+│   └── swagger/           # Swagger接口文档
+├── scripts/               # 构建和部署脚本
+├── web/                   # 前端资源
 ├── go.mod                 # Go 模块定义
 └── go.sum                 # 依赖校验
 
@@ -82,6 +95,7 @@ HTTP请求 → 路由 → 处理器 → 服务层 → 数据访问层 → 数据
 - 接口：简洁有力（如 `Reader`, `Writer`）
 - 函数/变量：驼峰命名，见名知义
 - 常量：大写+下划线或驼峰
+- 日志、注释：中文优先且作为一等公民支持
 
 ### 错误处理
 ```go
@@ -129,3 +143,7 @@ if err := doSomething(); err != nil {
 13. 对于任何可能的竞争关系，必须加入锁机制，同时以注释的形式说明锁机制的意义。
 14. 添加、删除任何实体类或者变更需要关联数据库变更，必须先创建幂等的up/down的sql文件到internal/database/migrations内。
 15. 各类连接（如数据库连接、Redis连接等）必须从Manager中取出，禁止随意创建，若不存在，则必须在应用启动的时候创建连接，特殊情况请加注释说明。
+16. 对于一般新增接口，均需要权限认证。若无需权限认证，则需要添加注释说明。
+17. 权限验证必须基于现有的权限规则，禁止私自增加、修改、删除权限规则，若需要请询问并明确拿到肯定回复才可以，并且要添加注释说明。
+18. 在命令执行的时候，先检索Makefile内的指令，若有可以替代的，优先使用Makefile内的指令而不是原生命令。
+19. 在任何注释中不要提及CLAUDE.md文档的存在，该文档默认是对其他用户不可见的。

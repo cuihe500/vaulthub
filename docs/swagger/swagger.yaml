@@ -34,19 +34,148 @@ definitions:
         example: 1762269490888
         type: integer
     type: object
+  models.SafeUser:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      last_login_at:
+        type: string
+      role:
+        type: string
+      status:
+        $ref: '#/definitions/models.UserStatus'
+      updated_at:
+        type: string
+      username:
+        type: string
+      uuid:
+        type: string
+    type: object
+  models.UserStatus:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-comments:
+      UserStatusActive: 活跃
+      UserStatusDisabled: 已禁用
+      UserStatusLocked: 已锁定
+    x-enum-descriptions:
+    - 活跃
+    - 已禁用
+    - 已锁定
+    x-enum-varnames:
+    - UserStatusActive
+    - UserStatusDisabled
+    - UserStatusLocked
+  response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+      requestId:
+        type: string
+      timestamp:
+        type: integer
+    type: object
+  service.ListUsersResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/models.SafeUser'
+        type: array
+    type: object
+  service.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  service.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/models.SafeUser'
+    type: object
+  service.RegisterRequest:
+    properties:
+      password:
+        minLength: 8
+        type: string
+      role:
+        description: 可选，默认为user
+        type: string
+      username:
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  service.RegisterResponse:
+    properties:
+      user:
+        $ref: '#/definitions/models.SafeUser'
+    type: object
+  service.UpdateUserRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - user
+        - readonly
+        type: string
+    required:
+    - role
+    type: object
+  service.UpdateUserStatusRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/models.UserStatus'
+        maximum: 3
+        minimum: 1
+    required:
+    - status
+    type: object
 host: localhost:8080
 info:
   contact:
     email: admin@thankseveryone.top
     name: API Support
   description: |-
-    VaultHub is a secure key management system for storing, managing and rotating encryption keys, API keys and other sensitive credentials.
+    VaultHub 是一个密钥管理系统，旨在安全地存储、管理和轮换加密密钥、API 密钥及其他敏感凭证。
 
     ## 特性
     - 安全的密钥存储和管理
     - 密钥轮换支持
     - 细粒度的访问控制
     - 审计日志
+
+    ## 认证
+    大部分接口需要JWT Bearer Token认证。
+    1. 调用 /api/v1/auth/register 注册账号
+    2. 调用 /api/v1/auth/login 获取 token
+    3. 在请求头中添加 Authorization: Bearer {token}
 
     ## 响应格式
     所有接口返回统一的响应格式，HTTP状态码均为200，错误码在响应体的code字段中：
@@ -66,6 +195,244 @@ info:
   title: VaultHub API
   version: "1.0"
 paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户登录获取JWT token
+      parameters:
+      - description: 登录请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.LoginResponse'
+              type: object
+      summary: 用户登录
+      tags:
+      - 认证
+  /api/v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: 用户登出，使当前token失效
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 用户登出
+      tags:
+      - 认证
+  /api/v1/auth/me:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的详细信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 认证
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 注册新用户账号
+      parameters:
+      - description: 注册请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.RegisterResponse'
+              type: object
+      summary: 用户注册
+      tags:
+      - 认证
+  /api/v1/users:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户列表（需要管理员权限）
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 用户状态
+        enum:
+        - 1
+        - 2
+        - 3
+        in: query
+        name: status
+        type: integer
+      - description: 用户角色
+        enum:
+        - admin
+        - user
+        - readonly
+        in: query
+        name: role
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.ListUsersResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取用户列表
+      tags:
+      - 用户管理
+  /api/v1/users/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: 根据UUID获取用户详细信息（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取用户信息
+      tags:
+      - 用户管理
+  /api/v1/users/{uuid}/role:
+    put:
+      consumes:
+      - application/json
+      description: 更新用户角色（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: 更新角色请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateUserRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 更新用户角色
+      tags:
+      - 用户管理
+  /api/v1/users/{uuid}/status:
+    put:
+      consumes:
+      - application/json
+      description: 更新用户状态（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: 更新状态请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateUserStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 更新用户状态
+      tags:
+      - 用户管理
   /health:
     get:
       consumes:
@@ -81,4 +448,10 @@ paths:
       summary: 健康检查
       tags:
       - 系统
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
