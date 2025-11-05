@@ -1,4 +1,6 @@
 -- 创建Casbin规则表
+-- 特例豁免：此表为 Casbin 框架标准表结构，不包含 created_at/updated_at/deleted_at 字段
+-- 原因：Casbin 适配器依赖固定的表结构，添加额外字段可能影响框架功能
 CREATE TABLE IF NOT EXISTS casbin_rule (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     ptype VARCHAR(100) COMMENT '策略类型',

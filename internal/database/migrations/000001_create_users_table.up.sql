@@ -10,9 +10,9 @@ CREATE TABLE IF NOT EXISTS users (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    INDEX idx_uuid (uuid),
-    INDEX idx_username (username),
-    INDEX idx_status (status),
-    INDEX idx_role (role),
-    INDEX idx_deleted_at (deleted_at)
+    INDEX idx_users_uuid (uuid),
+    INDEX idx_users_username (username),
+    INDEX idx_users_status (status),
+    INDEX idx_users_role (role),
+    INDEX idx_users_deleted_at (deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';

@@ -127,6 +127,75 @@ if err := doSomething(); err != nil {
    - 是否有安全隐患？
    - 能否用更少的代码实现？
 
+## 数据库约束
+
+注意：下述约束不适用于特殊表格（如casbin_rule），特殊表格需要写清楚注释。
+
+### 一、表名命名规范
+
+| 项目 | 规范说明 | 示例 |
+|------|----------|------|
+| **命名风格** | 小写字母 + 下划线分隔（snake_case） | `user_account` ✅ <br> `UserAccount` ❌（避免驼峰/帕斯卡） |
+| **语义清晰** | 表名应为名词复数或明确实体，表示存储内容 | `orders`, `product_inventory` ✅ <br> `data1`, `temp_table` ❌ |
+| **前缀/后缀** | 一般不加前缀；可加后缀如 `_log`、`_history` 表示特殊用途 | `payment_log`, `employee_archive` ✅ |
+| **避免保留字** | 不使用 SQL 关键字（如 `order`, `group`, `user`） | `app_user` ✅（替代 `user`） |
+| **长度限制** | ≤ 64 字符，简洁明确 | `customer_address` ✅ |
+
+> ✅ 推荐：`order_item`  
+> ❌ 避免：`OrderItems`, `OI`, `123order`
+
+### 二、字段名命名规范
+
+| 项目 | 规范说明 | 示例 |
+|------|----------|------|
+| **命名风格** | 小写 + 下划线（snake_case） | `created_at`, `order_amount` ✅ |
+| **语义明确** | 避免缩写歧义，优先完整英文 | `email_address` ✅ <br> `eml_addr` ❌（除非团队约定） |
+| **主键字段** | 统一命名为 `id`（单列）或 `<table>_id`（复合主键） | `id` BIGINT PRIMARY KEY |
+| **外键字段** | `<引用表名_singular>_id` | `user_id`, `product_id` |
+| **布尔字段** | 以 `is_`, `has_`, `can_`, `enable_` 开头 | `is_active`, `has_children` |
+| **时间字段** | 使用 `_at` 后缀，类型匹配含义 | `created_at` DATETIME, `updated_at` TIMESTAMP |
+| **避免保留字** | 不使用 `desc`, `key`, `type`, `timestamp` 等 | `description` ✅（替代 `desc`） |
+| **统一单位/格式** | 金额用最小货币单位（如分），时间用 UTC | `price_cents` INT, `order_time` TIMESTAMP |
+
+> ✅ 示例字段：  
+> `id`, `username`, `email`, `is_verified`, `created_at`, `updated_at`
+
+### 三、字段类型规范（以常见类型为例）
+
+| 数据类型 | 适用场景 | 推荐类型示例 |
+|----------|--------|-------------|
+| **整数** | ID、计数、状态码 | `BIGINT`（大表主键）、`INT`、`SMALLINT`、`TINYINT`（布尔用 `TINYINT(1)` 或 `BOOLEAN`） |
+| **字符串** | 短文本（≤255） | `VARCHAR(255)` <br> 用户名、手机号、邮箱等 |
+| **长文本** | 内容、备注、JSON | `TEXT` / `JSON`（MySQL 5.7+，PostgreSQL） |
+| **布尔值** | 真/假状态 | `BOOLEAN` 或 `TINYINT(1)`（0=false, 1=true） |
+| **金额/精确小数** | 货币、计算 | `DECIMAL(10,2)`（总10位，小数2位） |
+| **日期时间** | 创建/更新时间 | `TIMESTAMP`（自动更新）或 `DATETIME`（MySQL）<br>`TIMESTAMPTZ`（PostgreSQL 带时区） |
+| **浮点数** | 科学计算、允许误差 | `FLOAT` / `DOUBLE`（慎用于金额） |
+| **二进制数据** | 文件、图片哈希等 | `BLOB` / `BYTEA`（PostgreSQL） |
+| **枚举类型** | 有限固定值 | 优先用 `VARCHAR` + 应用层约束，或 `ENUM`（MySQL）/ 替代方案：`CHECK (status IN ('active','inactive'))` |
+
+### 四、通用设计原则
+
+1. **主键**：每张表必须有主键，推荐自增 `BIGINT` 或 UUID（需考虑性能）。
+2. **非空约束**：重要字段加 `NOT NULL`，避免 NULL 语义混乱。
+3. **默认值**：常用状态（如 `is_active = TRUE`）、时间字段设默认值。
+4. **索引命名**：`idx_<表名>_<字段>`，如 `idx_user_email`
+5. **注释**：每个表和字段添加 COMMENT 说明业务含义。
+6. **字符集**：统一使用 `utf8mb4`（支持 emoji 和全 Unicode）。
+7. **时区**：存储用 UTC，应用层转换时区。
+8. **外键约束**：不使用任何外键约束，而是使用关联表等其他方式。
+9. **时间戳**：每张表必须包含created_at、updated_at、deleted_at三个字段，并且这三个字段优先由数据库层处理(deleted_at除外)，其次由应用层处理。
+
+### 五、命名禁忌
+
+| ❌ 错误做法 | ✅ 正确做法 |
+|------------|------------|
+| `User`（保留字） | `app_user` |
+| `name`（模糊） | `full_name`, `nickname` |
+| `time`（类型不明确） | `created_at`, `expire_time` |
+| `data`（无意义） | `profile_data`, `extra_info` |
+| 使用空格、中文、特殊符号 | 仅使用 `a-z`, `0-9`, `_` |
+
 ## 注意（必须遵守）
 1. 所有的构建均放在build/文件夹内。
 2. 所有接口编写完毕后，必须完成详细的swagger接口文档，同时更新api-test.http。
