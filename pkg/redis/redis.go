@@ -131,6 +131,11 @@ func (c *Client) Close() error {
 	return c.client.Close()
 }
 
+// Ping 检查Redis连接状态
+func (c *Client) Ping(ctx context.Context) error {
+	return c.client.Ping(ctx).Err()
+}
+
 // Set 设置键值对,带过期时间
 func (c *Client) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
 	return c.client.Set(ctx, key, value, expiration).Err()

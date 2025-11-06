@@ -37,6 +37,12 @@ const (
 	CodeResourceAlreadyExists = 40002
 	CodeResourceConflict      = 40003
 	CodeResourceDeleted       = 40004
+	CodeNicknameRequired      = 40005
+	CodeEmailRequired         = 40006
+	CodeInvalidEmail          = 40007
+	CodeInvalidPhone          = 40008
+	CodeNicknameExists        = 40009
+	CodeEmailExists           = 40010
 )
 
 const (
@@ -52,6 +58,11 @@ const (
 	CodeExternalServiceError       = 60001
 	CodeExternalServiceTimeout     = 60002
 	CodeExternalServiceUnavailable = 60003
+)
+
+const (
+	CodeServiceDegraded = 70001
+	CodeServiceDown     = 70002
 )
 
 var codeMessages = map[int]string{
@@ -83,6 +94,12 @@ var codeMessages = map[int]string{
 	CodeResourceAlreadyExists: "资源已存在",
 	CodeResourceConflict:      "资源冲突",
 	CodeResourceDeleted:       "资源已删除",
+	CodeNicknameRequired:      "昵称不能为空",
+	CodeEmailRequired:         "邮箱不能为空",
+	CodeInvalidEmail:          "邮箱格式无效",
+	CodeInvalidPhone:          "手机号格式无效",
+	CodeNicknameExists:        "昵称已存在",
+	CodeEmailExists:           "邮箱已存在",
 
 	CodeInternalError: "内部错误",
 	CodeDatabaseError: "数据库错误",
@@ -94,6 +111,9 @@ var codeMessages = map[int]string{
 	CodeExternalServiceError:       "外部服务错误",
 	CodeExternalServiceTimeout:     "外部服务超时",
 	CodeExternalServiceUnavailable: "外部服务不可用",
+
+	CodeServiceDegraded: "服务降级",
+	CodeServiceDown:     "服务不可用",
 }
 
 func GetMessage(code int) string {

@@ -7,8 +7,8 @@
 
 ### 环境变量配置
 @baseUrl = http://localhost:8080
-@token = your-jwt-token-here
-@userUuid = user-uuid-here
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3V1aWQiOiI2ZWMzMGYzYS03Mzc4LTQ4MTAtYTE3Ny0yNTk5NzFhODNlYzAiLCJ1c2VybmFtZSI6ImN1aWhlNTAwIiwicm9sZSI6ImFkbWluIiwiaXNzIjoidmF1bHRodWIiLCJleHAiOjE3NjI0ODU1NjUsImlhdCI6MTc2MjM5OTE2NX0.bKExq6Q3fTWuHznRxC-TcBSu_kP8ST2nH8huogU-D80
+@userUuid = 6ec30f3a-7378-4810-a177-259971a83ec0
 
 ### ============================================
 ### 1. 系统接口
@@ -236,5 +236,259 @@ Authorization: Bearer {{token}}
 
 ### 4.10 获取不存在的用户
 GET {{baseUrl}}/api/v1/users/non-existent-uuid
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### ============================================
+### 5. 用户档案接口
+### ============================================
+
+### 5.1 获取当前用户档案信息
+GET {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 5.2 创建用户档案
+POST {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "cuihe500",
+  "phone": "15303947216",
+  "email": "admin@thankseveryone.top"
+}
+
+### 5.3 更新用户档案（完整更新）
+PUT {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "崔贺500",
+  "phone": "13900139000",
+  "email": "cuihe500@example.com"
+}
+
+### 5.4 更新用户档案（部分更新 - 只更新昵称）
+PUT {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "超级管理员"
+}
+
+### 5.5 更新用户档案（部分更新 - 只更新手机号）
+PUT {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "phone": "13700137000"
+}
+
+### 5.6 更新用户档案（部分更新 - 只更新邮箱）
+PUT {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "newemail@example.com"
+}
+
+### 5.7 创建或更新用户档案（首次调用会创建）
+PATCH {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "测试用户",
+  "phone": "13600136000",
+  "email": "patch@example.com"
+}
+
+### 5.8 创建或更新用户档案（再次调用会更新）
+PATCH {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "测试用户更新",
+  "phone": "13500135000",
+  "email": "patch-updated@example.com"
+}
+
+### 5.9 删除用户档案
+DELETE {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### ============================================
+### 6. 管理员用户档案接口（需要管理员权限）
+### ============================================
+
+### 6.1 获取用户档案列表（基本查询）
+GET {{baseUrl}}/api/v1/admin/profiles
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 6.2 获取用户档案列表（带分页）
+GET {{baseUrl}}/api/v1/admin/profiles?page=1&page_size=10
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 6.3 获取用户档案列表（按昵称搜索）
+GET {{baseUrl}}/api/v1/admin/profiles?nickname=崔
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 6.4 获取用户档案列表（按邮箱搜索）
+GET {{baseUrl}}/api/v1/admin/profiles?email=thankseveryone.top
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 6.5 获取指定用户档案（使用用户ID）
+GET {{baseUrl}}/api/v1/admin/users/1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 6.6 更新指定用户档案（管理员为用户更新）
+PUT {{baseUrl}}/api/v1/admin/users/1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "管理员修改的昵称",
+  "phone": "13400134000",
+  "email": "admin@modified.com"
+}
+
+### 6.7 更新指定用户档案（管理员只更新昵称）
+PUT {{baseUrl}}/api/v1/admin/users/1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "管理员昵称更新"
+}
+
+### ============================================
+### 7. 用户档案错误测试场景
+### ============================================
+
+### 7.1 创建用户档案（昵称为空）
+POST {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "",
+  "phone": "13800138000",
+  "email": "test@example.com"
+}
+
+### 7.2 创建用户档案（邮箱为空）
+POST {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "测试用户",
+  "phone": "13800138000",
+  "email": ""
+}
+
+### 7.3 创建用户档案（无效的邮箱格式）
+POST {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "测试用户",
+  "phone": "13800138000",
+  "email": "invalid-email"
+}
+
+### 7.4 创建用户档案（无效的手机号格式）
+POST {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "测试用户",
+  "phone": "123456",
+  "email": "test@example.com"
+}
+
+### 7.5 创建用户档案（昵称过长）
+POST {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "这个昵称非常非常长，超过了数据库字段的最大限制长度",
+  "phone": "13800138000",
+  "email": "test@example.com"
+}
+
+### 7.6 创建用户档案（手机号过长）
+POST {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "测试用户",
+  "phone": "138001380001234567890",
+  "email": "test@example.com"
+}
+
+### 7.7 创建用户档案（邮箱过长）
+POST {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "测试用户",
+  "phone": "13800138000",
+  "email": "this.email.address.is.very.long.and.exceeds.the.maximum.allowed.length.for.email.fields.in.database.schema"
+}
+
+### 7.8 更新用户档案（空的昵称）
+PUT {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "",
+  "email": "test@example.com"
+}
+
+### 7.9 更新用户档案（空的邮箱）
+PUT {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "测试用户",
+  "email": ""
+}
+
+### 7.10 无token访问用户档案接口
+GET {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+
+### 7.11 无效token访问用户档案接口
+GET {{baseUrl}}/api/v1/profile
+Content-Type: application/json
+Authorization: Bearer invalid-token
+
+### 7.12 普通用户尝试访问管理员接口
+GET {{baseUrl}}/api/v1/admin/profiles
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 7.13 获取不存在的用户档案
+GET {{baseUrl}}/api/v1/admin/users/999999/profile
 Content-Type: application/json
 Authorization: Bearer {{token}}

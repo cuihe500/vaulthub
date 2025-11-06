@@ -20,11 +20,13 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	// 创建 services
 	authService := service.NewAuthService(mgr.DB, mgr.JWT, mgr.Redis)
 	userService := service.NewUserService(mgr.DB)
+	profileService := service.NewUserProfileService(mgr.DB)
 
 	// 创建 handlers
 	healthHandler := handlers.NewHealthHandler(mgr)
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
+	profileHandler := handlers.NewUserProfileHandler(profileService)
 
 	// 健康检查接口（不需要认证）
 	r.GET("/health", healthHandler.HealthCheck)
@@ -64,6 +66,40 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 			// 更新用户角色 - 需要user:write权限
 			users.PUT("/:uuid/role", middleware.RequirePermission(mgr.Enforcer, "user", "write"), userHandler.UpdateUserRole)
+		}
+
+		// 用户档案路由（需要认证）
+		profile := v1.Group("/profile")
+		profile.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 获取当前用户档案 - 用户只能操作自己的档案
+			profile.GET("", profileHandler.GetProfile)
+
+			// 创建用户档案
+			profile.POST("", profileHandler.CreateProfile)
+
+			// 更新用户档案
+			profile.PUT("", profileHandler.UpdateProfile)
+
+			// 创建或更新用户档案
+			profile.PATCH("", profileHandler.CreateOrUpdateProfile)
+
+			// 删除用户档案
+			profile.DELETE("", profileHandler.DeleteProfile)
+		}
+
+		// 管理员用户档案路由（需要认证和管理员权限）
+		admin := v1.Group("/admin")
+		admin.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 获取用户档案列表 - 需要profile:read权限
+			admin.GET("/profiles", middleware.RequirePermission(mgr.Enforcer, "profile", "read"), profileHandler.ListProfiles)
+
+			// 获取指定用户档案 - 需要profile:read权限
+			admin.GET("/users/:user_id/profile", middleware.RequirePermission(mgr.Enforcer, "profile", "read"), profileHandler.GetUserProfile)
+
+			// 更新指定用户档案 - 需要profile:write权限
+			admin.PUT("/users/:user_id/profile", middleware.RequirePermission(mgr.Enforcer, "profile", "write"), profileHandler.UpdateUserProfile)
 		}
 	}
 }

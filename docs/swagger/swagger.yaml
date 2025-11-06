@@ -19,6 +19,23 @@ definitions:
       uuid:
         type: string
     type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      nickname:
+        type: string
+      phone:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
   github_com_cuihe500_vaulthub_internal_database_models.UserStatus:
     enum:
     - 1
@@ -37,6 +54,36 @@ definitions:
     - UserStatusActive
     - UserStatusDisabled
     - UserStatusLocked
+  github_com_cuihe500_vaulthub_internal_service.CreateProfileRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      nickname:
+        maxLength: 50
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+    required:
+    - email
+    - nickname
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.ListProfilesResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      profiles:
+        items:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+        type: array
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
   github_com_cuihe500_vaulthub_internal_service.ListUsersResponse:
     properties:
       page:
@@ -87,6 +134,18 @@ definitions:
       user:
         $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
     type: object
+  github_com_cuihe500_vaulthub_internal_service.UpdateProfileRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      nickname:
+        maxLength: 50
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+    type: object
   github_com_cuihe500_vaulthub_internal_service.UpdateUserRoleRequest:
     properties:
       role:
@@ -120,15 +179,51 @@ definitions:
       timestamp:
         type: integer
     type: object
-  internal_api_handlers.HealthData:
+  internal_api_handlers.ComponentStatus:
     properties:
-      database:
-        description: '数据库状态: connected, disconnected'
-        example: connected
+      last_checked:
+        description: 最后检查时间
+        example: "2025-11-06T10:30:00+08:00"
+        type: string
+      message:
+        description: 状态描述
+        example: 数据库连接正常
+        type: string
+      name:
+        description: 组件名称
+        example: database
         type: string
       status:
-        description: '服务状态: healthy, unhealthy'
+        description: 状态：healthy, degraded, unhealthy
         example: healthy
+        type: string
+    type: object
+  internal_api_handlers.HealthData:
+    properties:
+      components:
+        additionalProperties:
+          $ref: '#/definitions/internal_api_handlers.ComponentStatus'
+        description: 各组件状态详情
+        type: object
+      status:
+        description: 整体状态：healthy, degraded, unhealthy
+        example: healthy
+        type: string
+      system:
+        allOf:
+        - $ref: '#/definitions/internal_api_handlers.SystemInfo'
+        description: 系统信息
+      timestamp:
+        description: 检查时间戳（毫秒）
+        example: 1762269490888
+        type: integer
+      uptime:
+        description: 服务运行时间（毫秒）
+        example: 3600000
+        type: integer
+      version:
+        description: 服务版本
+        example: dev
         type: string
     type: object
   internal_api_handlers.HealthResponse:
@@ -152,6 +247,29 @@ definitions:
       timestamp:
         description: 时间戳（毫秒）
         example: 1762269490888
+        type: integer
+    type: object
+  internal_api_handlers.SystemInfo:
+    properties:
+      go_version:
+        description: Go版本
+        example: go1.25.1
+        type: string
+      goroutines:
+        description: 当前goroutine数量
+        example: 10
+        type: integer
+      memory_used:
+        description: 内存使用量（字节）
+        example: 5242880
+        type: integer
+      num_cpu:
+        description: CPU核心数
+        example: 8
+        type: integer
+      num_goroutine:
+        description: Goroutine数量
+        example: 10
         type: integer
     type: object
 host: localhost:8080
@@ -192,6 +310,160 @@ info:
   title: VaultHub API
   version: "1.0"
 paths:
+  /api/v1/admin/profiles:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户档案列表（需要管理员权限）
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 昵称筛选
+        in: query
+        name: nickname
+        type: string
+      - description: 邮箱筛选
+        in: query
+        name: email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ListProfilesResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户档案列表
+      tags:
+      - 用户档案
+  /api/v1/admin/users/{user_id}/profile:
+    get:
+      consumes:
+      - application/json
+      description: 根据用户ID获取指定用户的档案信息（需要管理员权限）
+      parameters:
+      - description: 用户ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取指定用户档案
+      tags:
+      - 用户档案
+    put:
+      consumes:
+      - application/json
+      description: 根据用户ID更新指定用户的档案信息（需要管理员权限）
+      parameters:
+      - description: 用户ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: 用户档案信息
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新指定用户档案
+      tags:
+      - 用户档案
   /api/v1/auth/login:
     post:
       consumes:
@@ -285,6 +557,204 @@ paths:
       summary: 用户注册
       tags:
       - 认证
+  /api/v1/profile:
+    delete:
+      consumes:
+      - application/json
+      description: 删除当前用户的档案信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除用户档案
+      tags:
+      - 用户档案
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的档案信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户档案信息
+      tags:
+      - 用户档案
+    patch:
+      consumes:
+      - application/json
+      description: 创建或更新当前用户的档案信息（如果不存在则创建，存在则更新）
+      parameters:
+      - description: 用户档案信息
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建或更新用户档案
+      tags:
+      - 用户档案
+    post:
+      consumes:
+      - application/json
+      description: 为当前用户创建档案信息
+      parameters:
+      - description: 用户档案信息
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建用户档案
+      tags:
+      - 用户档案
+    put:
+      consumes:
+      - application/json
+      description: 更新当前用户的档案信息
+      parameters:
+      - description: 用户档案信息
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新用户档案
+      tags:
+      - 用户档案
   /api/v1/users:
     get:
       consumes:
@@ -434,12 +904,12 @@ paths:
     get:
       consumes:
       - application/json
-      description: 检查服务及其依赖（数据库等）的运行状态
+      description: 检查服务及其依赖（数据库、Redis、Casbin权限系统等）的运行状态。返回整体健康状态、各组件详细状态、系统资源使用情况和服务运行时间。此接口无需认证，用于监控系统健康状态。
       produces:
       - application/json
       responses:
         "200":
-          description: 服务健康
+          description: 健康检查响应。code=0表示服务健康，code=70001表示服务降级，code=70002表示服务不可用
           schema:
             $ref: '#/definitions/internal_api_handlers.HealthResponse'
       summary: 健康检查

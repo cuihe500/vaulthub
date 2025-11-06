@@ -41,6 +41,17 @@ func Success(c *gin.Context, data interface{}) {
 	})
 }
 
+// SuccessWithCode 成功响应（自定义状态码和消息）
+func SuccessWithCode(c *gin.Context, code int, message string, data interface{}) {
+	c.JSON(200, Response{
+		Code:      code,
+		Message:   message,
+		Data:      data,
+		RequestID: getRequestID(c),
+		Timestamp: getTimestamp(),
+	})
+}
+
 func Error(c *gin.Context, code int, message string) {
 	if message == "" {
 		message = errors.GetMessage(code)
