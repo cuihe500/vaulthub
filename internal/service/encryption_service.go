@@ -1,9 +1,6 @@
 package service
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-
 	"github.com/cuihe500/vaulthub/internal/database/models"
 	"github.com/cuihe500/vaulthub/pkg/crypto"
 	"github.com/cuihe500/vaulthub/pkg/errors"
@@ -90,17 +87,23 @@ func (s *EncryptionService) CreateUserEncryptionKey(req *CreateUserEncryptionKey
 	encryptedDEKBlob = append(encryptedDEKBlob, nonce1...)
 	encryptedDEKBlob = append(encryptedDEKBlob, authTag1...)
 
-	// 5. 生成临时恢复密钥（阶段1占位符，阶段2将使用BIP39）
-	// TODO: 阶段2实现BIP39助记词生成
-	recoveryKey, err := crypto.GenerateRandomBytes(32)
+	// 5. 生成BIP39助记词（24个单词）
+	recoveryMnemonic, err := crypto.GenerateBIP39Mnemonic()
 	if err != nil {
-		logger.Error("生成恢复密钥失败", logger.Err(err))
+		logger.Error("生成BIP39助记词失败", logger.Err(err))
+		return nil, err
+	}
+
+	// 从助记词派生恢复密钥
+	recoveryKey, err := crypto.DeriveKeyFromMnemonic(recoveryMnemonic)
+	if err != nil {
+		logger.Error("从助记词派生恢复密钥失败", logger.Err(err))
 		return nil, err
 	}
 	defer crypto.ClearBytes(recoveryKey)
 
 	// 计算恢复密钥哈希（用于后续验证）
-	recoveryKeyHash := sha256.Sum256(recoveryKey)
+	recoveryKeyHash := crypto.HashRecoveryKey(recoveryKey)
 
 	// 6. 用恢复密钥加密DEK（备份）
 	encryptedDEKRecovery, nonce2, authTag2, err := crypto.EncryptAESGCM(dek, recoveryKey)
@@ -123,7 +126,7 @@ func (s *EncryptionService) CreateUserEncryptionKey(req *CreateUserEncryptionKey
 		EncryptedDEK:         encryptedDEKBlob,
 		DEKVersion:           1,
 		DEKAlgorithm:         "AES-256-GCM",
-		RecoveryKeyHash:      hex.EncodeToString(recoveryKeyHash[:]),
+		RecoveryKeyHash:      recoveryKeyHash,
 		EncryptedDEKRecovery: encryptedDEKRecoveryBlob,
 	}
 
@@ -134,10 +137,10 @@ func (s *EncryptionService) CreateUserEncryptionKey(req *CreateUserEncryptionKey
 
 	logger.Info("创建用户加密密钥成功", logger.String("user_uuid", req.UserUUID))
 
-	// 8. 返回响应（恢复密钥仅显示一次）
+	// 8. 返回响应（恢复助记词仅显示一次，用户必须妥善保管）
 	return &CreateUserEncryptionKeyResponse{
 		UserEncryptionKey: userKey.ToSafe(),
-		RecoveryKey:       hex.EncodeToString(recoveryKey), // 阶段1临时方案，阶段2将返回助记词
+		RecoveryKey:       recoveryMnemonic, // 返回24个单词的助记词
 	}, nil
 }
 

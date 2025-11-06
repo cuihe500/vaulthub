@@ -22,13 +22,15 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	userService := service.NewUserService(mgr.DB)
 	profileService := service.NewUserProfileService(mgr.DB)
 	encryptionService := service.NewEncryptionService(mgr.DB)
+	recoveryService := service.NewRecoveryService(mgr.DB)
 
 	// 创建 handlers
 	healthHandler := handlers.NewHealthHandler(mgr)
-	authHandler := handlers.NewAuthHandler(authService)
+	authHandler := handlers.NewAuthHandler(authService, recoveryService)
 	userHandler := handlers.NewUserHandler(userService)
 	profileHandler := handlers.NewUserProfileHandler(profileService)
 	secretHandler := handlers.NewSecretHandler(encryptionService)
+	keyManagementHandler := handlers.NewKeyManagementHandler(encryptionService, recoveryService)
 
 	// 健康检查接口（不需要认证）
 	r.GET("/health", healthHandler.HealthCheck)
@@ -50,6 +52,8 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			auth.GET("/me", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.GetMe)
 			// 登出需要认证
 			auth.POST("/logout", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.Logout)
+			// 使用恢复密钥重置密码需要认证
+			auth.POST("/reset-password", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.ResetPassword)
 		}
 
 		// 用户管理路由（需要认证和管理员权限）
@@ -92,11 +96,13 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 		// 加密密钥管理路由（需要认证）
 		// 用户只能操作自己的加密密钥
-		encryption := v1.Group("/encryption")
-		encryption.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		keys := v1.Group("/keys")
+		keys.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
 		{
 			// 创建用户加密密钥（首次使用加密功能时调用）
-			encryption.POST("/keys", secretHandler.CreateEncryptionKey)
+			keys.POST("/create", keyManagementHandler.CreateUserEncryptionKey)
+			// 验证恢复密钥有效性
+			keys.POST("/verify-recovery", keyManagementHandler.VerifyRecoveryKey)
 		}
 
 		// 秘密管理路由（需要认证）

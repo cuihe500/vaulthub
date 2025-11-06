@@ -14,13 +14,15 @@ import (
 
 // AuthHandler 认证处理器
 type AuthHandler struct {
-	authService *service.AuthService
+	authService     *service.AuthService
+	recoveryService *service.RecoveryService
 }
 
 // NewAuthHandler 创建认证处理器实例
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
+func NewAuthHandler(authService *service.AuthService, recoveryService *service.RecoveryService) *AuthHandler {
 	return &AuthHandler{
-		authService: authService,
+		authService:     authService,
+		recoveryService: recoveryService,
 	}
 }
 
@@ -143,4 +145,48 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	response.Success(c, nil)
+}
+
+// ResetPassword 使用恢复密钥重置密码
+// @Summary 使用恢复密钥重置密码
+// @Description 用户忘记密码时，可使用注册时获得的24个单词恢复助记词重置密码
+// @Tags 认证
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body service.ResetPasswordWithRecoveryRequest true "重置密码请求"
+// @Success 200 {object} response.Response
+// @Router /api/v1/auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	// 获取当前用户
+	user, exists := middleware.GetCurrentUser(c)
+	if !exists {
+		response.Unauthorized(c, "上下文中未找到用户信息")
+		return
+	}
+
+	var req service.ResetPasswordWithRecoveryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warn("重置密码请求参数无效", logger.Err(err))
+		response.ValidationError(c, validator.TranslateError(err))
+		return
+	}
+
+	// 设置用户UUID
+	req.UserUUID = user.UUID
+
+	// 调用recovery service
+	if err := h.recoveryService.ResetPasswordWithRecovery(&req); err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			response.AppError(c, appErr)
+		} else {
+			logger.Error("重置密码失败", logger.Err(err))
+			response.InternalError(c, "重置密码失败")
+		}
+		return
+	}
+
+	response.Success(c, gin.H{
+		"message": "密码重置成功，请使用新密码登录",
+	})
 }

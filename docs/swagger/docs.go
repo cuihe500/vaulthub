@@ -434,6 +434,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/reset-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户忘记密码时，可使用注册时获得的24个单词恢复助记词重置密码",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "使用恢复密钥重置密码",
+                "parameters": [
+                    {
+                        "description": "重置密码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.ResetPasswordWithRecoveryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/encryption/keys": {
             "post": {
                 "security": [
@@ -476,6 +515,108 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keys/create": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "在用户注册或首次使用加密功能时创建加密密钥，返回24个单词的恢复助记词（仅显示一次）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "密钥管理"
+                ],
+                "summary": "创建用户加密密钥",
+                "parameters": [
+                    {
+                        "description": "创建密钥请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keys/verify-recovery": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "验证用户输入的恢复助记词是否正确，用于在实际重置密码前进行确认",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "密钥管理"
+                ],
+                "summary": "验证恢复密钥有效性",
+                "parameters": [
+                    {
+                        "description": "验证恢复密钥请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyResponse"
                                         }
                                     }
                                 }
@@ -1754,6 +1895,22 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cuihe500_vaulthub_internal_service.ResetPasswordWithRecoveryRequest": {
+            "type": "object",
+            "required": [
+                "new_password",
+                "recovery_mnemonic"
+            ],
+            "properties": {
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "recovery_mnemonic": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cuihe500_vaulthub_internal_service.UpdateProfileRequest": {
             "type": "object",
             "properties": {
@@ -1801,6 +1958,28 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.UserStatus"
                         }
                     ]
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyRequest": {
+            "type": "object",
+            "required": [
+                "recovery_mnemonic"
+            ],
+            "properties": {
+                "recovery_mnemonic": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "valid": {
+                    "type": "boolean"
                 }
             }
         },
