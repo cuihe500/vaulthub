@@ -46,12 +46,15 @@ const (
 )
 
 const (
-	CodeInternalError = 50001
-	CodeDatabaseError = 50002
-	CodeCacheError    = 50003
-	CodeConfigError   = 50004
-	CodeCryptoError   = 50005
-	CodeUnknownError  = 50099
+	CodeInternalError      = 50001
+	CodeDatabaseError      = 50002
+	CodeCacheError         = 50003
+	CodeConfigError        = 50004
+	CodeCryptoError        = 50005
+	CodeEncryptionFailed   = 50006
+	CodeDecryptionFailed   = 50007
+	CodeKeyDerivationError = 50008
+	CodeUnknownError       = 50099
 )
 
 const (
@@ -101,12 +104,15 @@ var codeMessages = map[int]string{
 	CodeNicknameExists:        "昵称已存在",
 	CodeEmailExists:           "邮箱已存在",
 
-	CodeInternalError: "内部错误",
-	CodeDatabaseError: "数据库错误",
-	CodeCacheError:    "缓存错误",
-	CodeConfigError:   "配置错误",
-	CodeCryptoError:   "加密错误",
-	CodeUnknownError:  "未知错误",
+	CodeInternalError:      "内部错误",
+	CodeDatabaseError:      "数据库错误",
+	CodeCacheError:         "缓存错误",
+	CodeConfigError:        "配置错误",
+	CodeCryptoError:        "加密错误",
+	CodeEncryptionFailed:   "加密失败",
+	CodeDecryptionFailed:   "解密失败",
+	CodeKeyDerivationError: "密钥派生失败",
+	CodeUnknownError:       "未知错误",
 
 	CodeExternalServiceError:       "外部服务错误",
 	CodeExternalServiceTimeout:     "外部服务超时",

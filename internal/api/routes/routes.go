@@ -21,12 +21,14 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	authService := service.NewAuthService(mgr.DB, mgr.JWT, mgr.Redis)
 	userService := service.NewUserService(mgr.DB)
 	profileService := service.NewUserProfileService(mgr.DB)
+	encryptionService := service.NewEncryptionService(mgr.DB)
 
 	// 创建 handlers
 	healthHandler := handlers.NewHealthHandler(mgr)
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userService)
 	profileHandler := handlers.NewUserProfileHandler(profileService)
+	secretHandler := handlers.NewSecretHandler(encryptionService)
 
 	// 健康检查接口（不需要认证）
 	r.GET("/health", healthHandler.HealthCheck)
@@ -86,6 +88,33 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 			// 删除用户档案
 			profile.DELETE("", profileHandler.DeleteProfile)
+		}
+
+		// 加密密钥管理路由（需要认证）
+		// 用户只能操作自己的加密密钥
+		encryption := v1.Group("/encryption")
+		encryption.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 创建用户加密密钥（首次使用加密功能时调用）
+			encryption.POST("/keys", secretHandler.CreateEncryptionKey)
+		}
+
+		// 秘密管理路由（需要认证）
+		// 用户只能操作自己的秘密
+		secrets := v1.Group("/secrets")
+		secrets.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 获取秘密列表
+			secrets.GET("", secretHandler.ListSecrets)
+
+			// 创建秘密
+			secrets.POST("", secretHandler.CreateSecret)
+
+			// 解密秘密（获取明文）
+			secrets.POST("/:uuid/decrypt", secretHandler.GetSecret)
+
+			// 删除秘密
+			secrets.DELETE("/:uuid", secretHandler.DeleteSecret)
 		}
 
 		// 管理员用户档案路由（需要认证和管理员权限）

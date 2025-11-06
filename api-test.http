@@ -7,7 +7,7 @@
 
 ### 环境变量配置
 @baseUrl = http://localhost:8080
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3V1aWQiOiI2ZWMzMGYzYS03Mzc4LTQ4MTAtYTE3Ny0yNTk5NzFhODNlYzAiLCJ1c2VybmFtZSI6ImN1aWhlNTAwIiwicm9sZSI6ImFkbWluIiwiaXNzIjoidmF1bHRodWIiLCJleHAiOjE3NjI0ODU1NjUsImlhdCI6MTc2MjM5OTE2NX0.bKExq6Q3fTWuHznRxC-TcBSu_kP8ST2nH8huogU-D80
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3V1aWQiOiI2ZWMzMGYzYS03Mzc4LTQ4MTAtYTE3Ny0yNTk5NzFhODNlYzAiLCJ1c2VybmFtZSI6ImN1aWhlNTAwIiwicm9sZSI6ImFkbWluIiwiaXNzIjoidmF1bHRodWIiLCJleHAiOjE3NjI1MDE3OTQsImlhdCI6MTc2MjQxNTM5NH0.fLXE4QvbpRagVbgpvIH7cyzlVzwjF-FqUD_KnGXgC7w
 @userUuid = 6ec30f3a-7378-4810-a177-259971a83ec0
 
 ### ============================================
@@ -492,3 +492,273 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/v1/admin/users/999999/profile
 Content-Type: application/json
 Authorization: Bearer {{token}}
+
+### ============================================
+### 8. 加密密钥管理接口
+### ============================================
+
+### 8.1 创建用户加密密钥（首次使用）
+### 警告：返回的恢复密钥仅显示一次，请务必保存
+POST {{baseUrl}}/api/v1/encryption/keys
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!"
+}
+
+### ============================================
+### 9. 秘密管理接口
+### ============================================
+
+### 环境变量（秘密相关）
+@secretUuid =
+
+### 9.1 创建加密秘密（API密钥）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "GitHub API Token",
+  "secret_type": "api_key",
+  "plain_data": "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+  "description": "用于访问GitHub API的个人访问令牌",
+  "metadata": {
+    "tags": ["github", "api", "production"],
+    "extra": {
+      "permissions": ["repo", "read:org"]
+    }
+  }
+}
+
+### 9.2 创建加密秘密（数据库凭证）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "Production MySQL",
+  "secret_type": "db_credential",
+  "plain_data": "{\"host\":\"db.example.com\",\"port\":3306,\"username\":\"admin\",\"password\":\"SuperSecret123!\",\"database\":\"production\"}",
+  "description": "生产环境MySQL数据库连接信息"
+}
+
+### 9.3 创建加密秘密（SSH私钥）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "Server SSH Key",
+  "secret_type": "ssh_key",
+  "plain_data": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----",
+  "description": "服务器SSH登录私钥"
+}
+
+### 9.4 创建加密秘密（密码）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "Admin Password",
+  "secret_type": "password",
+  "plain_data": "AdminP@ssw0rd2024!",
+  "description": "系统管理员密码"
+}
+
+### 9.5 创建加密秘密（证书）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "SSL Certificate",
+  "secret_type": "certificate",
+  "plain_data": "-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIB...\n-----END CERTIFICATE-----",
+  "description": "域名SSL证书"
+}
+
+### 9.6 创建加密秘密（带过期时间）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "Temporary Token",
+  "secret_type": "token",
+  "plain_data": "temp_token_abc123xyz",
+  "description": "临时访问令牌",
+  "metadata": {
+    "expires_at": "2026-12-31T23:59:59Z",
+    "tags": ["temporary", "limited"]
+  }
+}
+
+### 9.7 获取秘密列表（所有秘密）
+GET {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 9.8 获取秘密列表（带分页）
+GET {{baseUrl}}/api/v1/secrets?page=1&page_size=10
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 9.9 获取秘密列表（按类型过滤 - API密钥）
+GET {{baseUrl}}/api/v1/secrets?secret_type=api_key
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 9.10 获取秘密列表（按类型过滤 - 数据库凭证）
+GET {{baseUrl}}/api/v1/secrets?secret_type=db_credential
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 9.11 获取秘密列表（按类型过滤 - 证书）
+GET {{baseUrl}}/api/v1/secrets?secret_type=certificate
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 9.12 获取秘密列表（按类型过滤 - SSH密钥）
+GET {{baseUrl}}/api/v1/secrets?secret_type=ssh_key
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 9.13 获取秘密列表（按类型过滤 - 令牌）
+GET {{baseUrl}}/api/v1/secrets?secret_type=token
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 9.14 获取秘密列表（按类型过滤 - 密码）
+GET {{baseUrl}}/api/v1/secrets?secret_type=password
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 9.15 解密秘密（获取明文数据）
+### 注意：将上面创建秘密返回的secret_uuid填入@secretUuid变量
+POST {{baseUrl}}/api/v1/secrets/{{secretUuid}}/decrypt
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!"
+}
+
+### 9.16 删除秘密
+DELETE {{baseUrl}}/api/v1/secrets/{{secretUuid}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### ============================================
+### 10. 秘密管理错误测试场景
+### ============================================
+
+### 10.1 创建秘密（未创建加密密钥）
+### 注意：使用一个新用户测试此场景
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "testpass123",
+  "secret_name": "Test Secret",
+  "secret_type": "password",
+  "plain_data": "secret123"
+}
+
+### 10.2 创建秘密（密码错误）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "WrongPassword123!",
+  "secret_name": "Test Secret",
+  "secret_type": "api_key",
+  "plain_data": "test_api_key"
+}
+
+### 10.3 创建秘密（秘密名称为空）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "",
+  "secret_type": "password",
+  "plain_data": "secret123"
+}
+
+### 10.4 创建秘密（秘密类型无效）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "Test Secret",
+  "secret_type": "invalid_type",
+  "plain_data": "secret123"
+}
+
+### 10.5 创建秘密（明文数据为空）
+POST {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!",
+  "secret_name": "Test Secret",
+  "secret_type": "password",
+  "plain_data": ""
+}
+
+### 10.6 解密秘密（密码错误）
+POST {{baseUrl}}/api/v1/secrets/{{secretUuid}}/decrypt
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "WrongPassword123!"
+}
+
+### 10.7 解密秘密（UUID不存在）
+POST {{baseUrl}}/api/v1/secrets/non-existent-uuid/decrypt
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!"
+}
+
+### 10.8 删除秘密（UUID不存在）
+DELETE {{baseUrl}}/api/v1/secrets/non-existent-uuid
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 10.9 无token访问秘密接口
+GET {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+
+### 10.10 无效token访问秘密接口
+GET {{baseUrl}}/api/v1/secrets
+Content-Type: application/json
+Authorization: Bearer invalid-token
+
+### 10.11 重复创建加密密钥
+POST {{baseUrl}}/api/v1/encryption/keys
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "Ch870219176!"
+}

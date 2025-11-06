@@ -1,5 +1,62 @@
 basePath: /
 definitions:
+  github_com_cuihe500_vaulthub_internal_database_models.DecryptedSecret:
+    properties:
+      access_count:
+        type: integer
+      created_at:
+        type: string
+      dek_version:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      last_accessed_at:
+        type: string
+      metadata:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata'
+      plain_data:
+        description: 解密后的明文数据
+        type: string
+      secret_name:
+        type: string
+      secret_type:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretType'
+      secret_uuid:
+        type: string
+      updated_at:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SafeEncryptedSecret:
+    properties:
+      access_count:
+        type: integer
+      created_at:
+        type: string
+      dek_version:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      last_accessed_at:
+        type: string
+      metadata:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata'
+      secret_name:
+        type: string
+      secret_type:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretType'
+      secret_uuid:
+        type: string
+      updated_at:
+        type: string
+      user_uuid:
+        type: string
+    type: object
   github_com_cuihe500_vaulthub_internal_database_models.SafeUser:
     properties:
       created_at:
@@ -19,6 +76,25 @@ definitions:
       uuid:
         type: string
     type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey:
+    properties:
+      created_at:
+        type: string
+      dek_algorithm:
+        type: string
+      dek_version:
+        type: integer
+      id:
+        type: integer
+      kek_algorithm:
+        type: string
+      last_rotation_at:
+        type: string
+      updated_at:
+        type: string
+      user_uuid:
+        type: string
+    type: object
   github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile:
     properties:
       created_at:
@@ -36,6 +112,55 @@ definitions:
       user_id:
         type: integer
     type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata:
+    properties:
+      expires_at:
+        description: 过期时间
+        type: string
+      extra:
+        additionalProperties: true
+        description: 额外信息
+        type: object
+      tags:
+        description: 标签
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SecretType:
+    enum:
+    - api_key
+    - db_credential
+    - certificate
+    - ssh_key
+    - token
+    - password
+    - other
+    type: string
+    x-enum-comments:
+      SecretTypeAPIKey: API密钥
+      SecretTypeCertificate: 证书
+      SecretTypeDBCredential: 数据库凭证
+      SecretTypeOther: 其他
+      SecretTypePassword: 密码
+      SecretTypeSSHKey: SSH密钥
+      SecretTypeToken: 令牌
+    x-enum-descriptions:
+    - API密钥
+    - 数据库凭证
+    - 证书
+    - SSH密钥
+    - 令牌
+    - 密码
+    - 其他
+    x-enum-varnames:
+    - SecretTypeAPIKey
+    - SecretTypeDBCredential
+    - SecretTypeCertificate
+    - SecretTypeSSHKey
+    - SecretTypeToken
+    - SecretTypePassword
+    - SecretTypeOther
   github_com_cuihe500_vaulthub_internal_database_models.UserStatus:
     enum:
     - 1
@@ -69,6 +194,49 @@ definitions:
     - email
     - nickname
     type: object
+  github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyRequest:
+    properties:
+      password:
+        minLength: 8
+        type: string
+    required:
+    - password
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyResponse:
+    properties:
+      recovery_key:
+        description: 恢复密钥（阶段2实现）
+        type: string
+      user_encryption_key:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey'
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.DecryptSecretRequest:
+    properties:
+      password:
+        type: string
+    required:
+    - password
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.EncryptAndStoreSecretRequest:
+    properties:
+      description:
+        type: string
+      metadata:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata'
+      password:
+        type: string
+      plain_data:
+        type: string
+      secret_name:
+        type: string
+      secret_type:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretType'
+    required:
+    - password
+    - plain_data
+    - secret_name
+    - secret_type
+    type: object
   github_com_cuihe500_vaulthub_internal_service.ListProfilesResponse:
     properties:
       page:
@@ -78,6 +246,21 @@ definitions:
       profiles:
         items:
           $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+        type: array
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.ListUserSecretsResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      secrets:
+        items:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeEncryptedSecret'
         type: array
       total:
         type: integer
@@ -557,6 +740,37 @@ paths:
       summary: 用户注册
       tags:
       - 认证
+  /api/v1/encryption/keys:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        为当前用户创建加密密钥（首次使用加密功能时调用）
+        警告：返回的恢复密钥仅显示一次，请务必妥善保管
+      parameters:
+      - description: 创建加密密钥请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 创建用户加密密钥
+      tags:
+      - 秘密管理
   /api/v1/profile:
     delete:
       consumes:
@@ -755,6 +969,136 @@ paths:
       summary: 更新用户档案
       tags:
       - 用户档案
+  /api/v1/secrets:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的秘密列表（不包含加密数据）
+      parameters:
+      - description: 秘密类型
+        enum:
+        - api_key
+        - db_credential
+        - certificate
+        - ssh_key
+        - token
+        - password
+        - other
+        in: query
+        name: secret_type
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ListUserSecretsResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取秘密列表
+      tags:
+      - 秘密管理
+    post:
+      consumes:
+      - application/json
+      description: 加密并存储敏感数据（需要输入密码）
+      parameters:
+      - description: 创建秘密请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.EncryptAndStoreSecretRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeEncryptedSecret'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 创建加密秘密
+      tags:
+      - 秘密管理
+  /api/v1/secrets/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的秘密（软删除）
+      parameters:
+      - description: 秘密UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除秘密
+      tags:
+      - 秘密管理
+  /api/v1/secrets/{uuid}/decrypt:
+    post:
+      consumes:
+      - application/json
+      description: 解密并获取秘密的明文数据（需要输入密码）
+      parameters:
+      - description: 秘密UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: 解密请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.DecryptSecretRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.DecryptedSecret'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 解密秘密
+      tags:
+      - 秘密管理
   /api/v1/users:
     get:
       consumes:
