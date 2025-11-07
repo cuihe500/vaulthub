@@ -143,17 +143,35 @@ func (s *AuthService) Login(req *LoginRequest) (*LoginResponse, error) {
 		return nil, errors.Wrap(errors.CodeInternalError, err)
 	}
 
-	// 将token存入Redis，使用token过期时间作为TTL
+	// Token互踢机制：一用户一Token
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	tokenKey := makeTokenKey(token)
 	expiration := s.jwtManager.GetExpiration()
+	userTokenKey := makeUserTokenKey(user.UUID)
+
+	// 查询并删除旧Token
+	if oldToken, err := s.redis.Get(ctx, userTokenKey); err == nil && oldToken != "" {
+		oldTokenKey := makeTokenKey(oldToken)
+		if err := s.redis.Del(ctx, oldTokenKey); err != nil {
+			logger.Warn("删除旧Token失败",
+				logger.String("uuid", user.UUID),
+				logger.Err(err))
+		}
+	}
+
+	// 写入新Token（双向索引）
+	tokenKey := makeTokenKey(token)
 	if err := s.redis.Set(ctx, tokenKey, user.UUID, expiration); err != nil {
 		logger.Error("存储token到Redis失败",
 			logger.String("uuid", user.UUID),
 			logger.Err(err))
 		// Redis存储失败不影响登录流程，仅记录错误
+	}
+	if err := s.redis.Set(ctx, userTokenKey, token, expiration); err != nil {
+		logger.Error("存储user_token到Redis失败",
+			logger.String("uuid", user.UUID),
+			logger.Err(err))
 	}
 
 	logger.Info("用户登录成功", logger.String("uuid", user.UUID), logger.String("username", user.Username))
@@ -166,14 +184,31 @@ func (s *AuthService) Login(req *LoginRequest) (*LoginResponse, error) {
 
 // Logout 用户登出
 func (s *AuthService) Logout(token string) error {
-	// 从Redis删除token
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// 解析Token获取userUUID
+	claims, err := s.jwtManager.ParseToken(token)
+	if err != nil {
+		logger.Warn("登出时解析token失败", logger.Err(err))
+		// 即使解析失败，也尝试删除token
+	}
+
+	// 删除token（主索引）
 	tokenKey := makeTokenKey(token)
 	if err := s.redis.Del(ctx, tokenKey); err != nil {
 		logger.Error("从Redis删除token失败", logger.Err(err))
 		return errors.Wrap(errors.CodeCacheError, err)
+	}
+
+	// 删除user_token（反向索引）
+	if claims != nil {
+		userTokenKey := makeUserTokenKey(claims.UserUUID)
+		if err := s.redis.Del(ctx, userTokenKey); err != nil {
+			logger.Warn("从Redis删除user_token失败",
+				logger.String("uuid", claims.UserUUID),
+				logger.Err(err))
+		}
 	}
 
 	logger.Info("用户登出成功")
@@ -183,4 +218,9 @@ func (s *AuthService) Logout(token string) error {
 // makeTokenKey 生成token在Redis中的key
 func makeTokenKey(token string) string {
 	return fmt.Sprintf("token:%s", token)
+}
+
+// makeUserTokenKey 生成user_token在Redis中的key（用于反向索引）
+func makeUserTokenKey(userUUID string) string {
+	return fmt.Sprintf("user_token:%s", userUUID)
 }

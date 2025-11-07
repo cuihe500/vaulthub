@@ -46,10 +46,15 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	{
 		// 认证路由（不需要token）
 		// 注册和登录接口不需要认证，因为这是用户获取token的入口
+		// 注册和登录接口需要限流保护，防止暴力攻击（配置从数据库动态读取）
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/register", authHandler.Register)
-			auth.POST("/login", authHandler.Login)
+			auth.POST("/register",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				authHandler.Register)
+			auth.POST("/login",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				authHandler.Login)
 
 			// 获取当前用户信息需要认证
 			auth.GET("/me", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.GetMe)
