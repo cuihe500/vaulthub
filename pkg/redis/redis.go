@@ -165,3 +165,8 @@ func (c *Client) Expire(ctx context.Context, key string, expiration time.Duratio
 func (c *Client) TTL(ctx context.Context, key string) (time.Duration, error) {
 	return c.client.TTL(ctx, key).Result()
 }
+
+// GetUniversalClient 获取底层的UniversalClient（用于第三方库集成，如redis_rate）
+func (c *Client) GetUniversalClient() redis.UniversalClient {
+	return c.client
+}
