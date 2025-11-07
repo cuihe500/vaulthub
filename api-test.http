@@ -7,8 +7,8 @@
 
 ### 环境变量配置
 @baseUrl = http://localhost:8080
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3V1aWQiOiI2ZWMzMGYzYS03Mzc4LTQ4MTAtYTE3Ny0yNTk5NzFhODNlYzAiLCJ1c2VybmFtZSI6ImN1aWhlNTAwIiwicm9sZSI6ImFkbWluIiwiaXNzIjoidmF1bHRodWIiLCJleHAiOjE3NjI1MDE3OTQsImlhdCI6MTc2MjQxNTM5NH0.fLXE4QvbpRagVbgpvIH7cyzlVzwjF-FqUD_KnGXgC7w
-@userUuid = 6ec30f3a-7378-4810-a177-259971a83ec0
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3V1aWQiOiI2ZmM2NTA3OS05NmQzLTRmYTItOGJiZi0yY2IwZmIwYWM1NWEiLCJ1c2VybmFtZSI6ImN1aWhlNTAwIiwicm9sZSI6InVzZXIiLCJpc3MiOiJ2YXVsdGh1YiIsImV4cCI6MTc2MjU3MjA1MCwiaWF0IjoxNzYyNDg1NjUwfQ.Civ_Le-eeyg3ocz5YzVVv4iKRI1pfJM4Zf5MDgnGWKw
+@userUuid = 6fc65079-96d3-4fa2-8bbf-2cb0fb0ac55a
 
 ### ============================================
 ### 1. 系统接口
@@ -27,8 +27,8 @@ POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "username": "your_username_here",
-  "password": "your_password_here"
+  "username": "cuihe500",
+  "password": "Ch870219176!"
 }
 
 ### 2.2 用户登录
@@ -36,8 +36,8 @@ POST {{baseUrl}}/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "username": "your_username_here",
-  "password": "your_password_here"
+  "username": "cuihe500",
+  "password": "Ch870219176!"
 }
 
 ### 2.3 获取当前用户信息
@@ -50,7 +50,7 @@ POST {{baseUrl}}/api/v1/auth/logout
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-### 2.5 使用恢复密钥重置密码
+### 2.5 使用恢复密钥重置安全密码
 ### 注意：需要先创建加密密钥（8.1）并保存恢复密钥到@recoveryKey变量
 POST {{baseUrl}}/api/v1/auth/reset-password
 Content-Type: application/json
@@ -58,7 +58,7 @@ Authorization: Bearer {{token}}
 
 {
   "recovery_mnemonic": "{{recoveryKey}}",
-  "new_password": "NewPassword123!"
+  "new_security_pin": "NewSecurityPIN123!"
 }
 
 ### ============================================
@@ -259,15 +259,15 @@ GET {{baseUrl}}/api/v1/profile
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-### 5.2 创建用户档案
-POST {{baseUrl}}/api/v1/profile
+### 5.2 创建或更新用户档案（再次调用会更新）
+PATCH {{baseUrl}}/api/v1/profile
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "nickname": "your_username_here",
-  "phone": "15303947216",
-  "email": "admin@thankseveryone.top"
+  "nickname": "测试用户",
+  "phone": "13500135000",
+  "email": "patch-updated@example.com"
 }
 
 ### 5.3 更新用户档案（完整更新）
@@ -276,7 +276,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "nickname": "崔贺500",
+  "nickname": "测试用户2",
   "phone": "13900139000",
   "email": "your_username_here@example.com"
 }
@@ -319,18 +319,7 @@ Authorization: Bearer {{token}}
   "email": "patch@example.com"
 }
 
-### 5.8 创建或更新用户档案（再次调用会更新）
-PATCH {{baseUrl}}/api/v1/profile
-Content-Type: application/json
-Authorization: Bearer {{token}}
-
-{
-  "nickname": "测试用户更新",
-  "phone": "13500135000",
-  "email": "patch-updated@example.com"
-}
-
-### 5.9 删除用户档案
+### 5.8 删除用户档案
 DELETE {{baseUrl}}/api/v1/profile
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -509,16 +498,17 @@ Authorization: Bearer {{token}}
 ### ============================================
 
 ### 环境变量（恢复密钥相关）
-@recoveryKey =
+@recoveryKey = gate green memory orphan pact exist tribe name maple flame business round wagon virus dance raise frost cake erosion teach crowd theme machine dog
 
 ### 8.1 创建用户加密密钥（首次使用）
 ### 警告：返回的恢复密钥（24个单词）仅显示一次，请务必保存到@recoveryKey变量
+### 注意：security_pin 是安全密码，用于保护加密数据，独立于登录密码
 POST {{baseUrl}}/api/v1/keys/create
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here"
+  "security_pin": "YourSecurityPIN123!"
 }
 
 ### 8.2 验证恢复密钥有效性
@@ -531,20 +521,38 @@ Authorization: Bearer {{token}}
   "recovery_mnemonic": "{{recoveryKey}}"
 }
 
+### 8.3 手动触发密钥轮换
+### 注意：密钥轮换会在后台渐进式迁移所有加密数据，每30天最多轮换一次
+### security_pin 是安全密码，用于验证和解密DEK
+POST {{baseUrl}}/api/v1/keys/rotate
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "security_pin": "YourSecurityPIN123!"
+}
+
+### 8.4 查询密钥轮换进度
+### 获取当前用户的密钥轮换状态和数据迁移进度
+GET {{baseUrl}}/api/v1/keys/rotation-status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
 ### ============================================
 ### 9. 秘密管理接口
 ### ============================================
 
 ### 环境变量（秘密相关）
-@secretUuid = 
+@secretUuid = e73d61c1-29fd-440d-b9f9-6a3517610e48
 
 ### 9.1 创建加密秘密（API密钥）
+### 注意：security_pin 是安全密码，用于加密和解密数据
 POST {{baseUrl}}/api/v1/secrets
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "GitHub API Token",
   "secret_type": "api_key",
   "plain_data": "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
@@ -563,7 +571,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "Production MySQL",
   "secret_type": "db_credential",
   "plain_data": "{\"host\":\"db.example.com\",\"port\":3306,\"username\":\"admin\",\"password\":\"SuperSecret123!\",\"database\":\"production\"}",
@@ -576,7 +584,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "Server SSH Key",
   "secret_type": "ssh_key",
   "plain_data": "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----",
@@ -589,7 +597,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "Admin Password",
   "secret_type": "password",
   "plain_data": "AdminP@ssw0rd2024!",
@@ -602,7 +610,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "SSL Certificate",
   "secret_type": "certificate",
   "plain_data": "-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIB...\n-----END CERTIFICATE-----",
@@ -615,7 +623,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "Temporary Token",
   "secret_type": "token",
   "plain_data": "temp_token_abc123xyz",
@@ -668,12 +676,13 @@ Authorization: Bearer {{token}}
 
 ### 9.15 解密秘密（获取明文数据）
 ### 注意：将上面创建秘密返回的secret_uuid填入@secretUuid变量
+### security_pin 是安全密码，用于解密数据
 POST {{baseUrl}}/api/v1/secrets/{{secretUuid}}/decrypt
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here"
+  "security_pin": "YourSecurityPIN123!"
 }
 
 ### 9.16 删除秘密
@@ -692,19 +701,19 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "testpass123",
+  "security_pin": "TestSecurityPIN123!",
   "secret_name": "Test Secret",
   "secret_type": "password",
   "plain_data": "secret123"
 }
 
-### 10.2 创建秘密（密码错误）
+### 10.2 创建秘密（安全密码错误）
 POST {{baseUrl}}/api/v1/secrets
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "WrongPassword123!",
+  "security_pin": "WrongSecurityPIN123!",
   "secret_name": "Test Secret",
   "secret_type": "api_key",
   "plain_data": "test_api_key"
@@ -716,7 +725,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "",
   "secret_type": "password",
   "plain_data": "secret123"
@@ -728,7 +737,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "Test Secret",
   "secret_type": "invalid_type",
   "plain_data": "secret123"
@@ -740,19 +749,19 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here",
+  "security_pin": "YourSecurityPIN123!",
   "secret_name": "Test Secret",
   "secret_type": "password",
   "plain_data": ""
 }
 
-### 10.6 解密秘密（密码错误）
+### 10.6 解密秘密（安全密码错误）
 POST {{baseUrl}}/api/v1/secrets/{{secretUuid}}/decrypt
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "WrongPassword123!"
+  "security_pin": "WrongSecurityPIN123!"
 }
 
 ### 10.7 解密秘密（UUID不存在）
@@ -784,5 +793,142 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "password": "your_password_here"
+  "security_pin": "YourSecurityPIN123!"
 }
+
+### ============================================
+### 11. 系统配置管理接口（需要管理员权限）
+### ============================================
+
+### 11.1 获取所有系统配置
+GET {{baseUrl}}/api/v1/configs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 11.2 获取单个配置（批次大小）
+GET {{baseUrl}}/api/v1/configs/key_rotation_batch_size
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 11.3 获取单个配置（批次休眠时间）
+GET {{baseUrl}}/api/v1/configs/key_rotation_batch_sleep_ms
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 11.4 获取单个配置（admin初始化标志）
+GET {{baseUrl}}/api/v1/configs/admin_initialized
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 11.5 更新配置（批次大小）
+### 注意：配置更新后立即生效，正在运行的密钥轮换任务会在下一批次使用新配置
+PUT {{baseUrl}}/api/v1/configs/key_rotation_batch_size
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "config_value": "200"
+}
+
+### 11.6 更新配置（批次休眠时间）
+PUT {{baseUrl}}/api/v1/configs/key_rotation_batch_sleep_ms
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "config_value": "50"
+}
+
+### 11.7 批量更新配置
+### 在同一事务中更新多个配置，全部成功或全部失败
+PUT {{baseUrl}}/api/v1/configs/batch
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "configs": [
+    {
+      "config_key": "key_rotation_batch_size",
+      "config_value": "150"
+    },
+    {
+      "config_key": "key_rotation_batch_sleep_ms",
+      "config_value": "75"
+    }
+  ]
+}
+
+### 11.8 重新加载配置
+### 从数据库重新加载所有配置到内存
+POST {{baseUrl}}/api/v1/configs/reload
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### ============================================
+### 12. 系统配置错误测试场景
+### ============================================
+
+### 12.1 获取不存在的配置
+GET {{baseUrl}}/api/v1/configs/nonexistent_config_key
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 12.2 更新不存在的配置
+PUT {{baseUrl}}/api/v1/configs/nonexistent_config_key
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "config_value": "some_value"
+}
+
+### 12.3 更新配置（值为空）
+PUT {{baseUrl}}/api/v1/configs/key_rotation_batch_size
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "config_value": ""
+}
+
+### 12.4 批量更新配置（包含不存在的配置键）
+PUT {{baseUrl}}/api/v1/configs/batch
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "configs": [
+    {
+      "config_key": "key_rotation_batch_size",
+      "config_value": "100"
+    },
+    {
+      "config_key": "nonexistent_key",
+      "config_value": "value"
+    }
+  ]
+}
+
+### 12.5 批量更新配置（空数组）
+PUT {{baseUrl}}/api/v1/configs/batch
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "configs": []
+}
+
+### 12.6 无token访问系统配置接口
+GET {{baseUrl}}/api/v1/configs
+Content-Type: application/json
+
+### 12.7 无效token访问系统配置接口
+GET {{baseUrl}}/api/v1/configs
+Content-Type: application/json
+Authorization: Bearer invalid-token
+
+### 12.8 普通用户尝试访问系统配置接口
+### 注意：使用普通用户的token测试
+GET {{baseUrl}}/api/v1/configs
+Content-Type: application/json
+Authorization: Bearer {{token}}

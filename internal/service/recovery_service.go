@@ -81,15 +81,15 @@ func (s *RecoveryService) VerifyRecoveryKey(req *VerifyRecoveryKeyRequest) (*Ver
 	}, nil
 }
 
-// ResetPasswordWithRecoveryRequest 使用恢复密钥重置密码请求
+// ResetPasswordWithRecoveryRequest 使用恢复密钥重置安全密码请求
 type ResetPasswordWithRecoveryRequest struct {
-	UserUUID         string `json:"-"` // 不从请求体解析，由handler从上下文设置
-	RecoveryMnemonic string `json:"recovery_mnemonic" binding:"required"`
-	NewPassword      string `json:"new_password" binding:"required,min=8"`
+	UserUUID         string `json:"-"`                                  // 不从请求体解析，由handler从上下文设置
+	RecoveryMnemonic string `json:"recovery_mnemonic" binding:"required"` // 恢复助记词
+	NewSecurityPIN   string `json:"new_security_pin" binding:"required,min=8"` // 新的安全密码（独立于登录密码）
 }
 
-// ResetPasswordWithRecovery 使用恢复密钥重置密码
-// 重要：密码重置后，所有已加密的数据不需要重新加密，因为DEK没有变化，只是KEK变了
+// ResetPasswordWithRecovery 使用恢复密钥重置安全密码
+// 重要：安全密码重置后，所有已加密的数据不需要重新加密，因为DEK没有变化，只是KEK变了
 func (s *RecoveryService) ResetPasswordWithRecovery(req *ResetPasswordWithRecoveryRequest) error {
 	// 1. 验证助记词格式
 	if !crypto.IsMnemonicValid(req.RecoveryMnemonic) {
@@ -131,14 +131,21 @@ func (s *RecoveryService) ResetPasswordWithRecovery(req *ResetPasswordWithRecove
 	}
 	defer crypto.ClearBytes(dek)
 
-	// 6. 从新密码派生新KEK
+	// 6. 生成新安全密码的哈希
+	newSecurityPINHash, err := crypto.HashPassword(req.NewSecurityPIN)
+	if err != nil {
+		logger.Error("生成新安全密码哈希失败", logger.Err(err))
+		return errors.Wrap(errors.CodeCryptoError, err)
+	}
+
+	// 7. 从新安全密码派生新KEK
 	newKEKSalt, err := crypto.GenerateRandomBytes(crypto.SaltSize)
 	if err != nil {
 		logger.Error("生成新KEK盐值失败", logger.Err(err))
 		return err
 	}
 
-	newKEK, err := crypto.DeriveKEK(req.NewPassword, newKEKSalt)
+	newKEK, err := crypto.DeriveKEK(req.NewSecurityPIN, newKEKSalt)
 	if err != nil {
 		logger.Error("派生新KEK失败", logger.Err(err))
 		return errors.WithMessage(errors.CodeKeyDerivationError, "新密钥派生失败", err)
@@ -158,12 +165,13 @@ func (s *RecoveryService) ResetPasswordWithRecovery(req *ResetPasswordWithRecove
 	newEncryptedDEKBlob = append(newEncryptedDEKBlob, newNonce...)
 	newEncryptedDEKBlob = append(newEncryptedDEKBlob, newAuthTag...)
 
-	// 8. 更新数据库（在事务中）
+	// 9. 更新数据库（在事务中）
 	err = s.db.Transaction(func(tx *gorm.DB) error {
-		// 更新密钥派生参数
+		// 更新密钥派生参数和安全密码哈希
 		if err := tx.Model(&userKey).Updates(map[string]interface{}{
-			"kek_salt":      newKEKSalt,
-			"encrypted_dek": newEncryptedDEKBlob,
+			"kek_salt":          newKEKSalt,
+			"encrypted_dek":     newEncryptedDEKBlob,
+			"security_pin_hash": newSecurityPINHash, // 更新安全密码哈希
 		}).Error; err != nil {
 			return err
 		}

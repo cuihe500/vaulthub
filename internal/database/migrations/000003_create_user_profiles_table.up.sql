@@ -10,6 +10,5 @@ CREATE TABLE `user_profiles` (
     `deleted_at` datetime(3) DEFAULT NULL COMMENT '删除时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx_user_profiles_user_id` (`user_id`),
-    KEY `idx_user_profiles_deleted_at` (`deleted_at`),
-    CONSTRAINT `fk_user_profiles_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    KEY `idx_user_profiles_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户基本信息表';

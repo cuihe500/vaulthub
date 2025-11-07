@@ -17,10 +17,20 @@ type UserEncryptionKey struct {
 	DEKVersion   int    `gorm:"type:int;not null;default:1" json:"dek_version"`
 	DEKAlgorithm string `gorm:"type:varchar(32);not null;default:'AES-256-GCM'" json:"dek_algorithm"`
 
+	// 安全密码（Security PIN）
+	// 用于保护加密数据的密码，独立于认证密码
+	// 存储bcrypt哈希用于快速验证，避免每次都进行昂贵的Argon2派生
+	SecurityPINHash string `gorm:"type:varchar(255)" json:"-"` // 安全密码哈希不对外暴露
+
 	// 恢复密钥
 	RecoveryKeyHash       string `gorm:"type:char(64);not null" json:"-"`          // 恢复密钥哈希不对外暴露
 	EncryptedDEKRecovery  []byte `gorm:"type:varbinary(512);not null" json:"-"`    // 恢复密钥加密的DEK不对外暴露
 	LastRotationAt        *time.Time `gorm:"type:datetime" json:"last_rotation_at"` // 最后一次密钥轮换时间
+
+	// 密钥轮换相关
+	EncryptedDEKOld    []byte     `gorm:"type:varbinary(512)" json:"-"`                      // 旧DEK（轮换期间暂存）
+	RotationStatus     string     `gorm:"type:varchar(20);not null;default:'none'" json:"rotation_status"` // 轮换状态
+	RotationStartedAt  *time.Time `gorm:"type:datetime" json:"rotation_started_at,omitempty"` // 轮换开始时间
 }
 
 // TableName 指定表名
@@ -28,28 +38,41 @@ func (UserEncryptionKey) TableName() string {
 	return "user_encryption_keys"
 }
 
+// RotationStatus 轮换状态枚举
+type RotationStatus string
+
+const (
+	RotationStatusNone       RotationStatus = "none"        // 无轮换
+	RotationStatusInProgress RotationStatus = "in_progress" // 轮换中
+	RotationStatusCompleted  RotationStatus = "completed"   // 已完成
+)
+
 // SafeUserEncryptionKey 用于返回给前端的安全信息（不包含敏感字段）
 type SafeUserEncryptionKey struct {
-	ID             uint       `json:"id"`
-	UserUUID       string     `json:"user_uuid"`
-	KEKAlgorithm   string     `json:"kek_algorithm"`
-	DEKVersion     int        `json:"dek_version"`
-	DEKAlgorithm   string     `json:"dek_algorithm"`
-	LastRotationAt *time.Time `json:"last_rotation_at,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	ID                uint       `json:"id"`
+	UserUUID          string     `json:"user_uuid"`
+	KEKAlgorithm      string     `json:"kek_algorithm"`
+	DEKVersion        int        `json:"dek_version"`
+	DEKAlgorithm      string     `json:"dek_algorithm"`
+	LastRotationAt    *time.Time `json:"last_rotation_at,omitempty"`
+	RotationStatus    string     `json:"rotation_status"`
+	RotationStartedAt *time.Time `json:"rotation_started_at,omitempty"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
 }
 
 // ToSafe 转换为安全信息
 func (k *UserEncryptionKey) ToSafe() *SafeUserEncryptionKey {
 	return &SafeUserEncryptionKey{
-		ID:             k.ID,
-		UserUUID:       k.UserUUID,
-		KEKAlgorithm:   k.KEKAlgorithm,
-		DEKVersion:     k.DEKVersion,
-		DEKAlgorithm:   k.DEKAlgorithm,
-		LastRotationAt: k.LastRotationAt,
-		CreatedAt:      k.CreatedAt,
-		UpdatedAt:      k.UpdatedAt,
+		ID:                k.ID,
+		UserUUID:          k.UserUUID,
+		KEKAlgorithm:      k.KEKAlgorithm,
+		DEKVersion:        k.DEKVersion,
+		DEKAlgorithm:      k.DEKAlgorithm,
+		LastRotationAt:    k.LastRotationAt,
+		RotationStatus:    k.RotationStatus,
+		RotationStartedAt: k.RotationStartedAt,
+		CreatedAt:         k.CreatedAt,
+		UpdatedAt:         k.UpdatedAt,
 	}
 }

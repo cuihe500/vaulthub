@@ -17,10 +17,11 @@ import (
 // Manager 管理应用的所有外部连接
 // 所有连接在应用启动时初始化一次，之后复用
 type Manager struct {
-	DB       *gorm.DB
-	Enforcer *casbin.Enforcer    // Casbin权限enforcer
-	JWT      *jwt.Manager        // JWT管理器
-	Redis    *redisClient.Client // Redis客户端
+	DB            *gorm.DB
+	Enforcer      *casbin.Enforcer       // Casbin权限enforcer
+	JWT           *jwt.Manager           // JWT管理器
+	Redis         *redisClient.Client    // Redis客户端
+	ConfigManager *config.ConfigManager  // 系统配置管理器
 	// Cache *cache.Client // 未来添加其他连接
 }
 
@@ -45,6 +46,11 @@ func (m *Manager) Initialize(cfg *config.Config) error {
 	// 初始化Redis连接
 	if err := m.initRedis(cfg.Redis); err != nil {
 		return fmt.Errorf("初始化Redis连接失败: %w", err)
+	}
+
+	// 初始化配置管理器
+	if err := m.initConfigManager(); err != nil {
+		return fmt.Errorf("初始化配置管理器失败: %w", err)
 	}
 
 	// 未来在这里添加其他连接的初始化
@@ -132,6 +138,16 @@ func (m *Manager) initRedis(cfg config.RedisConfig) error {
 		return fmt.Errorf("创建Redis客户端失败: %w", err)
 	}
 	m.Redis = client
+	return nil
+}
+
+// initConfigManager 初始化配置管理器
+func (m *Manager) initConfigManager() error {
+	configManager, err := config.NewConfigManager(m.DB)
+	if err != nil {
+		return fmt.Errorf("创建配置管理器失败: %w", err)
+	}
+	m.ConfigManager = configManager
 	return nil
 }
 

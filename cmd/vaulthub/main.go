@@ -12,7 +12,7 @@ import (
 	"github.com/cuihe500/vaulthub/internal/api/routes"
 	"github.com/cuihe500/vaulthub/internal/app"
 	"github.com/cuihe500/vaulthub/internal/config"
-	"github.com/cuihe500/vaulthub/internal/database"
+	"github.com/cuihe500/vaulthub/internal/service"
 	"github.com/cuihe500/vaulthub/pkg/logger"
 	"github.com/cuihe500/vaulthub/pkg/validator"
 	"github.com/cuihe500/vaulthub/pkg/version"
@@ -122,28 +122,36 @@ func runServer(cmd *cobra.Command, args []string) {
 		logger.String("build_time", version.BuildTime),
 	)
 
-	// 5. 初始化 Manager（包含所有外部连接）
+	// 5. 应用初始化（数据库迁移、超级管理员创建等）
+	// 此步骤在Manager初始化之前执行，确保数据库结构和初始数据正确
+	if err := app.Initialize(cfg); err != nil {
+		logger.Fatal("应用初始化失败", logger.Err(err))
+	}
+
+	// 6. 初始化 Manager（包含所有外部连接）
 	mgr := &app.Manager{}
 	if err := mgr.Initialize(cfg); err != nil {
 		logger.Fatal("初始化连接管理器失败", logger.Err(err))
 	}
 	defer mgr.Close()
 
-	// 6. 自动执行数据库迁移
-	if err := runAutoMigrate(cfg); err != nil {
-		logger.Fatal("数据库迁移失败", logger.Err(err))
+	// 7. 初始化定时任务调度器
+	scheduler := initScheduler(mgr)
+	if err := scheduler.Start(); err != nil {
+		logger.Fatal("启动定时任务调度器失败", logger.Err(err))
 	}
+	defer scheduler.Stop()
 
-	// 7. 初始化路由
+	// 8. 初始化路由
 	router := initRouter(cfg, mgr)
 
-	// 8. 创建 HTTP 服务器
+	// 9. 创建 HTTP 服务器
 	srv := &http.Server{
 		Addr:    cfg.Server.Address(),
 		Handler: router,
 	}
 
-	// 9. 启动服务器（非阻塞）
+	// 10. 启动服务器（非阻塞）
 	go func() {
 		logger.Info("启动服务器",
 			logger.String("host", cfg.Server.Host),
@@ -154,8 +162,8 @@ func runServer(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	// 10. 优雅关闭
-	gracefulShutdown(srv)
+	// 11. 优雅关闭
+	gracefulShutdown(srv, scheduler)
 }
 
 // loadConfig 加载配置
@@ -176,20 +184,24 @@ func initLogger(cfg *config.Config) error {
 	})
 }
 
-// runAutoMigrate 自动执行数据库迁移
-func runAutoMigrate(cfg *config.Config) error {
-	migrator, err := database.NewMigrator(cfg.Database)
-	if err != nil {
-		return fmt.Errorf("创建迁移器失败: %w", err)
-	}
-	defer migrator.Close()
+// initScheduler 初始化定时任务调度器
+func initScheduler(mgr *app.Manager) *app.Scheduler {
+	// 创建加密服务和密钥轮换服务
+	encryptionService := initEncryptionService(mgr)
+	keyRotationService := initKeyRotationService(mgr, encryptionService)
 
-	if err := migrator.Up(); err != nil {
-		return fmt.Errorf("迁移失败: %w", err)
-	}
+	// 创建调度器
+	return app.NewScheduler(keyRotationService)
+}
 
-	logger.Info("数据库操作执行完毕")
-	return nil
+// initEncryptionService 创建加密服务实例
+func initEncryptionService(mgr *app.Manager) *service.EncryptionService {
+	return service.NewEncryptionService(mgr.DB)
+}
+
+// initKeyRotationService 创建密钥轮换服务实例
+func initKeyRotationService(mgr *app.Manager, encryptionService *service.EncryptionService) *service.KeyRotationService {
+	return service.NewKeyRotationService(mgr.DB, encryptionService, mgr.ConfigManager)
 }
 
 // initRouter 初始化路由
@@ -218,7 +230,7 @@ func initRouter(cfg *config.Config, mgr *app.Manager) *gin.Engine {
 }
 
 // gracefulShutdown 优雅关闭服务器
-func gracefulShutdown(srv *http.Server) {
+func gracefulShutdown(srv *http.Server, scheduler *app.Scheduler) {
 	// 创建信号通道
 	quit := make(chan os.Signal, 1)
 	// 监听中断信号
@@ -227,6 +239,9 @@ func gracefulShutdown(srv *http.Server) {
 	// 阻塞等待信号
 	sig := <-quit
 	logger.Info("收到关闭信号", logger.String("signal", sig.String()))
+
+	// 停止定时任务调度器
+	scheduler.Stop()
 
 	// 创建超时上下文（30秒）
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

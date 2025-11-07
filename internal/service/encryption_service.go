@@ -24,8 +24,8 @@ func NewEncryptionService(db *gorm.DB) *EncryptionService {
 // CreateUserEncryptionKeyRequest 创建用户加密密钥请求
 // 注意：UserUUID 由服务端从认证上下文中提取，不需要客户端传入
 type CreateUserEncryptionKeyRequest struct {
-	UserUUID string `json:"-"` // 不从请求体解析，由handler从上下文设置
-	Password string `json:"password" binding:"required,min=8"`
+	UserUUID    string `json:"-"`                                  // 不从请求体解析，由handler从上下文设置
+	SecurityPIN string `json:"security_pin" binding:"required,min=8"` // 安全密码，用于保护加密数据（独立于登录密码）
 }
 
 // CreateUserEncryptionKeyResponse 创建用户加密密钥响应
@@ -58,15 +58,22 @@ func (s *EncryptionService) CreateUserEncryptionKey(req *CreateUserEncryptionKey
 	}
 	defer crypto.ClearBytes(dek) // 使用完毕后清零内存
 
-	// 2. 生成随机盐值用于派生KEK
+	// 2. 生成安全密码的bcrypt哈希（用于快速验证）
+	securityPINHash, err := crypto.HashPassword(req.SecurityPIN)
+	if err != nil {
+		logger.Error("生成安全密码哈希失败", logger.Err(err))
+		return nil, errors.Wrap(errors.CodeCryptoError, err)
+	}
+
+	// 3. 生成随机盐值用于派生KEK
 	kekSalt, err := crypto.GenerateRandomBytes(crypto.SaltSize)
 	if err != nil {
 		logger.Error("生成KEK盐值失败", logger.Err(err))
 		return nil, err
 	}
 
-	// 3. 从密码派生KEK（密钥加密密钥）
-	kek, err := crypto.DeriveKEK(req.Password, kekSalt)
+	// 4. 从安全密码派生KEK（密钥加密密钥）
+	kek, err := crypto.DeriveKEK(req.SecurityPIN, kekSalt)
 	if err != nil {
 		logger.Error("派生KEK失败", logger.Err(err))
 		return nil, errors.WithMessage(errors.CodeKeyDerivationError, "密钥派生失败", err)
@@ -126,6 +133,7 @@ func (s *EncryptionService) CreateUserEncryptionKey(req *CreateUserEncryptionKey
 		EncryptedDEK:         encryptedDEKBlob,
 		DEKVersion:           1,
 		DEKAlgorithm:         "AES-256-GCM",
+		SecurityPINHash:      securityPINHash, // 存储安全密码哈希
 		RecoveryKeyHash:      recoveryKeyHash,
 		EncryptedDEKRecovery: encryptedDEKRecoveryBlob,
 	}
@@ -147,8 +155,8 @@ func (s *EncryptionService) CreateUserEncryptionKey(req *CreateUserEncryptionKey
 // EncryptAndStoreSecretRequest 加密并存储秘密请求
 // 注意：UserUUID 由服务端从认证上下文中提取，不需要客户端传入
 type EncryptAndStoreSecretRequest struct {
-	UserUUID    string                 `json:"-"` // 不从请求体解析，由handler从上下文设置
-	Password    string                 `json:"password" binding:"required"`
+	UserUUID    string                 `json:"-"`                           // 不从请求体解析，由handler从上下文设置
+	SecurityPIN string                 `json:"security_pin" binding:"required"` // 安全密码，用于解密DEK
 	SecretName  string                 `json:"secret_name" binding:"required"`
 	SecretType  models.SecretType      `json:"secret_type" binding:"required"`
 	PlainData   string                 `json:"plain_data" binding:"required"`
@@ -169,19 +177,27 @@ func (s *EncryptionService) EncryptAndStoreSecret(req *EncryptAndStoreSecretRequ
 		return nil, errors.Wrap(errors.CodeDatabaseError, err)
 	}
 
-	// 2. 从密码派生KEK
-	kek, err := crypto.DeriveKEK(req.Password, userKey.KEKSalt)
+	// 2. 验证安全密码（快速失败，避免昂贵的Argon2计算）
+	if userKey.SecurityPINHash != "" {
+		if !crypto.VerifyPassword(req.SecurityPIN, userKey.SecurityPINHash) {
+			logger.Warn("安全密码验证失败", logger.String("user_uuid", req.UserUUID))
+			return nil, errors.New(errors.CodeInvalidCredentials, "安全密码错误")
+		}
+	}
+
+	// 3. 从安全密码派生KEK
+	kek, err := crypto.DeriveKEK(req.SecurityPIN, userKey.KEKSalt)
 	if err != nil {
 		logger.Error("派生KEK失败", logger.Err(err))
 		return nil, errors.WithMessage(errors.CodeKeyDerivationError, "密钥派生失败", err)
 	}
 	defer crypto.ClearBytes(kek)
 
-	// 3. 解密DEK
+	// 4. 解密DEK
 	dek, err := s.decryptDEK(userKey.EncryptedDEK, kek)
 	if err != nil {
-		logger.Warn("解密DEK失败，密码可能错误", logger.String("user_uuid", req.UserUUID), logger.Err(err))
-		return nil, errors.New(errors.CodeInvalidCredentials, "密码错误")
+		logger.Warn("解密DEK失败，安全密码可能错误", logger.String("user_uuid", req.UserUUID), logger.Err(err))
+		return nil, errors.New(errors.CodeInvalidCredentials, "安全密码错误")
 	}
 	defer crypto.ClearBytes(dek)
 
@@ -225,9 +241,9 @@ func (s *EncryptionService) EncryptAndStoreSecret(req *EncryptAndStoreSecretRequ
 // DecryptSecretRequest 解密秘密请求
 // 注意：UserUUID 和 SecretUUID 由服务端从认证上下文和URL路径中提取，不需要客户端传入
 type DecryptSecretRequest struct {
-	UserUUID   string `json:"-"` // 不从请求体解析，由handler从上下文设置
-	SecretUUID string `json:"-"` // 不从请求体解析，由handler从URL路径设置
-	Password   string `json:"password" binding:"required"`
+	UserUUID    string `json:"-"`                           // 不从请求体解析，由handler从上下文设置
+	SecretUUID  string `json:"-"`                           // 不从请求体解析，由handler从URL路径设置
+	SecurityPIN string `json:"security_pin" binding:"required"` // 安全密码，用于解密DEK
 }
 
 // DecryptSecret 解密秘密
@@ -262,19 +278,27 @@ func (s *EncryptionService) DecryptSecret(req *DecryptSecretRequest) (*models.De
 		return nil, errors.New(errors.CodeCryptoError, "密钥版本不匹配，请联系管理员")
 	}
 
-	// 4. 从密码派生KEK
-	kek, err := crypto.DeriveKEK(req.Password, userKey.KEKSalt)
+	// 4. 验证安全密码（快速失败，避免昂贵的Argon2计算）
+	if userKey.SecurityPINHash != "" {
+		if !crypto.VerifyPassword(req.SecurityPIN, userKey.SecurityPINHash) {
+			logger.Warn("安全密码验证失败", logger.String("user_uuid", req.UserUUID))
+			return nil, errors.New(errors.CodeInvalidCredentials, "安全密码错误")
+		}
+	}
+
+	// 5. 从安全密码派生KEK
+	kek, err := crypto.DeriveKEK(req.SecurityPIN, userKey.KEKSalt)
 	if err != nil {
 		logger.Error("派生KEK失败", logger.Err(err))
 		return nil, errors.WithMessage(errors.CodeKeyDerivationError, "密钥派生失败", err)
 	}
 	defer crypto.ClearBytes(kek)
 
-	// 5. 解密DEK
+	// 6. 解密DEK
 	dek, err := s.decryptDEK(userKey.EncryptedDEK, kek)
 	if err != nil {
-		logger.Warn("解密DEK失败，密码可能错误", logger.String("user_uuid", req.UserUUID), logger.Err(err))
-		return nil, errors.New(errors.CodeInvalidCredentials, "密码错误")
+		logger.Warn("解密DEK失败，安全密码可能错误", logger.String("user_uuid", req.UserUUID), logger.Err(err))
+		return nil, errors.New(errors.CodeInvalidCredentials, "安全密码错误")
 	}
 	defer crypto.ClearBytes(dek)
 

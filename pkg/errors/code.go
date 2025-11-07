@@ -43,6 +43,7 @@ const (
 	CodeInvalidPhone          = 40008
 	CodeNicknameExists        = 40009
 	CodeEmailExists           = 40010
+	CodeTooManyRequests       = 40011
 )
 
 const (
@@ -103,6 +104,7 @@ var codeMessages = map[int]string{
 	CodeInvalidPhone:          "手机号格式无效",
 	CodeNicknameExists:        "昵称已存在",
 	CodeEmailExists:           "邮箱已存在",
+	CodeTooManyRequests:       "请求过于频繁",
 
 	CodeInternalError:      "内部错误",
 	CodeDatabaseError:      "数据库错误",

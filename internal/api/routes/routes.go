@@ -23,6 +23,8 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	profileService := service.NewUserProfileService(mgr.DB)
 	encryptionService := service.NewEncryptionService(mgr.DB)
 	recoveryService := service.NewRecoveryService(mgr.DB)
+	keyRotationService := service.NewKeyRotationService(mgr.DB, encryptionService, mgr.ConfigManager)
+	systemConfigService := service.NewSystemConfigService(mgr.DB, mgr.ConfigManager)
 
 	// 创建 handlers
 	healthHandler := handlers.NewHealthHandler(mgr)
@@ -30,7 +32,8 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	userHandler := handlers.NewUserHandler(userService)
 	profileHandler := handlers.NewUserProfileHandler(profileService)
 	secretHandler := handlers.NewSecretHandler(encryptionService)
-	keyManagementHandler := handlers.NewKeyManagementHandler(encryptionService, recoveryService)
+	keyManagementHandler := handlers.NewKeyManagementHandler(encryptionService, recoveryService, keyRotationService)
+	systemConfigHandler := handlers.NewSystemConfigHandler(systemConfigService)
 
 	// 健康检查接口（不需要认证）
 	r.GET("/health", healthHandler.HealthCheck)
@@ -103,6 +106,10 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			keys.POST("/create", keyManagementHandler.CreateUserEncryptionKey)
 			// 验证恢复密钥有效性
 			keys.POST("/verify-recovery", keyManagementHandler.VerifyRecoveryKey)
+			// 手动触发密钥轮换
+			keys.POST("/rotate", keyManagementHandler.RotateDEK)
+			// 查询密钥轮换进度
+			keys.GET("/rotation-status", keyManagementHandler.GetRotationStatus)
 		}
 
 		// 秘密管理路由（需要认证）
@@ -135,6 +142,27 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 			// 更新指定用户档案 - 需要profile:write权限
 			admin.PUT("/users/:user_id/profile", middleware.RequirePermission(mgr.Enforcer, "profile", "write"), profileHandler.UpdateUserProfile)
+		}
+
+		// 系统配置路由（需要认证和管理员权限）
+		// 系统配置的管理属于敏感操作，需要config:read和config:write权限
+		configs := v1.Group("/configs")
+		configs.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 获取配置列表 - 需要config:read权限
+			configs.GET("", middleware.RequirePermission(mgr.Enforcer, "config", "read"), systemConfigHandler.ListConfigs)
+
+			// 获取单个配置 - 需要config:read权限
+			configs.GET("/:key", middleware.RequirePermission(mgr.Enforcer, "config", "read"), systemConfigHandler.GetConfig)
+
+			// 更新配置 - 需要config:write权限
+			configs.PUT("/:key", middleware.RequirePermission(mgr.Enforcer, "config", "write"), systemConfigHandler.UpdateConfig)
+
+			// 批量更新配置 - 需要config:write权限
+			configs.PUT("/batch", middleware.RequirePermission(mgr.Enforcer, "config", "write"), systemConfigHandler.BatchUpdateConfigs)
+
+			// 重新加载配置 - 需要config:write权限
+			configs.POST("/reload", middleware.RequirePermission(mgr.Enforcer, "config", "write"), systemConfigHandler.ReloadConfigs)
 		}
 	}
 }

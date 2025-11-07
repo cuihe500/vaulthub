@@ -72,6 +72,8 @@ type SecurityConfig struct {
 	JWTExpiration   int    `mapstructure:"jwt_expiration"` // JWT过期时间（小时）
 	EncryptionKey   string `mapstructure:"encryption_key"`
 	CasbinModelPath string `mapstructure:"casbin_model_path"` // Casbin模型文件路径
+	AdminUsername   string `mapstructure:"admin_username"`    // 超级管理员用户名（首次启动时创建）
+	AdminPassword   string `mapstructure:"admin_password"`    // 超级管理员密码（首次启动时创建）
 }
 
 type LoggerConfig struct {
@@ -180,6 +182,8 @@ func setupEnvBinding() {
 		{"security.jwt_expiration", "SECURITY_JWT_EXPIRATION"},
 		{"security.encryption_key", "SECURITY_ENCRYPTION_KEY"},
 		{"security.casbin_model_path", "SECURITY_CASBIN_MODEL_PATH"},
+		{"security.admin_username", "SECURITY_ADMIN_USERNAME"},
+		{"security.admin_password", "SECURITY_ADMIN_PASSWORD"},
 		{"logger.level", "LOGGER_LEVEL"},
 		{"logger.encoding", "LOGGER_ENCODING"},
 	}

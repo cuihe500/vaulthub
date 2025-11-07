@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS user_encryption_keys (
     dek_version INT NOT NULL DEFAULT 1 COMMENT 'DEK版本号（用于密钥轮换）',
     dek_algorithm VARCHAR(32) NOT NULL DEFAULT 'AES-256-GCM' COMMENT 'DEK加密算法',
 
+    -- 安全密码（Security PIN）
+    security_pin_hash VARCHAR(255) COMMENT '安全密码的bcrypt哈希（用于验证加密密码，独立于认证密码）',
+
     -- 恢复密钥
     recovery_key_hash CHAR(64) NOT NULL COMMENT '恢复密钥的SHA256哈希（用于验证）',
     encrypted_dek_recovery VARBINARY(512) NOT NULL COMMENT '用恢复密钥加密的DEK（备份）',

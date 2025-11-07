@@ -473,6 +473,326 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/configs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取所有系统配置项（管理员权限）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统配置"
+                ],
+                "summary": "获取系统配置列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.ListConfigsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/configs/batch": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "批量更新多个配置项（管理员权限）。所有配置在同一事务中更新，全部成功或全部失败",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统配置"
+                ],
+                "summary": "批量更新系统配置",
+                "parameters": [
+                    {
+                        "description": "批量更新配置请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.BatchUpdateConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/configs/reload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从数据库重新加载所有配置到内存（管理员权限）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统配置"
+                ],
+                "summary": "重新加载配置",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/configs/{key}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据配置键获取配置详情（管理员权限）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统配置"
+                ],
+                "summary": "获取单个系统配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "配置键",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.ConfigItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "更新指定配置项的值（管理员权限）。配置更新后会立即生效并触发相关观察者回调",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统配置"
+                ],
+                "summary": "更新系统配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "配置键",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新配置请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/encryption/keys": {
             "post": {
                 "security": [
@@ -566,6 +886,97 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keys/rotate": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "生成新的数据加密密钥(DEK)并在后台渐进式迁移所有加密数据。注意：每30天最多轮换一次",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "密钥管理"
+                ],
+                "summary": "手动触发密钥轮换",
+                "parameters": [
+                    {
+                        "description": "密钥轮换请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.RotateDEKRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.RotateDEKResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/keys/rotation-status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户的密钥轮换状态和数据迁移进度",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "密钥管理"
+                ],
+                "summary": "查询密钥轮换进度",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.MigrationTask"
                                         }
                                     }
                                 }
@@ -1572,6 +1983,12 @@ const docTemplate = `{
                 "last_rotation_at": {
                     "type": "string"
                 },
+                "rotation_started_at": {
+                    "type": "string"
+                },
+                "rotation_status": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -1689,6 +2106,47 @@ const docTemplate = `{
                 "UserStatusLocked"
             ]
         },
+        "github_com_cuihe500_vaulthub_internal_service.BatchUpdateConfigRequest": {
+            "type": "object",
+            "required": [
+                "configs"
+            ],
+            "properties": {
+                "configs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "config_key",
+                            "config_value"
+                        ],
+                        "properties": {
+                            "config_key": {
+                                "type": "string"
+                            },
+                            "config_value": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.ConfigItem": {
+            "type": "object",
+            "properties": {
+                "config_key": {
+                    "type": "string"
+                },
+                "config_value": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cuihe500_vaulthub_internal_service.CreateProfileRequest": {
             "type": "object",
             "required": [
@@ -1713,10 +2171,11 @@ const docTemplate = `{
         "github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyRequest": {
             "type": "object",
             "required": [
-                "password"
+                "security_pin"
             ],
             "properties": {
-                "password": {
+                "security_pin": {
+                    "description": "安全密码，用于保护加密数据（独立于登录密码）",
                     "type": "string",
                     "minLength": 8
                 }
@@ -1737,10 +2196,11 @@ const docTemplate = `{
         "github_com_cuihe500_vaulthub_internal_service.DecryptSecretRequest": {
             "type": "object",
             "required": [
-                "password"
+                "security_pin"
             ],
             "properties": {
-                "password": {
+                "security_pin": {
+                    "description": "安全密码，用于解密DEK",
                     "type": "string"
                 }
             }
@@ -1748,10 +2208,10 @@ const docTemplate = `{
         "github_com_cuihe500_vaulthub_internal_service.EncryptAndStoreSecretRequest": {
             "type": "object",
             "required": [
-                "password",
                 "plain_data",
                 "secret_name",
-                "secret_type"
+                "secret_type",
+                "security_pin"
             ],
             "properties": {
                 "description": {
@@ -1759,9 +2219,6 @@ const docTemplate = `{
                 },
                 "metadata": {
                     "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata"
-                },
-                "password": {
-                    "type": "string"
                 },
                 "plain_data": {
                     "type": "string"
@@ -1771,6 +2228,24 @@ const docTemplate = `{
                 },
                 "secret_type": {
                     "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretType"
+                },
+                "security_pin": {
+                    "description": "安全密码，用于解密DEK",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.ListConfigsResponse": {
+            "type": "object",
+            "properties": {
+                "configs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.ConfigItem"
+                    }
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -1869,6 +2344,42 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cuihe500_vaulthub_internal_service.MigrationTask": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "failed_secrets": {
+                    "type": "integer"
+                },
+                "migrated_secrets": {
+                    "type": "integer"
+                },
+                "new_version": {
+                    "type": "integer"
+                },
+                "old_version": {
+                    "type": "integer"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "running, completed, failed",
+                    "type": "string"
+                },
+                "total_secrets": {
+                    "type": "integer"
+                },
+                "user_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cuihe500_vaulthub_internal_service.RegisterRequest": {
             "type": "object",
             "required": [
@@ -1898,15 +2409,51 @@ const docTemplate = `{
         "github_com_cuihe500_vaulthub_internal_service.ResetPasswordWithRecoveryRequest": {
             "type": "object",
             "required": [
-                "new_password",
+                "new_security_pin",
                 "recovery_mnemonic"
             ],
             "properties": {
-                "new_password": {
+                "new_security_pin": {
+                    "description": "新的安全密码（独立于登录密码）",
                     "type": "string",
                     "minLength": 8
                 },
                 "recovery_mnemonic": {
+                    "description": "恢复助记词",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.RotateDEKRequest": {
+            "type": "object",
+            "required": [
+                "security_pin"
+            ],
+            "properties": {
+                "security_pin": {
+                    "description": "安全密码，用于验证和解密DEK",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.RotateDEKResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "user_encryption_key": {
+                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.UpdateConfigRequest": {
+            "type": "object",
+            "required": [
+                "config_value"
+            ],
+            "properties": {
+                "config_value": {
                     "type": "string"
                 }
             }
