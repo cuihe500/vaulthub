@@ -1,0 +1,1716 @@
+basePath: /
+definitions:
+  github_com_cuihe500_vaulthub_internal_database_models.DecryptedSecret:
+    properties:
+      access_count:
+        type: integer
+      created_at:
+        type: string
+      dek_version:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      last_accessed_at:
+        type: string
+      metadata:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata'
+      plain_data:
+        description: 解密后的明文数据
+        type: string
+      secret_name:
+        type: string
+      secret_type:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretType'
+      secret_uuid:
+        type: string
+      updated_at:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SafeEncryptedSecret:
+    properties:
+      access_count:
+        type: integer
+      created_at:
+        type: string
+      dek_version:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      last_accessed_at:
+        type: string
+      metadata:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata'
+      secret_name:
+        type: string
+      secret_type:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretType'
+      secret_uuid:
+        type: string
+      updated_at:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SafeUser:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      last_login_at:
+        type: string
+      role:
+        type: string
+      status:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.UserStatus'
+      updated_at:
+        type: string
+      username:
+        type: string
+      uuid:
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey:
+    properties:
+      created_at:
+        type: string
+      dek_algorithm:
+        type: string
+      dek_version:
+        type: integer
+      id:
+        type: integer
+      kek_algorithm:
+        type: string
+      last_rotation_at:
+        type: string
+      rotation_started_at:
+        type: string
+      rotation_status:
+        type: string
+      updated_at:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      nickname:
+        type: string
+      phone:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata:
+    properties:
+      expires_at:
+        description: 过期时间
+        type: string
+      extra:
+        additionalProperties: true
+        description: 额外信息
+        type: object
+      tags:
+        description: 标签
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_cuihe500_vaulthub_internal_database_models.SecretType:
+    enum:
+    - api_key
+    - db_credential
+    - certificate
+    - ssh_key
+    - token
+    - password
+    - other
+    type: string
+    x-enum-comments:
+      SecretTypeAPIKey: API密钥
+      SecretTypeCertificate: 证书
+      SecretTypeDBCredential: 数据库凭证
+      SecretTypeOther: 其他
+      SecretTypePassword: 密码
+      SecretTypeSSHKey: SSH密钥
+      SecretTypeToken: 令牌
+    x-enum-descriptions:
+    - API密钥
+    - 数据库凭证
+    - 证书
+    - SSH密钥
+    - 令牌
+    - 密码
+    - 其他
+    x-enum-varnames:
+    - SecretTypeAPIKey
+    - SecretTypeDBCredential
+    - SecretTypeCertificate
+    - SecretTypeSSHKey
+    - SecretTypeToken
+    - SecretTypePassword
+    - SecretTypeOther
+  github_com_cuihe500_vaulthub_internal_database_models.UserStatus:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-comments:
+      UserStatusActive: 活跃
+      UserStatusDisabled: 已禁用
+      UserStatusLocked: 已锁定
+    x-enum-descriptions:
+    - 活跃
+    - 已禁用
+    - 已锁定
+    x-enum-varnames:
+    - UserStatusActive
+    - UserStatusDisabled
+    - UserStatusLocked
+  github_com_cuihe500_vaulthub_internal_service.BatchUpdateConfigRequest:
+    properties:
+      configs:
+        items:
+          properties:
+            config_key:
+              type: string
+            config_value:
+              type: string
+          required:
+          - config_key
+          - config_value
+          type: object
+        minItems: 1
+        type: array
+    required:
+    - configs
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.ConfigItem:
+    properties:
+      config_key:
+        type: string
+      config_value:
+        type: string
+      description:
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.CreateProfileRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      nickname:
+        maxLength: 50
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+    required:
+    - email
+    - nickname
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyRequest:
+    properties:
+      security_pin:
+        description: 安全密码，用于保护加密数据（独立于登录密码）
+        minLength: 8
+        type: string
+    required:
+    - security_pin
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyResponse:
+    properties:
+      recovery_key:
+        description: 恢复密钥（阶段2实现）
+        type: string
+      user_encryption_key:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey'
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.DecryptSecretRequest:
+    properties:
+      security_pin:
+        description: 安全密码，用于解密DEK
+        type: string
+    required:
+    - security_pin
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.EncryptAndStoreSecretRequest:
+    properties:
+      description:
+        type: string
+      metadata:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretMetadata'
+      plain_data:
+        type: string
+      secret_name:
+        type: string
+      secret_type:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SecretType'
+      security_pin:
+        description: 安全密码，用于解密DEK
+        type: string
+    required:
+    - plain_data
+    - secret_name
+    - secret_type
+    - security_pin
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.ListConfigsResponse:
+    properties:
+      configs:
+        items:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ConfigItem'
+        type: array
+      total:
+        type: integer
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.ListProfilesResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      profiles:
+        items:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+        type: array
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.ListUserSecretsResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      secrets:
+        items:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeEncryptedSecret'
+        type: array
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.ListUsersResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
+        type: array
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.MigrationTask:
+    properties:
+      completed_at:
+        type: string
+      error:
+        type: string
+      failed_secrets:
+        type: integer
+      migrated_secrets:
+        type: integer
+      new_version:
+        type: integer
+      old_version:
+        type: integer
+      started_at:
+        type: string
+      status:
+        description: running, completed, failed
+        type: string
+      total_secrets:
+        type: integer
+      user_uuid:
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.RegisterRequest:
+    properties:
+      password:
+        minLength: 8
+        type: string
+      username:
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.RegisterResponse:
+    properties:
+      user:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.ResetPasswordWithRecoveryRequest:
+    properties:
+      new_security_pin:
+        description: 新的安全密码（独立于登录密码）
+        minLength: 8
+        type: string
+      recovery_mnemonic:
+        description: 恢复助记词
+        type: string
+    required:
+    - new_security_pin
+    - recovery_mnemonic
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.RotateDEKRequest:
+    properties:
+      security_pin:
+        description: 安全密码，用于验证和解密DEK
+        type: string
+    required:
+    - security_pin
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.RotateDEKResponse:
+    properties:
+      message:
+        type: string
+      user_encryption_key:
+        $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey'
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.UpdateConfigRequest:
+    properties:
+      config_value:
+        type: string
+    required:
+    - config_value
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.UpdateProfileRequest:
+    properties:
+      email:
+        maxLength: 100
+        type: string
+      nickname:
+        maxLength: 50
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.UpdateUserRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - user
+        - readonly
+        type: string
+    required:
+    - role
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.UpdateUserStatusRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.UserStatus'
+        maximum: 3
+        minimum: 1
+    required:
+    - status
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyRequest:
+    properties:
+      recovery_mnemonic:
+        type: string
+    required:
+    - recovery_mnemonic
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyResponse:
+    properties:
+      message:
+        type: string
+      valid:
+        type: boolean
+    type: object
+  github_com_cuihe500_vaulthub_pkg_response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+      requestId:
+        type: string
+      timestamp:
+        type: integer
+    type: object
+  internal_api_handlers.ComponentStatus:
+    properties:
+      last_checked:
+        description: 最后检查时间
+        example: "2025-11-06T10:30:00+08:00"
+        type: string
+      message:
+        description: 状态描述
+        example: 数据库连接正常
+        type: string
+      name:
+        description: 组件名称
+        example: database
+        type: string
+      status:
+        description: 状态：healthy, degraded, unhealthy
+        example: healthy
+        type: string
+    type: object
+  internal_api_handlers.HealthData:
+    properties:
+      components:
+        additionalProperties:
+          $ref: '#/definitions/internal_api_handlers.ComponentStatus'
+        description: 各组件状态详情
+        type: object
+      status:
+        description: 整体状态：healthy, degraded, unhealthy
+        example: healthy
+        type: string
+      system:
+        allOf:
+        - $ref: '#/definitions/internal_api_handlers.SystemInfo'
+        description: 系统信息
+      timestamp:
+        description: 检查时间戳（毫秒）
+        example: 1762269490888
+        type: integer
+      uptime:
+        description: 服务运行时间（毫秒）
+        example: 3600000
+        type: integer
+      version:
+        description: 服务版本
+        example: dev
+        type: string
+    type: object
+  internal_api_handlers.HealthResponse:
+    properties:
+      code:
+        description: 响应码，0表示成功
+        example: 0
+        type: integer
+      data:
+        allOf:
+        - $ref: '#/definitions/internal_api_handlers.HealthData'
+        description: 健康检查数据
+      message:
+        description: 响应消息
+        example: success
+        type: string
+      requestId:
+        description: 请求ID
+        example: b68c086f-db16-43f6-992e-bc391afbf24a
+        type: string
+      timestamp:
+        description: 时间戳（毫秒）
+        example: 1762269490888
+        type: integer
+    type: object
+  internal_api_handlers.SystemInfo:
+    properties:
+      go_version:
+        description: Go版本
+        example: go1.25.1
+        type: string
+      goroutines:
+        description: 当前goroutine数量
+        example: 10
+        type: integer
+      memory_used:
+        description: 内存使用量（字节）
+        example: 5242880
+        type: integer
+      num_cpu:
+        description: CPU核心数
+        example: 8
+        type: integer
+      num_goroutine:
+        description: Goroutine数量
+        example: 10
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: admin@thankseveryone.top
+    name: API Support
+  description: |-
+    VaultHub 是一个密钥管理系统，旨在安全地存储、管理和轮换加密密钥、API 密钥及其他敏感凭证。
+
+    ## 特性
+    - 安全的密钥存储和管理
+    - 密钥轮换支持
+    - 细粒度的访问控制
+    - 审计日志
+
+    ## 认证
+    大部分接口需要JWT Bearer Token认证。
+    1. 调用 /api/v1/auth/register 注册账号
+    2. 调用 /api/v1/auth/login 获取 token
+    3. 在请求头中添加 Authorization: Bearer {token}
+
+    ## 响应格式
+    所有接口返回统一的响应格式，HTTP状态码均为200，错误码在响应体的code字段中：
+    ```json
+    {
+    "code": 0,
+    "message": "success",
+    "data": {},
+    "requestId": "xxx",
+    "timestamp": 1762269490888
+    }
+    ```
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://github.com/cuihe500/vaulthub
+  title: VaultHub API
+  version: "1.0"
+paths:
+  /api/v1/admin/profiles:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户档案列表（需要管理员权限）
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 昵称筛选
+        in: query
+        name: nickname
+        type: string
+      - description: 邮箱筛选
+        in: query
+        name: email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ListProfilesResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户档案列表
+      tags:
+      - 用户档案
+  /api/v1/admin/users/{user_id}/profile:
+    get:
+      consumes:
+      - application/json
+      description: 根据用户ID获取指定用户的档案信息（需要管理员权限）
+      parameters:
+      - description: 用户ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取指定用户档案
+      tags:
+      - 用户档案
+    put:
+      consumes:
+      - application/json
+      description: 根据用户ID更新指定用户的档案信息（需要管理员权限）
+      parameters:
+      - description: 用户ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: 用户档案信息
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新指定用户档案
+      tags:
+      - 用户档案
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户登录获取JWT token
+      parameters:
+      - description: 登录请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.LoginResponse'
+              type: object
+      summary: 用户登录
+      tags:
+      - 认证
+  /api/v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: 用户登出，使当前token失效
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 用户登出
+      tags:
+      - 认证
+  /api/v1/auth/me:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的详细信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 认证
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 注册新用户账号,所有新用户默认为普通用户角色,只有管理员才能提权
+      parameters:
+      - description: 注册请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.RegisterResponse'
+              type: object
+      summary: 用户注册
+      tags:
+      - 认证
+  /api/v1/auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: 用户忘记密码时，可使用注册时获得的24个单词恢复助记词重置密码
+      parameters:
+      - description: 重置密码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ResetPasswordWithRecoveryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 使用恢复密钥重置密码
+      tags:
+      - 认证
+  /api/v1/configs:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有系统配置项（管理员权限）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ListConfigsResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取系统配置列表
+      tags:
+      - 系统配置
+  /api/v1/configs/{key}:
+    get:
+      consumes:
+      - application/json
+      description: 根据配置键获取配置详情（管理员权限）
+      parameters:
+      - description: 配置键
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ConfigItem'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取单个系统配置
+      tags:
+      - 系统配置
+    put:
+      consumes:
+      - application/json
+      description: 更新指定配置项的值（管理员权限）。配置更新后会立即生效并触发相关观察者回调
+      parameters:
+      - description: 配置键
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: 更新配置请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新系统配置
+      tags:
+      - 系统配置
+  /api/v1/configs/batch:
+    put:
+      consumes:
+      - application/json
+      description: 批量更新多个配置项（管理员权限）。所有配置在同一事务中更新，全部成功或全部失败
+      parameters:
+      - description: 批量更新配置请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.BatchUpdateConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 批量更新系统配置
+      tags:
+      - 系统配置
+  /api/v1/configs/reload:
+    post:
+      consumes:
+      - application/json
+      description: 从数据库重新加载所有配置到内存（管理员权限）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 重新加载配置
+      tags:
+      - 系统配置
+  /api/v1/encryption/keys:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        为当前用户创建加密密钥（首次使用加密功能时调用）
+        警告：返回的恢复密钥仅显示一次，请务必妥善保管
+      parameters:
+      - description: 创建加密密钥请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 创建用户加密密钥
+      tags:
+      - 秘密管理
+  /api/v1/keys/create:
+    post:
+      consumes:
+      - application/json
+      description: 在用户注册或首次使用加密功能时创建加密密钥，返回24个单词的恢复助记词（仅显示一次）
+      parameters:
+      - description: 创建密钥请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserEncryptionKeyResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 创建用户加密密钥
+      tags:
+      - 密钥管理
+  /api/v1/keys/rotate:
+    post:
+      consumes:
+      - application/json
+      description: 生成新的数据加密密钥(DEK)并在后台渐进式迁移所有加密数据。注意：每30天最多轮换一次
+      parameters:
+      - description: 密钥轮换请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.RotateDEKRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.RotateDEKResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 手动触发密钥轮换
+      tags:
+      - 密钥管理
+  /api/v1/keys/rotation-status:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的密钥轮换状态和数据迁移进度
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.MigrationTask'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 查询密钥轮换进度
+      tags:
+      - 密钥管理
+  /api/v1/keys/verify-recovery:
+    post:
+      consumes:
+      - application/json
+      description: 验证用户输入的恢复助记词是否正确，用于在实际重置密码前进行确认
+      parameters:
+      - description: 验证恢复密钥请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 验证恢复密钥有效性
+      tags:
+      - 密钥管理
+  /api/v1/profile:
+    delete:
+      consumes:
+      - application/json
+      description: 删除当前用户的档案信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除用户档案
+      tags:
+      - 用户档案
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的档案信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户档案信息
+      tags:
+      - 用户档案
+    patch:
+      consumes:
+      - application/json
+      description: 创建或更新当前用户的档案信息（如果不存在则创建，存在则更新）
+      parameters:
+      - description: 用户档案信息
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建或更新用户档案
+      tags:
+      - 用户档案
+    post:
+      consumes:
+      - application/json
+      description: 为当前用户创建档案信息
+      parameters:
+      - description: 用户档案信息
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建用户档案
+      tags:
+      - 用户档案
+    put:
+      consumes:
+      - application/json
+      description: 更新当前用户的档案信息
+      parameters:
+      - description: 用户档案信息
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新用户档案
+      tags:
+      - 用户档案
+  /api/v1/secrets:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的秘密列表（不包含加密数据）
+      parameters:
+      - description: 秘密类型
+        enum:
+        - api_key
+        - db_credential
+        - certificate
+        - ssh_key
+        - token
+        - password
+        - other
+        in: query
+        name: secret_type
+        type: string
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ListUserSecretsResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取秘密列表
+      tags:
+      - 秘密管理
+    post:
+      consumes:
+      - application/json
+      description: 加密并存储敏感数据（需要输入密码）
+      parameters:
+      - description: 创建秘密请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.EncryptAndStoreSecretRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeEncryptedSecret'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 创建加密秘密
+      tags:
+      - 秘密管理
+  /api/v1/secrets/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的秘密（软删除）
+      parameters:
+      - description: 秘密UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除秘密
+      tags:
+      - 秘密管理
+  /api/v1/secrets/{uuid}/decrypt:
+    post:
+      consumes:
+      - application/json
+      description: 解密并获取秘密的明文数据（需要输入密码）
+      parameters:
+      - description: 秘密UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: 解密请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.DecryptSecretRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.DecryptedSecret'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 解密秘密
+      tags:
+      - 秘密管理
+  /api/v1/users:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户列表（需要管理员权限）
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 用户状态
+        enum:
+        - 1
+        - 2
+        - 3
+        in: query
+        name: status
+        type: integer
+      - description: 用户角色
+        enum:
+        - admin
+        - user
+        - readonly
+        in: query
+        name: role
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ListUsersResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取用户列表
+      tags:
+      - 用户管理
+  /api/v1/users/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: 根据UUID获取用户详细信息（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 获取用户信息
+      tags:
+      - 用户管理
+  /api/v1/users/{uuid}/role:
+    put:
+      consumes:
+      - application/json
+      description: 更新用户角色（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: 更新角色请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateUserRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 更新用户角色
+      tags:
+      - 用户管理
+  /api/v1/users/{uuid}/status:
+    put:
+      consumes:
+      - application/json
+      description: 更新用户状态（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: 更新状态请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateUserStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 更新用户状态
+      tags:
+      - 用户管理
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: 检查服务及其依赖（数据库、Redis、Casbin权限系统等）的运行状态。返回整体健康状态、各组件详细状态、系统资源使用情况和服务运行时间。此接口无需认证，用于监控系统健康状态。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 健康检查响应。code=0表示服务健康，code=70001表示服务降级，code=70002表示服务不可用
+          schema:
+            $ref: '#/definitions/internal_api_handlers.HealthResponse'
+      summary: 健康检查
+      tags:
+      - 系统
+securityDefinitions:
+  BearerAuth:
+    description: 输入 "Bearer" 后跟一个空格和 JWT token。
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

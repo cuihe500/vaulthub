@@ -159,7 +159,10 @@ swag:
 	@echo "Generating swagger documentation..."
 	@which swag > /dev/null || (echo "Error: swag not installed. Install it with: go install github.com/swaggo/swag/cmd/swag@latest" && exit 1)
 	swag init -g $(CMD_DIR)/main.go -o docs/swagger --parseDependency --parseInternal
-	@echo "Swagger documentation generated in docs/swagger/"
+	@echo "Copying swagger documentation to web/api-docs..."
+	@mkdir -p web/api-docs
+	@cp -r docs/swagger/* web/api-docs/
+	@echo "Swagger documentation generated in docs/swagger/ and web/api-docs/"
 
 # 帮助
 .PHONY: help
