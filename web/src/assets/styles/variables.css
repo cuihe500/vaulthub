@@ -1,0 +1,189 @@
+/* VaultHub 设计系统 - CSS变量定义 */
+
+:root {
+  /* ==================== 颜色系统 ==================== */
+
+  /* 主色调 - 深蓝紫渐变系（科技、专业、可信） */
+  --color-primary: #667eea;
+  --color-primary-light: #7c8df0;
+  --color-primary-dark: #5568d3;
+  --color-primary-bg: #f0f2ff;
+
+  /* 辅助色 - 紫色系 */
+  --color-secondary: #764ba2;
+
+  /* 功能色 - 语义明确 */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* 中性色 - 灰度系统（只用5个层级） */
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-disabled: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-bg: #f9fafb;
+  --color-white: #ffffff;
+
+  /* 阴影色 */
+  --color-shadow: rgba(0, 0, 0, 0.1);
+
+  /* ==================== 字体系统 ==================== */
+
+  /* 字体族 - 优先使用系统字体，零加载时间 */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
+                 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono',
+                      Consolas, monospace;
+
+  /* 字号系统 - 基于4px倍数，只用5个层级 */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+
+  /* 字重 - 只用3个 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+
+  /* 行高 - 统一比例 */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-loose: 1.75;
+
+  /* ==================== 间距系统 ==================== */
+
+  /* 8px基础单位，只用倍数 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+
+  /* ==================== 圆角系统 ==================== */
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* ==================== 阴影系统 ==================== */
+
+  --shadow-sm: 0 1px 2px 0 var(--color-shadow);
+  --shadow-md: 0 4px 6px -1px var(--color-shadow);
+  --shadow-lg: 0 10px 15px -3px var(--color-shadow);
+
+  /* ==================== 动画系统 ==================== */
+
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+  --easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ==================== 响应式断点 ==================== */
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  /* ==================== 容器宽度 ==================== */
+
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+
+  /* ==================== 层级管理 ==================== */
+
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-modal: 1040;
+  --z-popover: 1060;
+  --z-toast: 1080;
+}
+
+/* ==================== 全局基础样式 ==================== */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+}
+
+/* 链接样式 */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--easing);
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+/* 按钮样式重置 */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+/* 输入框样式重置 */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-disabled);
+}

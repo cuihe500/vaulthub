@@ -418,6 +418,335 @@ const displayTime = dayjs.utc(utcTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH
 
 **如果答案有任何疑问，重构它。**
 
+## 样式规范
+
+### 设计哲学
+
+**简约大气 = 少即是多**
+
+- 用最少的颜色表达最丰富的语义
+- 用统一的间距建立视觉秩序
+- 用克制的动画提升体验
+- 消除所有魔法数字，一切可追溯
+
+### 颜色系统
+
+**所有颜色必须使用CSS变量，禁止硬编码颜色值**
+
+```css
+/* 主色调 - 深蓝紫渐变系（科技、专业、可信） */
+--color-primary: #667eea;         /* 主色 */
+--color-primary-light: #7c8df0;   /* 主色-浅 */
+--color-primary-dark: #5568d3;    /* 主色-深 */
+--color-primary-bg: #f0f2ff;      /* 主色-背景 */
+
+/* 辅助色 - 紫色系 */
+--color-secondary: #764ba2;       /* 辅助色 */
+
+/* 功能色 - 语义明确 */
+--color-success: #10b981;         /* 成功/安全 */
+--color-warning: #f59e0b;         /* 警告 */
+--color-error: #ef4444;           /* 错误/危险 */
+--color-info: #3b82f6;            /* 信息 */
+
+/* 中性色 - 灰度系统（只用5个层级） */
+--color-text-primary: #1f2937;    /* 主要文字 */
+--color-text-secondary: #6b7280;  /* 次要文字 */
+--color-text-disabled: #9ca3af;   /* 禁用文字 */
+--color-border: #e5e7eb;          /* 边框 */
+--color-bg: #f9fafb;              /* 背景 */
+--color-white: #ffffff;           /* 纯白 */
+
+/* 阴影色 */
+--color-shadow: rgba(0, 0, 0, 0.1);
+```
+
+**使用规则**：
+```css
+/* Bad: 硬编码颜色 */
+.button {
+  background: #667eea;
+  color: #ffffff;
+}
+
+/* Good: 使用变量 */
+.button {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+```
+
+### 字体系统
+
+**字体族**：优先使用系统字体，零加载时间
+```css
+--font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+               'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
+               'Apple Color Emoji', 'Segoe UI Emoji';
+
+--font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono',
+                    Consolas, monospace;
+```
+
+**字号系统**：基于4px倍数，只用5个层级
+```css
+--font-size-xs: 12px;    /* 辅助文字 */
+--font-size-sm: 14px;    /* 次要文字 */
+--font-size-base: 16px;  /* 正文（基准） */
+--font-size-lg: 18px;    /* 小标题 */
+--font-size-xl: 24px;    /* 大标题 */
+```
+
+**行高**：统一比例
+```css
+--line-height-tight: 1.25;   /* 标题 */
+--line-height-normal: 1.5;   /* 正文 */
+--line-height-loose: 1.75;   /* 松散文本 */
+```
+
+**字重**：只用3个
+```css
+--font-weight-normal: 400;
+--font-weight-medium: 500;
+--font-weight-bold: 600;
+```
+
+### 间距系统
+
+**8px基础单位，只用倍数，消除随意间距**
+
+```css
+--spacing-xs: 4px;     /* 0.5倍 */
+--spacing-sm: 8px;     /* 1倍 - 基础单位 */
+--spacing-md: 16px;    /* 2倍 */
+--spacing-lg: 24px;    /* 3倍 */
+--spacing-xl: 32px;    /* 4倍 */
+--spacing-2xl: 48px;   /* 6倍 */
+--spacing-3xl: 64px;   /* 8倍 */
+```
+
+**使用规则**：
+```css
+/* Bad: 随意的数字 */
+.card {
+  padding: 18px 22px;
+  margin-bottom: 15px;
+}
+
+/* Good: 使用间距系统 */
+.card {
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+```
+
+### 圆角系统
+
+```css
+--radius-sm: 4px;      /* 小圆角：按钮、输入框 */
+--radius-md: 8px;      /* 中圆角：卡片 */
+--radius-lg: 12px;     /* 大圆角：弹窗 */
+--radius-full: 9999px; /* 全圆角：标签、头像 */
+```
+
+### 阴影系统
+
+**分3层，表达层级关系**
+
+```css
+--shadow-sm: 0 1px 2px 0 var(--color-shadow);              /* 轻微抬起 */
+--shadow-md: 0 4px 6px -1px var(--color-shadow);           /* 卡片 */
+--shadow-lg: 0 10px 15px -3px var(--color-shadow);         /* 弹窗/抽屉 */
+```
+
+### 动画系统
+
+**克制的动画，只用于反馈交互**
+
+```css
+--duration-fast: 150ms;      /* 快速反馈：按钮hover */
+--duration-base: 250ms;      /* 标准过渡：展开收起 */
+--duration-slow: 350ms;      /* 慢速过渡：弹窗进出 */
+
+--easing: cubic-bezier(0.4, 0, 0.2, 1);  /* 标准缓动 */
+```
+
+**使用规则**：
+```css
+/* 统一的过渡 */
+.button {
+  transition: all var(--duration-fast) var(--easing);
+}
+
+.modal {
+  transition: opacity var(--duration-slow) var(--easing);
+}
+```
+
+### 布局原则
+
+**响应式断点**：基于主流设备
+```css
+--breakpoint-sm: 640px;    /* 手机 */
+--breakpoint-md: 768px;    /* 平板 */
+--breakpoint-lg: 1024px;   /* 笔记本 */
+--breakpoint-xl: 1280px;   /* 桌面 */
+```
+
+**容器宽度**：
+```css
+--container-sm: 640px;
+--container-md: 768px;
+--container-lg: 1024px;
+--container-xl: 1280px;
+```
+
+**层级管理**：统一z-index
+```css
+--z-dropdown: 1000;   /* 下拉菜单 */
+--z-sticky: 1020;     /* 吸顶元素 */
+--z-modal: 1040;      /* 弹窗 */
+--z-popover: 1060;    /* 气泡 */
+--z-toast: 1080;      /* 提示 */
+```
+
+### 全局样式文件
+
+创建 `src/assets/styles/variables.css` 统一管理：
+
+```css
+:root {
+  /* 颜色 */
+  --color-primary: #667eea;
+  --color-primary-light: #7c8df0;
+  --color-primary-dark: #5568d3;
+  --color-primary-bg: #f0f2ff;
+  --color-secondary: #764ba2;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-disabled: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-bg: #f9fafb;
+  --color-white: #ffffff;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+
+  /* 字体 */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, Consolas, monospace;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-loose: 1.75;
+
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 var(--color-shadow);
+  --shadow-md: 0 4px 6px -1px var(--color-shadow);
+  --shadow-lg: 0 10px 15px -3px var(--color-shadow);
+
+  /* 动画 */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+  --easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* 层级 */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-modal: 1040;
+  --z-popover: 1060;
+  --z-toast: 1080;
+}
+
+/* 全局基础样式 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+```
+
+### 组件样式规范
+
+**1. 使用scoped避免污染**
+```vue
+<style scoped>
+.card { /* ... */ }
+</style>
+```
+
+**2. BEM命名法（组件内部）**
+```css
+/* Block */
+.user-card { }
+
+/* Element */
+.user-card__header { }
+.user-card__body { }
+
+/* Modifier */
+.user-card--highlighted { }
+```
+
+**3. 禁止深度选择器**（除非必要覆盖Element Plus）
+```css
+/* Bad: 破坏封装 */
+::v-deep .el-button { }
+
+/* Good: 通过props传递类名 */
+<el-button :class="customClass" />
+```
+
+### 样式审查标准
+
+提交前检查：
+
+1. **是否使用了魔法数字？** 所有数字应该来自变量系统
+2. **是否硬编码颜色？** 必须使用CSS变量
+3. **间距是否是8的倍数？** 必须符合间距系统
+4. **是否过度使用动画？** 只在必要时添加
+5. **响应式是否考虑？** 大于768px的设计需要适配
+
+**记住：每个CSS规则都应该有明确的理由，否则删掉它。**
+
 ## 总结
 
 记住：
@@ -433,3 +762,5 @@ const displayTime = dayjs.utc(utcTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH
 2. 任何需要现在时间的地方，都必须调用date命令获取真实的现在时间。
 3. 优先使用MCP能力（如搜索，第三方库检索）等，若MCP无法使用，再回退到原始模式。
 4. 在引用第三方库之前，必须完全了解该库的情况，包括但不限于实际能力、接口规范等。
+5. 若该目录必须遵守其他相关的规定，则可以在该目录下新增README.md，该文档将会视为和章程一个优先级的规定。
+6. 若目录下存在README.md，必须先阅读并理解该文档内容，并且将其视为和章程一个优先级。

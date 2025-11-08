@@ -91,17 +91,20 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
 }
 
 .login-card {
   width: 400px;
-  padding: 20px;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
 }
 
 h2 {
   text-align: center;
-  margin-bottom: 30px;
-  color: #333;
+  margin-bottom: var(--spacing-xl);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xl);
 }
 </style>
