@@ -793,6 +793,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/email/send-code": {
+            "post": {
+                "description": "发送邮箱验证码用于注册、登录、重置密码等操作",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "邮件"
+                ],
+                "summary": "发送邮箱验证码",
+                "parameters": [
+                    {
+                        "description": "发送验证码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers.SendCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_api_handlers.SendCodeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/email/verify-code": {
+            "post": {
+                "description": "验证邮箱验证码是否正确（验证成功后验证码自动失效）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "邮件"
+                ],
+                "summary": "验证邮箱验证码",
+                "parameters": [
+                    {
+                        "description": "验证验证码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers.VerifyCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_api_handlers.VerifyCodeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/encryption/keys": {
             "post": {
                 "security": [
@@ -2006,6 +2098,9 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "email_verified": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -2387,6 +2482,20 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
+                "code": {
+                    "description": "验证码（可选，与email配合使用）",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "邮箱（可选，但如果提供则必须验证）",
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "昵称（可选，默认使用username）",
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
                 "password": {
                     "type": "string",
                     "minLength": 8
@@ -2507,6 +2616,33 @@ const docTemplate = `{
                     ]
                 }
             }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.VerificationPurpose": {
+            "type": "string",
+            "enum": [
+                "register",
+                "login",
+                "reset_password",
+                "change_email"
+            ],
+            "x-enum-comments": {
+                "PurposeChangeEmail": "修改邮箱",
+                "PurposeLogin": "登录",
+                "PurposeRegister": "注册",
+                "PurposeResetPassword": "重置密码"
+            },
+            "x-enum-descriptions": [
+                "注册",
+                "登录",
+                "重置密码",
+                "修改邮箱"
+            ],
+            "x-enum-varnames": [
+                "PurposeRegister",
+                "PurposeLogin",
+                "PurposeResetPassword",
+                "PurposeChangeEmail"
+            ]
         },
         "github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyRequest": {
             "type": "object",
@@ -2646,6 +2782,39 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_api_handlers.SendCodeRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "purpose"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "enum": [
+                        "register",
+                        "login",
+                        "reset_password",
+                        "change_email"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.VerificationPurpose"
+                        }
+                    ]
+                }
+            }
+        },
+        "internal_api_handlers.SendCodeResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api_handlers.SystemInfo": {
             "type": "object",
             "properties": {
@@ -2673,6 +2842,46 @@ const docTemplate = `{
                     "description": "Goroutine数量",
                     "type": "integer",
                     "example": 10
+                }
+            }
+        },
+        "internal_api_handlers.VerifyCodeRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "email",
+                "purpose"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "enum": [
+                        "register",
+                        "login",
+                        "reset_password",
+                        "change_email"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.VerificationPurpose"
+                        }
+                    ]
+                }
+            }
+        },
+        "internal_api_handlers.VerifyCodeResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "valid": {
+                    "type": "boolean"
                 }
             }
         }

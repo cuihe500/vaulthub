@@ -19,10 +19,51 @@ GET {{baseUrl}}/health
 Content-Type: application/json
 
 ### ============================================
-### 2. 认证接口
+### 2. 邮件接口
 ### ============================================
 
-### 2.1 用户注册
+### 2.1 发送注册验证码
+POST {{baseUrl}}/api/v1/email/send-code
+Content-Type: application/json
+
+{
+  "email": "cuihe500@example.com",
+  "purpose": "register"
+}
+
+### 2.2 发送登录验证码
+POST {{baseUrl}}/api/v1/email/send-code
+Content-Type: application/json
+
+{
+  "email": "cuihe500@example.com",
+  "purpose": "login"
+}
+
+### 2.3 发送重置密码验证码
+POST {{baseUrl}}/api/v1/email/send-code
+Content-Type: application/json
+
+{
+  "email": "cuihe500@example.com",
+  "purpose": "reset_password"
+}
+
+### 2.4 验证验证码
+POST {{baseUrl}}/api/v1/email/verify-code
+Content-Type: application/json
+
+{
+  "email": "cuihe500@example.com",
+  "code": "123456",
+  "purpose": "register"
+}
+
+### ============================================
+### 3. 认证接口
+### ============================================
+
+### 3.1 用户注册（仅用户名密码，不验证邮箱）
 POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
@@ -31,7 +72,20 @@ Content-Type: application/json
   "password": "Ch870219176!"
 }
 
-### 2.2 用户登录
+### 3.1.1 用户注册（带邮箱验证）
+### 注意：需要先执行 2.1 发送注册验证码，并替换下方的验证码
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "TestPass123!",
+  "email": "cuihe500@example.com",
+  "code": "123456",
+  "nickname": "测试用户"
+}
+
+### 3.2 用户登录
 POST {{baseUrl}}/api/v1/auth/login
 Content-Type: application/json
 
@@ -40,17 +94,17 @@ Content-Type: application/json
   "password": "Ch870219176!"
 }
 
-### 2.3 获取当前用户信息
+### 3.3 获取当前用户信息
 GET {{baseUrl}}/api/v1/auth/me
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-### 2.4 用户登出
+### 3.4 用户登出
 POST {{baseUrl}}/api/v1/auth/logout
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
-### 2.5 使用恢复密钥重置安全密码
+### 3.5 使用恢复密钥重置安全密码
 ### 注意：需要先创建加密密钥（8.1）并保存恢复密钥到@recoveryKey变量
 POST {{baseUrl}}/api/v1/auth/reset-password
 Content-Type: application/json
@@ -62,7 +116,7 @@ Authorization: Bearer {{token}}
 }
 
 ### ============================================
-### 3. 用户管理接口（需要管理员权限）
+### 4. 用户管理接口（需要管理员权限）
 ### ============================================
 
 ### 3.1 获取用户列表（基本查询）

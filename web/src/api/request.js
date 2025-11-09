@@ -32,8 +32,8 @@ request.interceptors.response.use(
   (response) => {
     const { code, data, message } = response.data
 
-    // 根据后端Base类型的Code字段处理
-    if (code === 200) {
+    // 根据后端Base类型的Code字段处理（后端使用0表示成功）
+    if (code === 0) {
       return data
     }
 

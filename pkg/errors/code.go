@@ -62,6 +62,9 @@ const (
 	CodeExternalServiceError       = 60001
 	CodeExternalServiceTimeout     = 60002
 	CodeExternalServiceUnavailable = 60003
+	CodeEmailSendFailed            = 60004
+	CodeInvalidVerificationCode    = 60005
+	CodeVerificationCodeExpired    = 60006
 )
 
 const (
@@ -119,6 +122,9 @@ var codeMessages = map[int]string{
 	CodeExternalServiceError:       "外部服务错误",
 	CodeExternalServiceTimeout:     "外部服务超时",
 	CodeExternalServiceUnavailable: "外部服务不可用",
+	CodeEmailSendFailed:            "邮件发送失败",
+	CodeInvalidVerificationCode:    "验证码无效",
+	CodeVerificationCodeExpired:    "验证码已过期",
 
 	CodeServiceDegraded: "服务降级",
 	CodeServiceDown:     "服务不可用",

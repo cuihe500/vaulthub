@@ -17,17 +17,19 @@ import (
 
 // AuthService 认证服务
 type AuthService struct {
-	db         *gorm.DB
-	jwtManager *jwt.Manager
-	redis      *redisClient.Client
+	db           *gorm.DB
+	jwtManager   *jwt.Manager
+	redis        *redisClient.Client
+	emailService *EmailService
 }
 
 // NewAuthService 创建认证服务实例
-func NewAuthService(db *gorm.DB, jwtManager *jwt.Manager, redis *redisClient.Client) *AuthService {
+func NewAuthService(db *gorm.DB, jwtManager *jwt.Manager, redis *redisClient.Client, emailService *EmailService) *AuthService {
 	return &AuthService{
-		db:         db,
-		jwtManager: jwtManager,
-		redis:      redis,
+		db:           db,
+		jwtManager:   jwtManager,
+		redis:        redis,
+		emailService: emailService,
 	}
 }
 
@@ -35,6 +37,9 @@ func NewAuthService(db *gorm.DB, jwtManager *jwt.Manager, redis *redisClient.Cli
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=32"`
 	Password string `json:"password" binding:"required,min=8"`
+	Email    string `json:"email" binding:"omitempty,email"`              // 邮箱（可选，但如果提供则必须验证）
+	Code     string `json:"code" binding:"omitempty,len=6,numeric"`       // 验证码（可选，与email配合使用）
+	Nickname string `json:"nickname" binding:"omitempty,min=1,max=50"`    // 昵称（可选，默认使用username）
 }
 
 // RegisterResponse 注册响应
@@ -44,6 +49,8 @@ type RegisterResponse struct {
 
 // Register 用户注册
 func (s *AuthService) Register(req *RegisterRequest) (*RegisterResponse, error) {
+	ctx := context.Background()
+
 	// 验证密码强度
 	if !crypto.ValidatePasswordStrength(req.Password) {
 		return nil, errors.New(errors.CodeWeakPassword, "")
@@ -59,12 +66,54 @@ func (s *AuthService) Register(req *RegisterRequest) (*RegisterResponse, error) 
 		return nil, errors.New(errors.CodeUsernameExists, "")
 	}
 
+	// 如果提供了邮箱，进行邮箱相关验证
+	var emailVerified bool
+	if req.Email != "" {
+		// 检查邮箱是否已存在
+		var profileCount int64
+		if err := s.db.Model(&models.UserProfile{}).Where("email = ?", req.Email).Count(&profileCount).Error; err != nil {
+			logger.Error("检查邮箱失败",
+				logger.String("email", req.Email),
+				logger.Err(err))
+			return nil, errors.Wrap(errors.CodeDatabaseError, err)
+		}
+		if profileCount > 0 {
+			return nil, errors.New(errors.CodeEmailExists, "")
+		}
+
+		// 如果提供了验证码，进行验证
+		if req.Code != "" {
+			if err := s.emailService.VerifyCode(ctx, req.Email, PurposeRegister, req.Code); err != nil {
+				logger.Warn("注册时验证码验证失败",
+					logger.String("email", req.Email),
+					logger.Err(err))
+				return nil, err
+			}
+			emailVerified = true
+			logger.Info("注册时验证码验证成功",
+				logger.String("email", req.Email))
+		} else {
+			// 提供了邮箱但没有验证码，要求验证
+			logger.Warn("注册时提供了邮箱但未提供验证码",
+				logger.String("email", req.Email))
+			return nil, errors.New(errors.CodeInvalidParam, "提供邮箱时必须提供验证码")
+		}
+	}
+
 	// 加密密码
 	passwordHash, err := crypto.HashPassword(req.Password)
 	if err != nil {
 		logger.Error("密码加密失败", logger.Err(err))
 		return nil, errors.Wrap(errors.CodeCryptoError, err)
 	}
+
+	// 开启事务创建用户和档案
+	tx := s.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
 	// 创建用户,强制设置角色为普通用户,只有管理员才能提权
 	user := &models.User{
@@ -75,8 +124,46 @@ func (s *AuthService) Register(req *RegisterRequest) (*RegisterResponse, error) 
 		Role:         "user",
 	}
 
-	if err := s.db.Create(user).Error; err != nil {
+	if err := tx.Create(user).Error; err != nil {
+		tx.Rollback()
 		logger.Error("创建用户失败", logger.String("username", req.Username), logger.Err(err))
+		return nil, errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	// 如果提供了邮箱，创建用户档案
+	if req.Email != "" {
+		nickname := req.Nickname
+		if nickname == "" {
+			nickname = req.Username // 默认使用用户名作为昵称
+		}
+
+		profile := &models.UserProfile{
+			UserID:        user.ID,
+			Nickname:      nickname,
+			Email:         req.Email,
+			EmailVerified: emailVerified,
+		}
+
+		if err := tx.Create(profile).Error; err != nil {
+			tx.Rollback()
+			logger.Error("创建用户档案失败",
+				logger.Uint("user_id", uint(user.ID)),
+				logger.String("email", req.Email),
+				logger.Err(err))
+			return nil, errors.Wrap(errors.CodeDatabaseError, err)
+		}
+
+		logger.Info("用户档案创建成功",
+			logger.Uint("user_id", uint(user.ID)),
+			logger.String("email", req.Email),
+			logger.Bool("email_verified", emailVerified))
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		logger.Error("提交事务失败",
+			logger.String("username", req.Username),
+			logger.Err(err))
 		return nil, errors.Wrap(errors.CodeDatabaseError, err)
 	}
 

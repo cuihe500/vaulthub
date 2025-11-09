@@ -18,7 +18,9 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	r.Use(middleware.RequestID())
 
 	// 创建 services
-	authService := service.NewAuthService(mgr.DB, mgr.JWT, mgr.Redis)
+	// 注意：EmailService 需要先创建，因为 AuthService 依赖它
+	emailService := service.NewEmailService(mgr.DB, mgr.Redis, mgr.ConfigManager)
+	authService := service.NewAuthService(mgr.DB, mgr.JWT, mgr.Redis, emailService)
 	userService := service.NewUserService(mgr.DB)
 	profileService := service.NewUserProfileService(mgr.DB)
 	encryptionService := service.NewEncryptionService(mgr.DB)
@@ -34,6 +36,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	secretHandler := handlers.NewSecretHandler(encryptionService)
 	keyManagementHandler := handlers.NewKeyManagementHandler(encryptionService, recoveryService, keyRotationService)
 	systemConfigHandler := handlers.NewSystemConfigHandler(systemConfigService)
+	emailHandler := handlers.NewEmailHandler(emailService)
 
 	// 健康检查接口（不需要认证）
 	r.GET("/health", healthHandler.HealthCheck)
@@ -44,6 +47,19 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	// API v1 路由组
 	v1 := r.Group("/api/v1")
 	{
+		// 邮件路由（不需要认证，但需要限流）
+		// 邮件验证码用于注册、登录、重置密码等场景，不需要token
+		// 邮件发送接口需要严格的限流保护，防止滥用和垃圾邮件攻击
+		email := v1.Group("/email")
+		{
+			email.POST("/send-code",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				emailHandler.SendCode)
+			email.POST("/verify-code",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				emailHandler.VerifyCode)
+		}
+
 		// 认证路由（不需要token）
 		// 注册和登录接口不需要认证，因为这是用户获取token的入口
 		// 注册和登录接口需要限流保护，防止暴力攻击（配置从数据库动态读取）

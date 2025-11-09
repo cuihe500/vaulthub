@@ -12,11 +12,12 @@ import (
 // UserProfile 用户基本信息模型
 type UserProfile struct {
 	BaseModel
-	UserID   uint       `gorm:"uniqueIndex;not null;comment:关联用户ID" json:"user_id"`   // 外键关联 users 表
-	Nickname string     `gorm:"type:varchar(50);not null;comment:用户昵称" json:"nickname"` // 昵称
-	Phone    string     `gorm:"type:varchar(20);comment:手机号" json:"phone"`              // 手机号（可选）
-	Email    string     `gorm:"type:varchar(100);not null;comment:邮箱地址" json:"email"` // 邮箱
-	User     User       `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user,omitempty"`
+	UserID        uint   `gorm:"uniqueIndex;not null;comment:关联用户ID" json:"user_id"`                        // 外键关联 users 表
+	Nickname      string `gorm:"type:varchar(50);not null;comment:用户昵称" json:"nickname"`                      // 昵称
+	Phone         string `gorm:"type:varchar(20);comment:手机号" json:"phone"`                                   // 手机号（可选）
+	Email         string `gorm:"type:varchar(100);not null;comment:邮箱地址" json:"email"`                        // 邮箱
+	EmailVerified bool   `gorm:"type:tinyint(1);not null;default:0;comment:邮箱是否已验证" json:"email_verified"` // 邮箱验证状态
+	User          User   `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user,omitempty"`
 }
 
 // TableName 指定表名
@@ -70,23 +71,25 @@ func isValidPhone(phone string) bool {
 // ToSafeProfile 转换为安全的用户档案信息
 func (p *UserProfile) ToSafeProfile() *SafeUserProfile {
 	return &SafeUserProfile{
-		ID:        p.ID,
-		UserID:    p.UserID,
-		Nickname:  p.Nickname,
-		Phone:     p.Phone,
-		Email:     p.Email,
-		CreatedAt: p.CreatedAt,
-		UpdatedAt: p.UpdatedAt,
+		ID:            p.ID,
+		UserID:        p.UserID,
+		Nickname:      p.Nickname,
+		Phone:         p.Phone,
+		Email:         p.Email,
+		EmailVerified: p.EmailVerified,
+		CreatedAt:     p.CreatedAt,
+		UpdatedAt:     p.UpdatedAt,
 	}
 }
 
 // SafeUserProfile 安全的用户档案信息（用于API返回）
 type SafeUserProfile struct {
-	ID        uint      `json:"id"`
-	UserID    uint      `json:"user_id"`
-	Nickname  string    `json:"nickname"`
-	Phone     string    `json:"phone"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID            uint      `json:"id"`
+	UserID        uint      `json:"user_id"`
+	Nickname      string    `json:"nickname"`
+	Phone         string    `json:"phone"`
+	Email         string    `json:"email"`
+	EmailVerified bool      `json:"email_verified"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
