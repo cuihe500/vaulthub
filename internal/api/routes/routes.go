@@ -30,7 +30,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 	// 创建 handlers
 	healthHandler := handlers.NewHealthHandler(mgr)
-	authHandler := handlers.NewAuthHandler(authService, recoveryService)
+	authHandler := handlers.NewAuthHandler(authService, recoveryService, mgr.DB)
 	userHandler := handlers.NewUserHandler(userService)
 	profileHandler := handlers.NewUserProfileHandler(profileService)
 	secretHandler := handlers.NewSecretHandler(encryptionService)
@@ -71,6 +71,18 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			auth.POST("/login",
 				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
 				authHandler.Login)
+			auth.POST("/login-with-email",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				authHandler.LoginWithEmail)
+
+			// 密码找回路由（不需要认证，需要限流）
+			auth.POST("/request-password-reset",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				authHandler.RequestPasswordReset)
+			auth.GET("/verify-reset-token", authHandler.VerifyPasswordResetToken)
+			auth.POST("/reset-password-with-token",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				authHandler.ResetPasswordWithToken)
 
 			// 获取当前用户信息需要认证
 			auth.GET("/me", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.GetMe)
@@ -78,6 +90,8 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			auth.POST("/logout", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.Logout)
 			// 使用恢复密钥重置密码需要认证
 			auth.POST("/reset-password", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.ResetPassword)
+			// 获取安全密码设置状态需要认证
+			auth.GET("/security-pin-status", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.GetSecurityPINStatus)
 		}
 
 		// 用户管理路由（需要认证和管理员权限）
@@ -135,8 +149,10 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 		// 秘密管理路由（需要认证）
 		// 用户只能操作自己的秘密
+		// 注意：秘密管理需要用户先设置安全密码（Security PIN）
 		secrets := v1.Group("/secrets")
 		secrets.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		secrets.Use(middleware.SecurityPINCheckMiddleware(mgr.DB))
 		{
 			// 获取秘密列表
 			secrets.GET("", secretHandler.ListSecrets)

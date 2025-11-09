@@ -94,6 +94,16 @@ Content-Type: application/json
   "password": "Ch870219176!"
 }
 
+### 3.2.1 邮箱验证码登录
+### 注意：需要先执行 2.2 发送登录验证码，并替换下方的验证码
+POST {{baseUrl}}/api/v1/auth/login-with-email
+Content-Type: application/json
+
+{
+  "email": "cuihe500@example.com",
+  "code": "123456"
+}
+
 ### 3.3 获取当前用户信息
 GET {{baseUrl}}/api/v1/auth/me
 Content-Type: application/json
@@ -102,6 +112,11 @@ Authorization: Bearer {{token}}
 ### 3.4 用户登出
 POST {{baseUrl}}/api/v1/auth/logout
 Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 3.4.1 获取安全密码设置状态
+### 用于前端判断用户是否需要先设置安全密码
+GET {{baseUrl}}/api/v1/auth/security-pin-status
 Authorization: Bearer {{token}}
 
 ### 3.5 使用恢复密钥重置安全密码
@@ -113,6 +128,30 @@ Authorization: Bearer {{token}}
 {
   "recovery_mnemonic": "{{recoveryKey}}",
   "new_security_pin": "NewSecurityPIN123!"
+}
+
+### 3.6 请求密码重置（发送重置邮件）
+### 注意：无需认证，会向邮箱发送重置链接
+POST {{baseUrl}}/api/v1/auth/request-password-reset
+Content-Type: application/json
+
+{
+  "email": "cuihe500@example.com"
+}
+
+### 3.7 验证密码重置token
+### 注意：将从邮件中获取的token替换下方的{token}
+GET {{baseUrl}}/api/v1/auth/verify-reset-token?token={token}
+Content-Type: application/json
+
+### 3.8 使用token重置密码
+### 注意：将从邮件中获取的token替换下方的{token}
+POST {{baseUrl}}/api/v1/auth/reset-password-with-token
+Content-Type: application/json
+
+{
+  "token": "{token}",
+  "new_password": "NewPassword123!"
 }
 
 ### ============================================
