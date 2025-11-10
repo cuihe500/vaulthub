@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken } from '@/utils/storage'
+import MainLayout from '@/layouts/MainLayout.vue'
 
 const routes = [
   {
@@ -10,19 +11,23 @@ const routes = [
   },
   {
     path: '/',
-    redirect: '/vault'
-  },
-  {
-    path: '/vault',
-    name: 'Vault',
-    component: () => import('@/views/vault/VaultList.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/user',
-    name: 'User',
-    component: () => import('@/views/user/UserManagement.vue'),
-    meta: { requiresAuth: true }
+    component: MainLayout,
+    redirect: '/vault',
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'vault',
+        name: 'Vault',
+        component: () => import('@/views/vault/VaultList.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'user',
+        name: 'User',
+        component: () => import('@/views/user/UserManagement.vue'),
+        meta: { requiresAuth: true }
+      }
+    ]
   }
 ]
 
