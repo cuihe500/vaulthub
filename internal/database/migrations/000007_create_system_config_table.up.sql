@@ -34,3 +34,16 @@ VALUES (
     '{"/api/v1/auth/login": {"requests": 10, "period": "minute"}, "/api/v1/auth/register": {"requests": 5, "period": "hour"}}',
     '接口级限流配置：登录每分钟10次，注册每小时5次'
 );
+
+-- 邮箱服务配置
+INSERT INTO system_config (config_key, config_value, description)
+VALUES
+    ('email_smtp_host', 'smtp.gmail.com', 'SMTP服务器地址'),
+    ('email_smtp_port', '587', 'SMTP服务器端口'),
+    ('email_smtp_username', '', 'SMTP用户名(必须配置)'),
+    ('email_smtp_password', '', 'SMTP密码或授权码(必须配置)'),
+    ('email_smtp_from', '', '发件人邮箱地址(必须配置)'),
+    ('email_smtp_from_name', 'VaultHub System', '发件人显示名称'),
+    ('email_smtp_use_tls', 'true', '是否启用TLS加密'),
+    ('email_code_expiry', '300', '验证码有效期(秒)'),
+    ('email_rate_limit', '60', '邮件发送频率限制(秒)');

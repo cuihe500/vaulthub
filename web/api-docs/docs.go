@@ -2749,9 +2749,14 @@ const docTemplate = `{
         "github_com_cuihe500_vaulthub_internal_service.RequestPasswordResetRequest": {
             "type": "object",
             "required": [
+                "domain",
                 "email"
             ],
             "properties": {
+                "domain": {
+                    "description": "前端当前访问的域名（含协议，如 https://example.com）",
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 }

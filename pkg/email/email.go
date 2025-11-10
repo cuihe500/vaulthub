@@ -180,7 +180,7 @@ func (s *Sender) SendVerificationCode(to, code, purpose string) error {
         </div>
         <div class="footer">
             <p>此邮件由系统自动发送，请勿回复。</p>
-            <p>&copy; 2024 VaultHub. All rights reserved.</p>
+            <p>&copy; 2025 VaultHub. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -237,7 +237,7 @@ func (s *Sender) SendPasswordResetLink(to, resetURL string, expiryMinutes int) e
         </div>
         <div class="footer">
             <p>此邮件由系统自动发送，请勿回复。</p>
-            <p>&copy; 2024 VaultHub. All rights reserved.</p>
+            <p>&copy; 2025 VaultHub. All rights reserved.</p>
         </div>
     </div>
 </body>

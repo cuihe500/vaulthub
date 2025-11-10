@@ -442,7 +442,8 @@ func makeUserTokenKey(userUUID string) string {
 
 // RequestPasswordResetRequest 请求密码重置
 type RequestPasswordResetRequest struct {
-	Email string `json:"email" binding:"required,email"`
+	Email  string `json:"email" binding:"required,email"`
+	Domain string `json:"domain" binding:"required"` // 前端当前访问的域名（含协议，如 https://example.com）
 }
 
 // RequestPasswordResetResponse 请求密码重置响应

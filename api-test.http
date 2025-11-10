@@ -136,7 +136,8 @@ POST {{baseUrl}}/api/v1/auth/request-password-reset
 Content-Type: application/json
 
 {
-  "email": "cuihe500@example.com"
+  "email": "cuihe500@example.com",
+  "domain": "http://localhost:8080"
 }
 
 ### 3.7 验证密码重置token

@@ -242,14 +242,8 @@ func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
 		return
 	}
 
-	// 获取请求的scheme和host用于构建重置链接
-	scheme := "http"
-	if c.Request.TLS != nil {
-		scheme = "https"
-	}
-	baseURL := scheme + "://" + c.Request.Host
-
-	resp, err := h.authService.RequestPasswordReset(&req, baseURL)
+	// 使用前端传入的 domain 参数构建重置链接
+	resp, err := h.authService.RequestPasswordReset(&req, req.Domain)
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
 			response.AppError(c, appErr)

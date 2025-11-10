@@ -75,7 +75,12 @@ export default {
         if (!valid) return
 
         loading.value = true
-        const data = await requestPasswordReset({ email: form.email })
+        // 获取当前访问的域名（包含协议，如 https://example.com）
+        const domain = window.location.origin
+        const data = await requestPasswordReset({
+          email: form.email,
+          domain: domain
+        })
 
         ElMessage.success(data.message || '重置邮件已发送，请查收')
 

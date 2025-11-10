@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { getToken } from '@/utils/storage'
 import { getSecurityPINStatus } from '@/api/keys'
+import { getCurrentUser } from '@/api/auth'
 
 const routes = [
   {
@@ -54,6 +56,12 @@ const routes = [
     name: 'User',
     component: () => import('@/views/user/UserManagement.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/system/config',
+    name: 'SystemConfig',
+    component: () => import('@/views/system/SystemConfig.vue'),
+    meta: { requiresAuth: true, requiresRole: 'admin' }
   }
 ]
 
@@ -62,7 +70,7 @@ const router = createRouter({
   routes
 })
 
-// 全局前置守卫：验证登录状态和安全密码设置
+// 全局前置守卫：验证登录状态、角色权限和安全密码设置
 router.beforeEach(async (to, from, next) => {
   const token = getToken()
 
@@ -79,7 +87,27 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 2. 检查安全密码设置状态（仅对需要认证且未跳过检查的路由）
+  // 2. 检查角色权限（仅对需要特定角色的路由）
+  if (to.meta.requiresRole && token) {
+    try {
+      const userInfo = await getCurrentUser()
+      const userRole = userInfo.role
+
+      // 检查用户角色是否匹配
+      if (userRole !== to.meta.requiresRole) {
+        ElMessage.error('您没有权限访问此页面')
+        next('/')
+        return
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+      ElMessage.error('获取用户信息失败')
+      next('/login')
+      return
+    }
+  }
+
+  // 3. 检查安全密码设置状态（仅对需要认证且未跳过检查的路由）
   if (to.meta.requiresAuth && !to.meta.skipSecurityPinCheck && token) {
     try {
       const status = await getSecurityPINStatus()

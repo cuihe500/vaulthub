@@ -51,10 +51,32 @@
         <el-form-item prop="email">
           <el-input
             v-model="registerForm.email"
-            placeholder="请输入邮箱（可选）"
+            placeholder="请输入邮箱（必填）"
             :prefix-icon="Message"
             size="large"
           />
+        </el-form-item>
+
+        <el-form-item prop="code">
+          <div class="verification-code-wrapper">
+            <el-input
+              v-model="registerForm.code"
+              placeholder="请输入验证码"
+              :prefix-icon="Lock"
+              size="large"
+              class="code-input"
+            />
+            <el-button
+              type="primary"
+              size="large"
+              @click="handleSendCode"
+              :disabled="sendCodeDisabled || countdown > 0"
+              :loading="sendingCode"
+              class="send-code-button"
+            >
+              {{ countdown > 0 ? `${countdown}s后重试` : '发送验证码' }}
+            </el-button>
+          </div>
         </el-form-item>
 
         <el-form-item prop="nickname">
@@ -89,11 +111,11 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Message, UserFilled } from '@element-plus/icons-vue'
-import { register } from '@/api/auth'
+import { register, sendEmailCode } from '@/api/auth'
 
 export default {
   name: 'Register',
@@ -101,13 +123,24 @@ export default {
     const router = useRouter()
     const registerFormRef = ref(null)
     const loading = ref(false)
+    const sendingCode = ref(false)
+    const countdown = ref(0)
+    let countdownTimer = null
 
     const registerForm = reactive({
       username: '',
       password: '',
       confirmPassword: '',
       email: '',
+      code: '',
       nickname: ''
+    })
+
+    // 计算发送验证码按钮是否禁用
+    const sendCodeDisabled = computed(() => {
+      // 邮箱为空或格式不正确时禁用
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      return !registerForm.email || !emailRegex.test(registerForm.email)
     })
 
     // 自定义验证器：确认密码
@@ -134,11 +167,51 @@ export default {
         { required: true, validator: validateConfirmPassword, trigger: 'blur' }
       ],
       email: [
+        { required: true, message: '请输入邮箱', trigger: 'blur' },
         { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+      ],
+      code: [
+        { required: true, message: '请输入验证码', trigger: 'blur' },
+        { min: 6, max: 6, message: '验证码为6位数字', trigger: 'blur' }
       ],
       nickname: [
         { min: 1, max: 50, message: '昵称长度为1-50个字符', trigger: 'blur' }
       ]
+    }
+
+    // 发送验证码
+    const handleSendCode = async () => {
+      // 先验证邮箱格式
+      try {
+        await registerFormRef.value.validateField('email')
+      } catch (error) {
+        return
+      }
+
+      try {
+        sendingCode.value = true
+
+        await sendEmailCode({
+          email: registerForm.email,
+          purpose: 'register'
+        })
+
+        ElMessage.success('验证码已发送，请查收邮件')
+
+        // 开始倒计时（60秒）
+        countdown.value = 60
+        countdownTimer = setInterval(() => {
+          countdown.value--
+          if (countdown.value <= 0) {
+            clearInterval(countdownTimer)
+            countdownTimer = null
+          }
+        }, 1000)
+      } catch (error) {
+        console.error('发送验证码失败:', error)
+      } finally {
+        sendingCode.value = false
+      }
     }
 
     const handleRegister = async () => {
@@ -151,13 +224,12 @@ export default {
         // 构造请求数据，移除 confirmPassword
         const requestData = {
           username: registerForm.username,
-          password: registerForm.password
+          password: registerForm.password,
+          email: registerForm.email,
+          code: registerForm.code
         }
 
         // 只在有值时添加可选字段
-        if (registerForm.email) {
-          requestData.email = registerForm.email
-        }
         if (registerForm.nickname) {
           requestData.nickname = registerForm.nickname
         }
@@ -178,6 +250,10 @@ export default {
       rules,
       registerFormRef,
       loading,
+      sendingCode,
+      countdown,
+      sendCodeDisabled,
+      handleSendCode,
       handleRegister,
       User,
       Lock,
@@ -311,6 +387,22 @@ export default {
 /* 登录表单 */
 .login-form {
   margin-top: var(--spacing-xl);
+}
+
+/* 验证码输入框容器 */
+.verification-code-wrapper {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.code-input {
+  flex: 1;
+}
+
+.send-code-button {
+  flex-shrink: 0;
+  min-width: 120px;
+  font-weight: var(--font-weight-medium);
 }
 
 /* 登录按钮 */

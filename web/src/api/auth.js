@@ -25,7 +25,7 @@ export const logout = () => {
  * 获取当前用户信息
  */
 export const getCurrentUser = () => {
-  return request.get('/v1/auth/current')
+  return request.get('/v1/auth/me')
 }
 
 /**
@@ -54,4 +54,12 @@ export const verifyResetToken = (token) => {
  */
 export const resetPasswordWithToken = (data) => {
   return request.post('/v1/auth/reset-password-with-token', data)
+}
+
+/**
+ * 发送邮箱验证码
+ * @param {Object} data - { email: string, purpose: 'register' | 'login' | 'reset_password' | 'change_email' }
+ */
+export const sendEmailCode = (data) => {
+  return request.post('/v1/email/send-code', data)
 }
