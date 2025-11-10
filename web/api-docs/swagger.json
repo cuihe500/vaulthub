@@ -314,6 +314,52 @@
                 }
             }
         },
+        "/api/v1/auth/login-with-email": {
+            "post": {
+                "description": "使用邮箱和验证码登录，无需密码。验证码通过 /api/v1/email/send-code 接口获取",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "邮箱验证码登录",
+                "parameters": [
+                    {
+                        "description": "邮箱验证码登录请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.LoginWithEmailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.LoginResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/logout": {
             "post": {
                 "security": [
@@ -428,6 +474,52 @@
                 }
             }
         },
+        "/api/v1/auth/request-password-reset": {
+            "post": {
+                "description": "通过邮箱申请密码重置，系统将发送重置链接到邮箱。无需登录即可访问",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "请求密码重置",
+                "parameters": [
+                    {
+                        "description": "请求密码重置",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.RequestPasswordResetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.RequestPasswordResetResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/reset-password": {
             "post": {
                 "security": [
@@ -462,6 +554,130 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/reset-password-with-token": {
+            "post": {
+                "description": "使用邮件中的重置token设置新密码。无需登录即可访问",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "使用token重置密码",
+                "parameters": [
+                    {
+                        "description": "重置密码请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.ResetPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.ResetPasswordResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/security-pin-status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "检查当前用户是否已设置安全密码，用于前端判断是否需要引导用户设置",
+                "tags": [
+                    "认证"
+                ],
+                "summary": "获取安全密码设置状态",
+                "responses": {
+                    "200": {
+                        "description": "返回 has_security_pin 字段",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/verify-reset-token": {
+            "get": {
+                "description": "验证密码重置token是否有效（未过期且未使用）。无需登录即可访问",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "验证密码重置token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "重置token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.VerifyResetTokenResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -2433,6 +2649,21 @@
                 }
             }
         },
+        "github_com_cuihe500_vaulthub_internal_service.LoginWithEmailRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "email"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cuihe500_vaulthub_internal_service.MigrationTask": {
             "type": "object",
             "properties": {
@@ -2506,6 +2737,49 @@
             "properties": {
                 "user": {
                     "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.RequestPasswordResetRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.RequestPasswordResetResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.ResetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "new_password",
+                "token"
+            ],
+            "properties": {
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.ResetPasswordResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -2655,6 +2929,14 @@
                 "message": {
                     "type": "string"
                 },
+                "valid": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.VerifyResetTokenResponse": {
+            "type": "object",
+            "properties": {
                 "valid": {
                     "type": "boolean"
                 }

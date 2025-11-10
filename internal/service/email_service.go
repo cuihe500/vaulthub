@@ -277,3 +277,16 @@ func (s *EmailService) MarkEmailVerified(ctx context.Context, emailAddr string) 
 
 	return nil
 }
+
+// SendPasswordResetLink 发送密码重置链接
+func (s *EmailService) SendPasswordResetLink(emailAddr string, resetURL string, expiryMinutes int) error {
+	// 获取邮件配置
+	emailConfig, err := s.getEmailConfig()
+	if err != nil {
+		return err
+	}
+
+	// 创建邮件发送器并发送
+	sender := email.NewSender(emailConfig)
+	return sender.SendPasswordResetLink(emailAddr, resetURL, expiryMinutes)
+}

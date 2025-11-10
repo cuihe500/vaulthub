@@ -76,3 +76,9 @@ func (k *UserEncryptionKey) ToSafe() *SafeUserEncryptionKey {
 		UpdatedAt:         k.UpdatedAt,
 	}
 }
+
+// HasSecurityPIN 检查用户是否已设置安全密码
+// 用于判断用户是否需要先设置安全密码才能使用加密功能
+func (k *UserEncryptionKey) HasSecurityPIN() bool {
+	return k.SecurityPINHash != ""
+}

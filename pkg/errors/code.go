@@ -23,6 +23,8 @@ const (
 	CodeAccountDisabled     = 20007
 	CodeWeakPassword        = 20008
 	CodeUsernameExists      = 20009
+	CodeSecurityPINNotSet   = 20010 // 安全密码未设置
+	CodeSecurityPINRequired = 20011 // 需要安全密码
 )
 
 const (
@@ -91,6 +93,8 @@ var codeMessages = map[int]string{
 	CodeAccountDisabled:     "账户已禁用",
 	CodeWeakPassword:        "密码不符合安全要求",
 	CodeUsernameExists:      "用户名已存在",
+	CodeSecurityPINNotSet:   "安全密码未设置",
+	CodeSecurityPINRequired: "需要安全密码",
 
 	CodeForbidden:              "禁止访问",
 	CodeInsufficientPermission: "权限不足",
