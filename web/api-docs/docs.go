@@ -30,7 +30,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "获取用户档案列表（需要管理员权限）",
+                "description": "获取用户档案列表（需要管理员权限）。不传分页参数时全量导出（最多10000条）",
                 "consumes": [
                     "application/json"
                 ],
@@ -43,16 +43,17 @@ const docTemplate = `{
                 "summary": "获取用户档案列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
-                        "default": 1,
-                        "description": "页码",
+                        "description": "页码（可选，不传则全量导出）",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 10000,
+                        "minimum": 1,
                         "type": "integer",
-                        "default": 20,
-                        "description": "每页数量",
+                        "description": "每页数量（可选，不传则全量导出）",
                         "name": "page_size",
                         "in": "query"
                     },
@@ -281,7 +282,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "查询审计日志，支持多条件过滤和分页。普通用户只能查询自己的日志，管理员可以查询所有用户的日志",
+                "description": "查询审计日志，支持多条件过滤和分页。普通用户只能查询自己的日志，管理员可以查询所有用户的日志。不传分页参数时全量导出（最多10000条）",
                 "consumes": [
                     "application/json"
                 ],
@@ -332,19 +333,17 @@ const docTemplate = `{
                     {
                         "minimum": 1,
                         "type": "integer",
-                        "description": "页码",
+                        "description": "页码（可选，不传则全量导出）",
                         "name": "page",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
-                        "maximum": 100,
+                        "maximum": 10000,
                         "minimum": 1,
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "每页数量（可选，不传则全量导出）",
                         "name": "page_size",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -352,6 +351,120 @@ const docTemplate = `{
                         "description": "查询成功",
                         "schema": {
                             "$ref": "#/definitions/internal_api_handlers.QueryAuditLogsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/audit/logs/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "导出各类型加密数据的统计总量。普通用户只能查询自己的统计，管理员可以查询指定用户或全局统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计"
+                ],
+                "summary": "导出密钥类型统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户UUID（管理员可指定，普通用户自动使用当前用户，管理员不指定则查询全局）",
+                        "name": "user_uuid",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "导出成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.SecretStatisticsExport"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/audit/operations/export": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "导出指定时间范围内的操作统计数据（按操作类型分组）。普通用户只能查询自己的统计，管理员可以查询指定用户或全局统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计"
+                ],
+                "summary": "导出操作统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户UUID（管理员可指定，普通用户自动使用当前用户，管理员不指定则查询全局）",
+                        "name": "user_uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间（RFC3339格式，如2024-01-01T00:00:00Z）",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间（RFC3339格式）",
+                        "name": "end_time",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "导出成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.OperationStatisticsExport"
                         }
                     },
                     "400": {
@@ -1780,7 +1893,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "获取当前用户的秘密列表（不包含加密数据）",
+                "description": "获取当前用户的秘密列表（不包含加密数据）。不传分页参数时全量导出（最多10000条）",
                 "consumes": [
                     "application/json"
                 ],
@@ -1808,16 +1921,17 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
-                        "default": 1,
-                        "description": "页码",
+                        "description": "页码（可选，不传则全量导出）",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 10000,
+                        "minimum": 1,
                         "type": "integer",
-                        "default": 20,
-                        "description": "每页数量",
+                        "description": "每页数量（可选，不传则全量导出）",
                         "name": "page_size",
                         "in": "query"
                     }
@@ -2118,7 +2232,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "获取用户列表（需要管理员权限）",
+                "description": "获取用户列表（需要管理员权限）。不传分页参数时全量导出（最多10000条）",
                 "consumes": [
                     "application/json"
                 ],
@@ -2131,16 +2245,17 @@ const docTemplate = `{
                 "summary": "获取用户列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
-                        "default": 1,
-                        "description": "页码",
+                        "description": "页码（可选，不传则全量导出）",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 10000,
+                        "minimum": 1,
                         "type": "integer",
-                        "default": 20,
-                        "description": "每页数量",
+                        "description": "每页数量（可选，不传则全量导出）",
                         "name": "page_size",
                         "in": "query"
                     },
@@ -3092,6 +3207,23 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cuihe500_vaulthub_internal_service.OperationStatisticsExport": {
+            "type": "object",
+            "properties": {
+                "by_action": {
+                    "description": "按操作类型统计",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "total_operations": {
+                    "description": "操作总数",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_cuihe500_vaulthub_internal_service.RegisterRequest": {
             "type": "object",
             "required": [
@@ -3213,6 +3345,23 @@ const docTemplate = `{
                 },
                 "user_encryption_key": {
                     "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.SecretStatisticsExport": {
+            "type": "object",
+            "properties": {
+                "by_type": {
+                    "description": "按类型统计",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "total_secrets": {
+                    "description": "密钥总数",
+                    "type": "integer"
                 }
             }
         },

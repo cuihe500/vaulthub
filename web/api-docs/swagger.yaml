@@ -488,6 +488,18 @@ definitions:
       user_uuid:
         type: string
     type: object
+  github_com_cuihe500_vaulthub_internal_service.OperationStatisticsExport:
+    properties:
+      by_action:
+        additionalProperties:
+          format: int64
+          type: integer
+        description: 按操作类型统计
+        type: object
+      total_operations:
+        description: 操作总数
+        type: integer
+    type: object
   github_com_cuihe500_vaulthub_internal_service.RegisterRequest:
     properties:
       code:
@@ -572,6 +584,18 @@ definitions:
         type: string
       user_encryption_key:
         $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey'
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.SecretStatisticsExport:
+    properties:
+      by_type:
+        additionalProperties:
+          format: int64
+          type: integer
+        description: 按类型统计
+        type: object
+      total_secrets:
+        description: 密钥总数
+        type: integer
     type: object
   github_com_cuihe500_vaulthub_internal_service.UpdateConfigRequest:
     properties:
@@ -861,16 +885,17 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取用户档案列表（需要管理员权限）
+      description: 获取用户档案列表（需要管理员权限）。不传分页参数时全量导出（最多10000条）
       parameters:
-      - default: 1
-        description: 页码
+      - description: 页码（可选，不传则全量导出）
         in: query
+        minimum: 1
         name: page
         type: integer
-      - default: 20
-        description: 每页数量
+      - description: 每页数量（可选，不传则全量导出）
         in: query
+        maximum: 10000
+        minimum: 1
         name: page_size
         type: integer
       - description: 昵称筛选
@@ -1015,7 +1040,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 查询审计日志，支持多条件过滤和分页。普通用户只能查询自己的日志，管理员可以查询所有用户的日志
+      description: 查询审计日志，支持多条件过滤和分页。普通用户只能查询自己的日志，管理员可以查询所有用户的日志。不传分页参数时全量导出（最多10000条）
       parameters:
       - description: 用户UUID（管理员可指定，普通用户自动使用当前用户）
         in: query
@@ -1041,18 +1066,16 @@ paths:
         in: query
         name: end_time
         type: string
-      - description: 页码
+      - description: 页码（可选，不传则全量导出）
         in: query
         minimum: 1
         name: page
-        required: true
         type: integer
-      - description: 每页数量
+      - description: 每页数量（可选，不传则全量导出）
         in: query
-        maximum: 100
+        maximum: 10000
         minimum: 1
         name: page_size
-        required: true
         type: integer
       produces:
       - application/json
@@ -1076,6 +1099,78 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 查询审计日志
+      tags:
+      - 审计
+  /api/v1/audit/logs/export:
+    get:
+      consumes:
+      - application/json
+      description: 导出各类型加密数据的统计总量。普通用户只能查询自己的统计，管理员可以查询指定用户或全局统计
+      parameters:
+      - description: 用户UUID（管理员可指定，普通用户自动使用当前用户，管理员不指定则查询全局）
+        in: query
+        name: user_uuid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 导出成功
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.SecretStatisticsExport'
+        "401":
+          description: 未授权
+          schema:
+            type: string
+        "500":
+          description: 服务器错误
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: 导出密钥类型统计
+      tags:
+      - 审计
+  /api/v1/audit/operations/export:
+    get:
+      consumes:
+      - application/json
+      description: 导出指定时间范围内的操作统计数据（按操作类型分组）。普通用户只能查询自己的统计，管理员可以查询指定用户或全局统计
+      parameters:
+      - description: 用户UUID（管理员可指定，普通用户自动使用当前用户，管理员不指定则查询全局）
+        in: query
+        name: user_uuid
+        type: string
+      - description: 开始时间（RFC3339格式，如2024-01-01T00:00:00Z）
+        in: query
+        name: start_time
+        type: string
+      - description: 结束时间（RFC3339格式）
+        in: query
+        name: end_time
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 导出成功
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.OperationStatisticsExport'
+        "400":
+          description: 参数错误
+          schema:
+            type: string
+        "401":
+          description: 未授权
+          schema:
+            type: string
+        "500":
+          description: 服务器错误
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: 导出操作统计
       tags:
       - 审计
   /api/v1/auth/login:
@@ -1918,7 +2013,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取当前用户的秘密列表（不包含加密数据）
+      description: 获取当前用户的秘密列表（不包含加密数据）。不传分页参数时全量导出（最多10000条）
       parameters:
       - description: 秘密类型
         enum:
@@ -1932,14 +2027,15 @@ paths:
         in: query
         name: secret_type
         type: string
-      - default: 1
-        description: 页码
+      - description: 页码（可选，不传则全量导出）
         in: query
+        minimum: 1
         name: page
         type: integer
-      - default: 20
-        description: 每页数量
+      - description: 每页数量（可选，不传则全量导出）
         in: query
+        maximum: 10000
+        minimum: 1
         name: page_size
         type: integer
       produces:
@@ -2126,16 +2222,17 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取用户列表（需要管理员权限）
+      description: 获取用户列表（需要管理员权限）。不传分页参数时全量导出（最多10000条）
       parameters:
-      - default: 1
-        description: 页码
+      - description: 页码（可选，不传则全量导出）
         in: query
+        minimum: 1
         name: page
         type: integer
-      - default: 20
-        description: 每页数量
+      - description: 每页数量（可选，不传则全量导出）
         in: query
+        maximum: 10000
+        minimum: 1
         name: page_size
         type: integer
       - description: 用户状态

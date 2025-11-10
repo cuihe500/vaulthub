@@ -162,14 +162,14 @@ func (h *SecretHandler) GetSecret(c *gin.Context) {
 
 // ListSecrets 获取秘密列表
 // @Summary 获取秘密列表
-// @Description 获取当前用户的秘密列表（不包含加密数据）
+// @Description 获取当前用户的秘密列表（不包含加密数据）。不传分页参数时全量导出（最多10000条）
 // @Tags 秘密管理
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param secret_type query string false "秘密类型" Enums(api_key, db_credential, certificate, ssh_key, token, password, other)
-// @Param page query int false "页码" default(1)
-// @Param page_size query int false "每页数量" default(20)
+// @Param page query int false "页码（可选，不传则全量导出）" minimum(1)
+// @Param page_size query int false "每页数量（可选，不传则全量导出）" minimum(1) maximum(10000)
 // @Success 200 {object} response.Response{data=service.ListUserSecretsResponse}
 // @Router /api/v1/secrets [get]
 func (h *SecretHandler) ListSecrets(c *gin.Context) {

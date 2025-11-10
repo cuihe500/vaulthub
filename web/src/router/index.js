@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken } from '@/utils/storage'
+import { getSecurityPINStatus } from '@/api/keys'
 import MainLayout from '@/layouts/MainLayout.vue'
 
 const routes = [
@@ -8,6 +9,12 @@ const routes = [
     name: 'Login',
     component: () => import('@/views/login/Login.vue'),
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/setup-security-pin',
+    name: 'SetupSecurityPin',
+    component: () => import('@/views/security/SetupSecurityPin.vue'),
+    meta: { requiresAuth: true, skipSecurityPinCheck: true }
   },
   {
     path: '/',

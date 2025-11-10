@@ -158,7 +158,8 @@ Content-Type: application/json
 ### 4. 用户管理接口（需要管理员权限）
 ### ============================================
 
-### 3.1 获取用户列表（基本查询）
+### 3.1 获取用户列表（全量导出）
+### 注意：不传分页参数时，返回最多10000条记录
 GET {{baseUrl}}/api/v1/users
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -421,7 +422,8 @@ Authorization: Bearer {{token}}
 ### 6. 管理员用户档案接口（需要管理员权限）
 ### ============================================
 
-### 6.1 获取用户档案列表（基本查询）
+### 6.1 获取用户档案列表（全量导出）
+### 注意：不传分页参数时，返回最多10000条记录
 GET {{baseUrl}}/api/v1/admin/profiles
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -727,7 +729,8 @@ Authorization: Bearer {{token}}
   }
 }
 
-### 9.7 获取秘密列表（所有秘密）
+### 9.7 获取秘密列表（所有秘密，全量导出）
+### 注意：不传分页参数时，返回最多10000条记录
 GET {{baseUrl}}/api/v1/secrets
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -1023,5 +1026,80 @@ Authorization: Bearer invalid-token
 ### 12.8 普通用户尝试访问系统配置接口
 ### 注意：使用普通用户的token测试
 GET {{baseUrl}}/api/v1/configs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### ============================================
+### 13. 审计日志接口
+### ============================================
+
+### 13.1 查询审计日志（全量导出）
+### 注意：不传分页参数时，返回最多10000条记录
+GET {{baseUrl}}/api/v1/audit/logs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.2 查询审计日志（带分页）
+GET {{baseUrl}}/api/v1/audit/logs?page=1&page_size=20
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.3 查询审计日志（按操作类型过滤）
+GET {{baseUrl}}/api/v1/audit/logs?action_type=CREATE
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.4 查询审计日志（按资源类型过滤）
+GET {{baseUrl}}/api/v1/audit/logs?resource_type=secret
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.5 查询审计日志（按状态过滤）
+GET {{baseUrl}}/api/v1/audit/logs?status=success
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.6 查询审计日志（按时间范围过滤）
+GET {{baseUrl}}/api/v1/audit/logs?start_time=2025-01-01T00:00:00Z&end_time=2025-12-31T23:59:59Z
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.7 查询审计日志（复合条件过滤）
+GET {{baseUrl}}/api/v1/audit/logs?page=1&page_size=20&action_type=ACCESS&resource_type=secret&status=success
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.8 管理员查询指定用户的审计日志
+GET {{baseUrl}}/api/v1/audit/logs?user_uuid={{userUuid}}&page=1&page_size=20
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.9 导出密钥类型统计（当前用户）
+GET {{baseUrl}}/api/v1/audit/logs/export
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.10 管理员导出指定用户的密钥类型统计
+GET {{baseUrl}}/api/v1/audit/logs/export?user_uuid={{userUuid}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.11 管理员导出全局密钥类型统计
+GET {{baseUrl}}/api/v1/audit/logs/export
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.12 导出今日操作统计（当前用户）
+GET {{baseUrl}}/api/v1/audit/operations/export?start_time=2025-11-10T00:00:00Z&end_time=2025-11-10T23:59:59Z
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.13 管理员导出指定用户的操作统计
+GET {{baseUrl}}/api/v1/audit/operations/export?user_uuid={{userUuid}}&start_time=2025-11-01T00:00:00Z&end_time=2025-11-30T23:59:59Z
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 13.14 管理员导出全局操作统计（不指定用户）
+GET {{baseUrl}}/api/v1/audit/operations/export?start_time=2025-11-01T00:00:00Z&end_time=2025-11-30T23:59:59Z
 Content-Type: application/json
 Authorization: Bearer {{token}}

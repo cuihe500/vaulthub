@@ -16,8 +16,8 @@ import (
 func Setup(r *gin.Engine, mgr *app.Manager) {
 	// 全局中间件
 	r.Use(middleware.RequestID())
-	// 审计中间件（自动记录所有已认证请求）
-	r.Use(middleware.AuditMiddleware(mgr.AuditService))
+	// 注意：审计中间件不能在全局注册，因为它依赖AuthMiddleware设置的用户信息
+	// 审计中间件需要在各个路由组的AuthMiddleware之后注册
 
 	// 创建 services
 	// 注意：EmailService 需要先创建，因为 AuthService 依赖它
@@ -90,19 +90,21 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 				authHandler.ResetPasswordWithToken)
 
 			// 获取当前用户信息需要认证
-			auth.GET("/me", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.GetMe)
+			// 注意：这些独立路由需要在handler内手动记录审计日志（Auth中间件后没有Audit中间件）
+			auth.GET("/me", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), middleware.AuditMiddleware(mgr.AuditService), authHandler.GetMe)
 			// 登出需要认证
-			auth.POST("/logout", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.Logout)
+			auth.POST("/logout", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), middleware.AuditMiddleware(mgr.AuditService), authHandler.Logout)
 			// 使用恢复密钥重置密码需要认证
-			auth.POST("/reset-password", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.ResetPassword)
+			auth.POST("/reset-password", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), middleware.AuditMiddleware(mgr.AuditService), authHandler.ResetPassword)
 			// 获取安全密码设置状态需要认证
-			auth.GET("/security-pin-status", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.GetSecurityPINStatus)
+			auth.GET("/security-pin-status", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), middleware.AuditMiddleware(mgr.AuditService), authHandler.GetSecurityPINStatus)
 		}
 
 		// 用户管理路由（需要认证和管理员权限）
 		// 这里使用Casbin进行权限验证，user资源的管理操作需要admin权限
 		users := v1.Group("/users")
 		users.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		users.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 获取用户列表 - 需要user:read权限
 			users.GET("", middleware.RequirePermission(mgr.Enforcer, "user", "read"), userHandler.ListUsers)
@@ -120,6 +122,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 用户档案路由（需要认证）
 		profile := v1.Group("/profile")
 		profile.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		profile.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 获取当前用户档案 - 用户只能操作自己的档案
 			profile.GET("", profileHandler.GetProfile)
@@ -141,6 +144,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 用户只能操作自己的加密密钥
 		keys := v1.Group("/keys")
 		keys.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		keys.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 创建用户加密密钥（首次使用加密功能时调用）
 			keys.POST("/create", keyManagementHandler.CreateUserEncryptionKey)
@@ -157,6 +161,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 注意：秘密管理需要用户先设置安全密码（Security PIN）
 		secrets := v1.Group("/secrets")
 		secrets.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		secrets.Use(middleware.AuditMiddleware(mgr.AuditService))
 		secrets.Use(middleware.SecurityPINCheckMiddleware(mgr.DB))
 		{
 			// 获取秘密列表
@@ -175,6 +180,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 管理员用户档案路由（需要认证和管理员权限）
 		admin := v1.Group("/admin")
 		admin.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		admin.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 获取用户档案列表 - 需要profile:read权限
 			admin.GET("/profiles", middleware.RequirePermission(mgr.Enforcer, "profile", "read"), profileHandler.ListProfiles)
@@ -190,6 +196,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 系统配置的管理属于敏感操作，需要config:read和config:write权限
 		configs := v1.Group("/configs")
 		configs.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		configs.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 获取配置列表 - 需要config:read权限
 			configs.GET("", middleware.RequirePermission(mgr.Enforcer, "config", "read"), systemConfigHandler.ListConfigs)
@@ -211,15 +218,21 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 普通用户只能查询自己的日志，管理员可以查询所有用户的日志
 		audit := v1.Group("/audit")
 		audit.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		audit.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 查询审计日志 - 所有用户都可以访问（权限在handler内部控制）
 			audit.GET("/logs", auditHandler.QueryAuditLogs)
+			// 导出密钥类型统计 - 所有用户都可以访问（权限在handler内部控制）
+			audit.GET("/logs/export", auditHandler.ExportStatistics)
+			// 导出操作统计 - 所有用户都可以访问（权限在handler内部控制）
+			audit.GET("/operations/export", auditHandler.ExportOperationStatistics)
 		}
 
 		// 统计数据路由（需要认证）
 		// 普通用户只能查询自己的统计，管理员可以查询所有用户的统计
 		statistics := v1.Group("/statistics")
 		statistics.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		statistics.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 获取用户统计数据（历史统计）- 所有用户都可以访问（权限在handler内部控制）
 			statistics.GET("/user", statisticsHandler.GetUserStatistics)

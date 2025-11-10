@@ -347,7 +347,7 @@ type ListUserSecretsRequest struct {
 	UserUUID   string            `form:"-"`
 	SecretType models.SecretType `form:"secret_type"`
 	Page       int               `form:"page" binding:"omitempty,min=1"`
-	PageSize   int               `form:"page_size" binding:"omitempty,min=1,max=100"`
+	PageSize   int               `form:"page_size" binding:"omitempty,min=1,max=10000"`
 }
 
 // ListUserSecretsResponse 列出用户秘密响应
@@ -361,14 +361,6 @@ type ListUserSecretsResponse struct {
 
 // ListUserSecrets 列出用户的秘密列表（不包含加密数据）
 func (s *EncryptionService) ListUserSecrets(req *ListUserSecretsRequest) (*ListUserSecretsResponse, error) {
-	// 设置默认值
-	if req.Page == 0 {
-		req.Page = 1
-	}
-	if req.PageSize == 0 {
-		req.PageSize = 20
-	}
-
 	// 构建查询
 	query := s.db.Model(&models.EncryptedSecret{}).Where("user_uuid = ?", req.UserUUID)
 
@@ -386,8 +378,24 @@ func (s *EncryptionService) ListUserSecrets(req *ListUserSecretsRequest) (*ListU
 
 	// 分页查询
 	var secrets []models.EncryptedSecret
-	offset := (req.Page - 1) * req.PageSize
-	if err := query.Offset(offset).Limit(req.PageSize).Order("created_at DESC").Find(&secrets).Error; err != nil {
+	query = query.Order("created_at DESC")
+
+	// 如果未传分页参数，则全量导出（添加安全上限10000）
+	if req.Page <= 0 && req.PageSize <= 0 {
+		query = query.Limit(10000)
+	} else {
+		// 设置默认值
+		if req.Page <= 0 {
+			req.Page = 1
+		}
+		if req.PageSize <= 0 {
+			req.PageSize = 20
+		}
+		offset := (req.Page - 1) * req.PageSize
+		query = query.Offset(offset).Limit(req.PageSize)
+	}
+
+	if err := query.Find(&secrets).Error; err != nil {
 		logger.Error("查询秘密列表失败", logger.Err(err))
 		return nil, errors.Wrap(errors.CodeDatabaseError, err)
 	}

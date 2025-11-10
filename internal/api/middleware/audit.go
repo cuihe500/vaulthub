@@ -7,6 +7,7 @@ import (
 
 	"github.com/cuihe500/vaulthub/internal/database/models"
 	"github.com/cuihe500/vaulthub/internal/service"
+	"github.com/cuihe500/vaulthub/pkg/logger"
 	"github.com/cuihe500/vaulthub/pkg/response"
 	"github.com/gin-gonic/gin"
 )
@@ -43,7 +44,16 @@ func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 只审计已认证的请求
 		userUUID, exists := GetCurrentUserUUID(c)
+
+		// 调试日志：记录中间件是否执行
+		logger.Debug("审计中间件执行",
+			logger.String("path", c.FullPath()),
+			logger.String("method", c.Request.Method),
+			logger.Bool("authenticated", exists),
+			logger.String("user_uuid", userUUID))
+
 		if !exists {
+			logger.Debug("跳过审计：用户未认证", logger.String("path", c.FullPath()))
 			c.Next()
 			return
 		}
@@ -131,6 +141,16 @@ func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
 		if details != "" {
 			auditLog.Details = details
 		}
+
+		// 记录审计日志信息用于调试
+		logger.Debug("写入审计日志",
+			logger.String("user_uuid", auditLog.UserUUID),
+			logger.String("username", auditLog.Username),
+			logger.String("action_type", string(auditLog.ActionType)),
+			logger.String("resource_type", string(auditLog.ResourceType)),
+			logger.String("status", string(auditLog.Status)),
+			logger.String("method", c.Request.Method),
+			logger.String("path", c.FullPath()))
 
 		// 异步写入审计日志
 		auditService.LogAsync(auditLog)

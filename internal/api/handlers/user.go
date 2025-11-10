@@ -23,13 +23,13 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 
 // ListUsers 获取用户列表
 // @Summary 获取用户列表
-// @Description 获取用户列表（需要管理员权限）
+// @Description 获取用户列表（需要管理员权限）。不传分页参数时全量导出（最多10000条）
 // @Tags 用户管理
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码" default(1)
-// @Param page_size query int false "每页数量" default(20)
+// @Param page query int false "页码（可选，不传则全量导出）" minimum(1)
+// @Param page_size query int false "每页数量（可选，不传则全量导出）" minimum(1) maximum(10000)
 // @Param status query int false "用户状态" Enums(1, 2, 3)
 // @Param role query string false "用户角色" Enums(admin, user, readonly)
 // @Success 200 {object} response.Response{data=service.ListUsersResponse}

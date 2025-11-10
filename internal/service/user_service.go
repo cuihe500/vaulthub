@@ -22,7 +22,7 @@ func NewUserService(db *gorm.DB) *UserService {
 // ListUsersRequest 用户列表请求
 type ListUsersRequest struct {
 	Page     int    `form:"page" binding:"omitempty,min=1"`
-	PageSize int    `form:"page_size" binding:"omitempty,min=1,max=100"`
+	PageSize int    `form:"page_size" binding:"omitempty,min=1,max=10000"`
 	Status   int    `form:"status" binding:"omitempty,min=1,max=3"`
 	Role     string `form:"role" binding:"omitempty"`
 }
@@ -38,14 +38,6 @@ type ListUsersResponse struct {
 
 // ListUsers 获取用户列表
 func (s *UserService) ListUsers(req *ListUsersRequest) (*ListUsersResponse, error) {
-	// 设置默认值
-	if req.Page == 0 {
-		req.Page = 1
-	}
-	if req.PageSize == 0 {
-		req.PageSize = 20
-	}
-
 	// 构建查询
 	query := s.db.Model(&models.User{})
 
@@ -66,8 +58,24 @@ func (s *UserService) ListUsers(req *ListUsersRequest) (*ListUsersResponse, erro
 
 	// 分页查询
 	var users []models.User
-	offset := (req.Page - 1) * req.PageSize
-	if err := query.Offset(offset).Limit(req.PageSize).Order("created_at DESC").Find(&users).Error; err != nil {
+	query = query.Order("created_at DESC")
+
+	// 如果未传分页参数，则全量导出（添加安全上限10000）
+	if req.Page <= 0 && req.PageSize <= 0 {
+		query = query.Limit(10000)
+	} else {
+		// 设置默认值
+		if req.Page <= 0 {
+			req.Page = 1
+		}
+		if req.PageSize <= 0 {
+			req.PageSize = 20
+		}
+		offset := (req.Page - 1) * req.PageSize
+		query = query.Offset(offset).Limit(req.PageSize)
+	}
+
+	if err := query.Find(&users).Error; err != nil {
 		logger.Error("查询用户列表失败", logger.Err(err))
 		return nil, errors.Wrap(errors.CodeDatabaseError, err)
 	}

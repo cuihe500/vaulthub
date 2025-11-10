@@ -377,6 +377,35 @@ const UserManagement = () => import('@/views/user/UserManagement.vue')
 - 后端存储UTC时间，前端展示时转换为`Asia/Shanghai`
 - 使用Day.js或date-fns处理时间格式化
 
+**重要：时间格式规范**
+
+后端期望的时间格式是**RFC3339（不含毫秒）**:
+- ✅ 正确: `2025-11-09T16:00:00Z`
+- ❌ 错误: `2025-11-09T16:00:00.000Z` (带毫秒)
+- ❌ 错误: `2025-11-09 16:00:00` (非ISO格式)
+
+**前端发送时间到后端**:
+```javascript
+import { toRFC3339, getTodayStart, getTodayEnd } from '@/utils/date'
+
+// 方式1: 转换现有Date对象
+const date = new Date()
+const rfc3339Time = toRFC3339(date)  // "2025-11-09T16:00:00Z"
+
+// 方式2: 使用工具函数获取今日时间范围
+const startTime = getTodayStart()  // 今天UTC 00:00:00
+const endTime = getTodayEnd()      // 明天UTC 00:00:00
+
+// 发送到后端
+await queryAuditLogs({
+  start_time: startTime,  // 必须是RFC3339格式
+  end_time: endTime,
+  page: 1,
+  page_size: 10
+})
+```
+
+**前端显示后端返回的时间**:
 ```javascript
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
@@ -387,6 +416,15 @@ dayjs.extend(timezone)
 
 // 后端返回UTC时间，前端显示本地时间
 const displayTime = dayjs.utc(utcTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')
+```
+
+**禁止直接使用 `toISOString()`**:
+```javascript
+// Bad: toISOString()会生成带毫秒的格式，导致后端参数绑定失败
+const badTime = new Date().toISOString()  // "2025-11-09T16:00:00.123Z" ❌
+
+// Good: 使用工具函数
+const goodTime = toRFC3339(new Date())    // "2025-11-09T16:00:00Z" ✅
 ```
 
 ### 3. 认证机制

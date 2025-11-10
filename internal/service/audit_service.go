@@ -113,7 +113,20 @@ func (s *AuditService) writeLog(log *models.AuditLog) error {
 		}
 	}
 
-	return s.db.Create(log).Error
+	err := s.db.Create(log).Error
+	if err != nil {
+		logger.Error("审计日志数据库写入失败",
+			logger.String("user_uuid", log.UserUUID),
+			logger.String("action_type", string(log.ActionType)),
+			logger.Err(err))
+	} else {
+		logger.Debug("审计日志数据库写入成功",
+			logger.String("uuid", log.UUID),
+			logger.String("user_uuid", log.UserUUID),
+			logger.String("action_type", string(log.ActionType)))
+	}
+
+	return err
 }
 
 // LogAsync 异步记录审计日志（非阻塞）
@@ -170,12 +183,24 @@ func (s *AuditService) QueryLogs(req *QueryAuditLogsRequest) ([]*AuditLogDTO, in
 
 	// 分页查询
 	var logs []*models.AuditLog
-	offset := (req.Page - 1) * req.PageSize
-	err := query.Order("created_at DESC").
-		Limit(req.PageSize).
-		Offset(offset).
-		Find(&logs).Error
+	query = query.Order("created_at DESC")
 
+	// 如果未传分页参数，则全量导出（添加安全上限10000）
+	if req.Page <= 0 && req.PageSize <= 0 {
+		query = query.Limit(10000)
+	} else {
+		// 设置默认值
+		if req.Page <= 0 {
+			req.Page = 1
+		}
+		if req.PageSize <= 0 {
+			req.PageSize = 20
+		}
+		offset := (req.Page - 1) * req.PageSize
+		query = query.Limit(req.PageSize).Offset(offset)
+	}
+
+	err := query.Find(&logs).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -236,8 +261,66 @@ type QueryAuditLogsRequest struct {
 	Status       string    `form:"status"`
 	StartTime    time.Time `form:"start_time" time_format:"2006-01-02T15:04:05Z07:00"`
 	EndTime      time.Time `form:"end_time" time_format:"2006-01-02T15:04:05Z07:00"`
-	Page         int       `form:"page" binding:"required,min=1"`
-	PageSize     int       `form:"page_size" binding:"required,min=1,max=100"`
+	Page         int       `form:"page" binding:"omitempty,min=1"`
+	PageSize     int       `form:"page_size" binding:"omitempty,min=1,max=10000"`
+}
+
+// ExportStatistics 导出各类型密钥统计总量
+// 该方法用于全局统计，返回所有用户或指定用户的密钥类型分布情况
+func (s *AuditService) ExportStatistics(userUUID string) (*SecretStatisticsExport, error) {
+	query := s.db.Model(&models.EncryptedSecret{})
+
+	// 如果指定用户UUID，则只统计该用户的数据
+	if userUUID != "" {
+		query = query.Where("user_uuid = ?", userUUID)
+	}
+
+	// 统计总数
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	// 按类型分组统计
+	type TypeCount struct {
+		SecretType models.SecretType
+		Count      int64
+	}
+	var typeCounts []TypeCount
+	if err := query.Select("secret_type, COUNT(*) as count").
+		Group("secret_type").
+		Scan(&typeCounts).Error; err != nil {
+		return nil, err
+	}
+
+	// 构建返回结果
+	result := &SecretStatisticsExport{
+		TotalSecrets: total,
+		ByType:       make(map[string]int64),
+	}
+
+	// 映射到结果
+	for _, tc := range typeCounts {
+		result.ByType[string(tc.SecretType)] = tc.Count
+	}
+
+	// 确保所有类型都有值（即使为0）
+	allTypes := []models.SecretType{
+		models.SecretTypeAPIKey,
+		models.SecretTypeDBCredential,
+		models.SecretTypeCertificate,
+		models.SecretTypeSSHKey,
+		models.SecretTypeToken,
+		models.SecretTypePassword,
+		models.SecretTypeOther,
+	}
+	for _, t := range allTypes {
+		if _, exists := result.ByType[string(t)]; !exists {
+			result.ByType[string(t)] = 0
+		}
+	}
+
+	return result, nil
 }
 
 // AuditLogDTO 审计日志数据传输对象
@@ -257,4 +340,89 @@ type AuditLogDTO struct {
 	RequestID    string      `json:"request_id,omitempty"`
 	Details      interface{} `json:"details,omitempty"`
 	CreatedAt    time.Time   `json:"created_at"`
+}
+
+// SecretStatisticsExport 密钥统计导出数据
+type SecretStatisticsExport struct {
+	TotalSecrets int64            `json:"total_secrets"` // 密钥总数
+	ByType       map[string]int64 `json:"by_type"`       // 按类型统计
+}
+
+// ExportOperationStatistics 导出操作统计（按时间范围）
+// 该方法用于统计指定时间范围内的操作分布情况
+func (s *AuditService) ExportOperationStatistics(userUUID string, startTime, endTime time.Time) (*OperationStatisticsExport, error) {
+	query := s.db.Model(&models.AuditLog{})
+
+	// 记录查询参数用于调试
+	logger.Debug("导出操作统计",
+		logger.String("user_uuid", userUUID),
+		logger.Time("start_time", startTime),
+		logger.Time("end_time", endTime))
+
+	// 如果指定用户UUID，则只统计该用户的数据
+	if userUUID != "" {
+		query = query.Where("user_uuid = ?", userUUID)
+	}
+
+	// 时间范围过滤
+	if !startTime.IsZero() {
+		query = query.Where("created_at >= ?", startTime)
+	}
+	if !endTime.IsZero() {
+		query = query.Where("created_at < ?", endTime)
+	}
+
+	// 统计总数
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	logger.Debug("操作统计查询结果", logger.Int64("total", total))
+
+	// 按操作类型分组统计
+	type ActionCount struct {
+		ActionType models.ActionType
+		Count      int64
+	}
+	var actionCounts []ActionCount
+	if err := query.Select("action_type, COUNT(*) as count").
+		Group("action_type").
+		Scan(&actionCounts).Error; err != nil {
+		return nil, err
+	}
+
+	// 构建返回结果
+	result := &OperationStatisticsExport{
+		TotalOperations: total,
+		ByAction:        make(map[string]int64),
+	}
+
+	// 映射到结果
+	for _, ac := range actionCounts {
+		result.ByAction[string(ac.ActionType)] = ac.Count
+	}
+
+	// 确保所有操作类型都有值（即使为0）
+	allActions := []models.ActionType{
+		models.ActionCreate,
+		models.ActionUpdate,
+		models.ActionDelete,
+		models.ActionAccess,
+		models.ActionLogin,
+		models.ActionLogout,
+	}
+	for _, a := range allActions {
+		if _, exists := result.ByAction[string(a)]; !exists {
+			result.ByAction[string(a)] = 0
+		}
+	}
+
+	return result, nil
+}
+
+// OperationStatisticsExport 操作统计导出数据
+type OperationStatisticsExport struct {
+	TotalOperations int64            `json:"total_operations"` // 操作总数
+	ByAction        map[string]int64 `json:"by_action"`        // 按操作类型统计
 }
