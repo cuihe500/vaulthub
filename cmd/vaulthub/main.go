@@ -190,8 +190,11 @@ func initScheduler(mgr *app.Manager) *app.Scheduler {
 	encryptionService := initEncryptionService(mgr)
 	keyRotationService := initKeyRotationService(mgr, encryptionService)
 
+	// 创建统计服务
+	statisticsService := initStatisticsService(mgr)
+
 	// 创建调度器
-	return app.NewScheduler(keyRotationService)
+	return app.NewScheduler(keyRotationService, statisticsService)
 }
 
 // initEncryptionService 创建加密服务实例
@@ -202,6 +205,11 @@ func initEncryptionService(mgr *app.Manager) *service.EncryptionService {
 // initKeyRotationService 创建密钥轮换服务实例
 func initKeyRotationService(mgr *app.Manager, encryptionService *service.EncryptionService) *service.KeyRotationService {
 	return service.NewKeyRotationService(mgr.DB, encryptionService, mgr.ConfigManager)
+}
+
+// initStatisticsService 创建统计服务实例
+func initStatisticsService(mgr *app.Manager) *service.StatisticsService {
+	return service.NewStatisticsService(mgr.DB)
 }
 
 // initRouter 初始化路由

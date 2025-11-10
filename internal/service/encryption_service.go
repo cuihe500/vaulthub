@@ -178,11 +178,9 @@ func (s *EncryptionService) EncryptAndStoreSecret(req *EncryptAndStoreSecretRequ
 	}
 
 	// 2. 验证安全密码（快速失败，避免昂贵的Argon2计算）
-	if userKey.SecurityPINHash != "" {
-		if !crypto.VerifyPassword(req.SecurityPIN, userKey.SecurityPINHash) {
-			logger.Warn("安全密码验证失败", logger.String("user_uuid", req.UserUUID))
-			return nil, errors.New(errors.CodeInvalidCredentials, "安全密码错误")
-		}
+	if !crypto.VerifyPassword(req.SecurityPIN, userKey.SecurityPINHash) {
+		logger.Warn("安全密码验证失败", logger.String("user_uuid", req.UserUUID))
+		return nil, errors.New(errors.CodeInvalidCredentials, "安全密码错误")
 	}
 
 	// 3. 从安全密码派生KEK
@@ -279,11 +277,9 @@ func (s *EncryptionService) DecryptSecret(req *DecryptSecretRequest) (*models.De
 	}
 
 	// 4. 验证安全密码（快速失败，避免昂贵的Argon2计算）
-	if userKey.SecurityPINHash != "" {
-		if !crypto.VerifyPassword(req.SecurityPIN, userKey.SecurityPINHash) {
-			logger.Warn("安全密码验证失败", logger.String("user_uuid", req.UserUUID))
-			return nil, errors.New(errors.CodeInvalidCredentials, "安全密码错误")
-		}
+	if !crypto.VerifyPassword(req.SecurityPIN, userKey.SecurityPINHash) {
+		logger.Warn("安全密码验证失败", logger.String("user_uuid", req.UserUUID))
+		return nil, errors.New(errors.CodeInvalidCredentials, "安全密码错误")
 	}
 
 	// 5. 从安全密码派生KEK

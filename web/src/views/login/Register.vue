@@ -12,15 +12,15 @@
           <div class="logo">V</div>
         </div>
         <h2 class="login-title">VaultHub</h2>
-        <p class="login-subtitle">安全的密钥管理系统</p>
+        <p class="login-subtitle">创建您的账号</p>
       </div>
 
-      <!-- 登录表单 -->
-      <el-form :model="loginForm" :rules="rules" ref="loginFormRef" class="login-form">
+      <!-- 注册表单 -->
+      <el-form :model="registerForm" :rules="rules" ref="registerFormRef" class="login-form">
         <el-form-item prop="username">
           <el-input
-            v-model="loginForm.username"
-            placeholder="请输入用户名"
+            v-model="registerForm.username"
+            placeholder="请输入用户名（3-32字符）"
             :prefix-icon="User"
             size="large"
           />
@@ -28,38 +28,60 @@
 
         <el-form-item prop="password">
           <el-input
-            v-model="loginForm.password"
+            v-model="registerForm.password"
             type="password"
-            placeholder="请输入密码"
+            placeholder="请输入密码（至少8位）"
             :prefix-icon="Lock"
             size="large"
             show-password
-            @keyup.enter="handleLogin"
           />
         </el-form-item>
 
-        <!-- 辅助选项 -->
-        <div class="login-options">
-          <el-checkbox v-model="rememberMe">记住密码</el-checkbox>
-          <router-link to="/forgot-password" class="forgot-password">忘记密码？</router-link>
-        </div>
+        <el-form-item prop="confirmPassword">
+          <el-input
+            v-model="registerForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入密码"
+            :prefix-icon="Lock"
+            size="large"
+            show-password
+          />
+        </el-form-item>
+
+        <el-form-item prop="email">
+          <el-input
+            v-model="registerForm.email"
+            placeholder="请输入邮箱（可选）"
+            :prefix-icon="Message"
+            size="large"
+          />
+        </el-form-item>
+
+        <el-form-item prop="nickname">
+          <el-input
+            v-model="registerForm.nickname"
+            placeholder="请输入昵称（可选，默认使用用户名）"
+            :prefix-icon="UserFilled"
+            size="large"
+          />
+        </el-form-item>
 
         <el-form-item class="login-button-item">
           <el-button
             type="primary"
-            @click="handleLogin"
+            @click="handleRegister"
             :loading="loading"
             size="large"
             class="login-button"
           >
-            登录
+            注册
           </el-button>
         </el-form-item>
 
-        <!-- 注册入口 -->
-        <div class="register-entry">
-          <span>还没有账号？</span>
-          <router-link to="/register" class="register-link">立即注册</router-link>
+        <!-- 返回登录 -->
+        <div class="back-to-login">
+          <span>已有账号？</span>
+          <router-link to="/login" class="login-link">立即登录</router-link>
         </div>
       </el-form>
     </el-card>
@@ -69,65 +91,106 @@
 <script>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useStore } from 'vuex'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
-import { login } from '@/api/auth'
+import { User, Lock, Message, UserFilled } from '@element-plus/icons-vue'
+import { register } from '@/api/auth'
 
 export default {
-  name: 'Login',
+  name: 'Register',
   setup() {
     const router = useRouter()
-    const store = useStore()
-    const loginFormRef = ref(null)
+    const registerFormRef = ref(null)
     const loading = ref(false)
-    const rememberMe = ref(false)
 
-    const loginForm = reactive({
+    const registerForm = reactive({
       username: '',
-      password: ''
+      password: '',
+      confirmPassword: '',
+      email: '',
+      nickname: ''
     })
 
-    const rules = {
-      username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-      password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+    // 自定义验证器：确认密码
+    const validateConfirmPassword = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('请再次输入密码'))
+      } else if (value !== registerForm.password) {
+        callback(new Error('两次输入的密码不一致'))
+      } else {
+        callback()
+      }
     }
 
-    const handleLogin = async () => {
+    const rules = {
+      username: [
+        { required: true, message: '请输入用户名', trigger: 'blur' },
+        { min: 3, max: 32, message: '用户名长度为3-32个字符', trigger: 'blur' }
+      ],
+      password: [
+        { required: true, message: '请输入密码', trigger: 'blur' },
+        { min: 8, message: '密码长度至少为8位', trigger: 'blur' }
+      ],
+      confirmPassword: [
+        { required: true, validator: validateConfirmPassword, trigger: 'blur' }
+      ],
+      email: [
+        { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+      ],
+      nickname: [
+        { min: 1, max: 50, message: '昵称长度为1-50个字符', trigger: 'blur' }
+      ]
+    }
+
+    const handleRegister = async () => {
       try {
-        const valid = await loginFormRef.value.validate()
+        const valid = await registerFormRef.value.validate()
         if (!valid) return
 
         loading.value = true
-        const data = await login(loginForm)
 
-        // 存储token
-        store.dispatch('login', data.token)
+        // 构造请求数据，移除 confirmPassword
+        const requestData = {
+          username: registerForm.username,
+          password: registerForm.password
+        }
 
-        ElMessage.success('登录成功')
-        router.push('/')
+        // 只在有值时添加可选字段
+        if (registerForm.email) {
+          requestData.email = registerForm.email
+        }
+        if (registerForm.nickname) {
+          requestData.nickname = registerForm.nickname
+        }
+
+        await register(requestData)
+
+        ElMessage.success('注册成功，请登录')
+        router.push('/login')
       } catch (error) {
-        console.error('登录失败:', error)
+        console.error('注册失败:', error)
       } finally {
         loading.value = false
       }
     }
 
     return {
-      loginForm,
+      registerForm,
       rules,
-      loginFormRef,
+      registerFormRef,
       loading,
-      rememberMe,
-      handleLogin,
+      handleRegister,
       User,
-      Lock
+      Lock,
+      Message,
+      UserFilled
     }
   }
 }
 </script>
 
 <style scoped>
+/* 复用 Login.vue 的样式系统 */
+
 /* 登录容器 - 全屏居中，渐变背景 */
 .login-container {
   position: relative;
@@ -250,25 +313,6 @@ export default {
   margin-top: var(--spacing-xl);
 }
 
-/* 辅助选项 - 记住密码和忘记密码 */
-.login-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-lg);
-}
-
-.forgot-password {
-  font-size: var(--font-size-sm);
-  color: var(--color-primary);
-  text-decoration: none;
-  transition: color var(--duration-fast) var(--easing);
-}
-
-.forgot-password:hover {
-  color: var(--color-primary-dark);
-}
-
 /* 登录按钮 */
 .login-button-item {
   margin-bottom: var(--spacing-md);
@@ -292,14 +336,14 @@ export default {
   transform: translateY(0);
 }
 
-/* 注册入口 */
-.register-entry {
+/* 返回登录 */
+.back-to-login {
   text-align: center;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
 
-.register-link {
+.login-link {
   margin-left: var(--spacing-xs);
   color: var(--color-primary);
   text-decoration: none;
@@ -307,7 +351,7 @@ export default {
   transition: color var(--duration-fast) var(--easing);
 }
 
-.register-link:hover {
+.login-link:hover {
   color: var(--color-primary-dark);
 }
 

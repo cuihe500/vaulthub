@@ -189,3 +189,60 @@ func (s *Sender) SendVerificationCode(to, code, purpose string) error {
 
 	return s.SendMail([]string{to}, subject, body)
 }
+
+// SendPasswordResetLink 发送密码重置链接邮件
+// to: 收件人邮箱
+// resetURL: 重置密码链接
+// expiryMinutes: 链接有效期（分钟）
+func (s *Sender) SendPasswordResetLink(to, resetURL string, expiryMinutes int) error {
+	subject := "VaultHub - 密码重置"
+	body := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #4CAF50; color: white; padding: 10px; text-align: center; }
+        .content { background-color: #f9f9f9; padding: 20px; border-radius: 5px; margin-top: 20px; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+        .button:hover { background-color: #45a049; }
+        .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 15px 0; }
+        .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+        .link { word-break: break-all; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>VaultHub 密钥管理系统</h2>
+        </div>
+        <div class="content">
+            <p>您好，</p>
+            <p>我们收到了您的密码重置请求。请点击下面的按钮重置您的密码：</p>
+            <div style="text-align: center;">
+                <a href="%s" class="button">重置密码</a>
+            </div>
+            <p>或者复制以下链接到浏览器打开：</p>
+            <p class="link">%s</p>
+            <div class="warning">
+                <p style="margin: 0;"><strong>注意：</strong></p>
+                <ul style="margin: 5px 0;">
+                    <li>此链接有效期为 <strong>%d分钟</strong></li>
+                    <li>链接仅可使用一次</li>
+                    <li>如果这不是您本人的操作，请忽略此邮件并确保账户安全</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">
+            <p>此邮件由系统自动发送，请勿回复。</p>
+            <p>&copy; 2024 VaultHub. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+`, resetURL, resetURL, expiryMinutes)
+
+	return s.SendMail([]string{to}, subject, body)
+}

@@ -16,6 +16,8 @@ import (
 func Setup(r *gin.Engine, mgr *app.Manager) {
 	// 全局中间件
 	r.Use(middleware.RequestID())
+	// 审计中间件（自动记录所有已认证请求）
+	r.Use(middleware.AuditMiddleware(mgr.AuditService))
 
 	// 创建 services
 	// 注意：EmailService 需要先创建，因为 AuthService 依赖它
@@ -27,16 +29,19 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	recoveryService := service.NewRecoveryService(mgr.DB)
 	keyRotationService := service.NewKeyRotationService(mgr.DB, encryptionService, mgr.ConfigManager)
 	systemConfigService := service.NewSystemConfigService(mgr.DB, mgr.ConfigManager)
+	statisticsService := service.NewStatisticsService(mgr.DB)
 
 	// 创建 handlers
 	healthHandler := handlers.NewHealthHandler(mgr)
-	authHandler := handlers.NewAuthHandler(authService, recoveryService)
+	authHandler := handlers.NewAuthHandler(authService, recoveryService, mgr.DB)
 	userHandler := handlers.NewUserHandler(userService)
 	profileHandler := handlers.NewUserProfileHandler(profileService)
 	secretHandler := handlers.NewSecretHandler(encryptionService)
 	keyManagementHandler := handlers.NewKeyManagementHandler(encryptionService, recoveryService, keyRotationService)
 	systemConfigHandler := handlers.NewSystemConfigHandler(systemConfigService)
 	emailHandler := handlers.NewEmailHandler(emailService)
+	auditHandler := handlers.NewAuditHandler(mgr.AuditService)
+	statisticsHandler := handlers.NewStatisticsHandler(statisticsService)
 
 	// 健康检查接口（不需要认证）
 	r.GET("/health", healthHandler.HealthCheck)
@@ -71,6 +76,18 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			auth.POST("/login",
 				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
 				authHandler.Login)
+			auth.POST("/login-with-email",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				authHandler.LoginWithEmail)
+
+			// 密码找回路由（不需要认证，需要限流）
+			auth.POST("/request-password-reset",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				authHandler.RequestPasswordReset)
+			auth.GET("/verify-reset-token", authHandler.VerifyPasswordResetToken)
+			auth.POST("/reset-password-with-token",
+				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
+				authHandler.ResetPasswordWithToken)
 
 			// 获取当前用户信息需要认证
 			auth.GET("/me", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.GetMe)
@@ -78,6 +95,8 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			auth.POST("/logout", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.Logout)
 			// 使用恢复密钥重置密码需要认证
 			auth.POST("/reset-password", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.ResetPassword)
+			// 获取安全密码设置状态需要认证
+			auth.GET("/security-pin-status", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), authHandler.GetSecurityPINStatus)
 		}
 
 		// 用户管理路由（需要认证和管理员权限）
@@ -135,8 +154,10 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 		// 秘密管理路由（需要认证）
 		// 用户只能操作自己的秘密
+		// 注意：秘密管理需要用户先设置安全密码（Security PIN）
 		secrets := v1.Group("/secrets")
 		secrets.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		secrets.Use(middleware.SecurityPINCheckMiddleware(mgr.DB))
 		{
 			// 获取秘密列表
 			secrets.GET("", secretHandler.ListSecrets)
@@ -184,6 +205,27 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 			// 重新加载配置 - 需要config:write权限
 			configs.POST("/reload", middleware.RequirePermission(mgr.Enforcer, "config", "write"), systemConfigHandler.ReloadConfigs)
+		}
+
+		// 审计日志路由（需要认证）
+		// 普通用户只能查询自己的日志，管理员可以查询所有用户的日志
+		audit := v1.Group("/audit")
+		audit.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 查询审计日志 - 所有用户都可以访问（权限在handler内部控制）
+			audit.GET("/logs", auditHandler.QueryAuditLogs)
+		}
+
+		// 统计数据路由（需要认证）
+		// 普通用户只能查询自己的统计，管理员可以查询所有用户的统计
+		statistics := v1.Group("/statistics")
+		statistics.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 获取用户统计数据（历史统计）- 所有用户都可以访问（权限在handler内部控制）
+			statistics.GET("/user", statisticsHandler.GetUserStatistics)
+
+			// 获取当前统计（实时统计）- 所有用户都可以访问（权限在handler内部控制）
+			statistics.GET("/current", statisticsHandler.GetCurrentStatistics)
 		}
 	}
 }
