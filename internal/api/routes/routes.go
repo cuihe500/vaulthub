@@ -16,6 +16,8 @@ import (
 func Setup(r *gin.Engine, mgr *app.Manager) {
 	// 全局中间件
 	r.Use(middleware.RequestID())
+	// 审计中间件（自动记录所有已认证请求）
+	r.Use(middleware.AuditMiddleware(mgr.AuditService))
 
 	// 创建 services
 	// 注意：EmailService 需要先创建，因为 AuthService 依赖它
@@ -27,6 +29,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	recoveryService := service.NewRecoveryService(mgr.DB)
 	keyRotationService := service.NewKeyRotationService(mgr.DB, encryptionService, mgr.ConfigManager)
 	systemConfigService := service.NewSystemConfigService(mgr.DB, mgr.ConfigManager)
+	statisticsService := service.NewStatisticsService(mgr.DB)
 
 	// 创建 handlers
 	healthHandler := handlers.NewHealthHandler(mgr)
@@ -37,6 +40,8 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	keyManagementHandler := handlers.NewKeyManagementHandler(encryptionService, recoveryService, keyRotationService)
 	systemConfigHandler := handlers.NewSystemConfigHandler(systemConfigService)
 	emailHandler := handlers.NewEmailHandler(emailService)
+	auditHandler := handlers.NewAuditHandler(mgr.AuditService)
+	statisticsHandler := handlers.NewStatisticsHandler(statisticsService)
 
 	// 健康检查接口（不需要认证）
 	r.GET("/health", healthHandler.HealthCheck)
@@ -184,6 +189,27 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 
 			// 重新加载配置 - 需要config:write权限
 			configs.POST("/reload", middleware.RequirePermission(mgr.Enforcer, "config", "write"), systemConfigHandler.ReloadConfigs)
+		}
+
+		// 审计日志路由（需要认证）
+		// 普通用户只能查询自己的日志，管理员可以查询所有用户的日志
+		audit := v1.Group("/audit")
+		audit.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 查询审计日志 - 所有用户都可以访问（权限在handler内部控制）
+			audit.GET("/logs", auditHandler.QueryAuditLogs)
+		}
+
+		// 统计数据路由（需要认证）
+		// 普通用户只能查询自己的统计，管理员可以查询所有用户的统计
+		statistics := v1.Group("/statistics")
+		statistics.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
+		{
+			// 获取用户统计数据（历史统计）- 所有用户都可以访问（权限在handler内部控制）
+			statistics.GET("/user", statisticsHandler.GetUserStatistics)
+
+			// 获取当前统计（实时统计）- 所有用户都可以访问（权限在handler内部控制）
+			statistics.GET("/current", statisticsHandler.GetCurrentStatistics)
 		}
 	}
 }

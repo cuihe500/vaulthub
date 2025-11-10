@@ -274,6 +274,107 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/audit/logs": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "查询审计日志，支持多条件过滤和分页。普通用户只能查询自己的日志，管理员可以查询所有用户的日志",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "审计"
+                ],
+                "summary": "查询审计日志",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户UUID（管理员可指定，普通用户自动使用当前用户）",
+                        "name": "user_uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "操作类型：CREATE/UPDATE/DELETE/ACCESS/LOGIN/LOGOUT",
+                        "name": "action_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "资源类型：vault/secret/user/config",
+                        "name": "resource_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "操作状态：success/failed",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始时间（RFC3339格式，如2024-01-01T00:00:00Z）",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间（RFC3339格式）",
+                        "name": "end_time",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers.QueryAuditLogsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "description": "用户登录获取JWT token",
@@ -1671,6 +1772,129 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/statistics/current": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取用户的实时统计数据（密钥数量、今日操作数等）。普通用户只能查询自己的统计，管理员可以查询指定用户的统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "统计"
+                ],
+                "summary": "获取用户当前统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户UUID（管理员可指定，普通用户自动使用当前用户）",
+                        "name": "user_uuid",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.CurrentStatistics"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/statistics/user": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取用户的历史统计数据，支持时间范围和统计类型过滤。普通用户只能查询自己的统计，管理员可以查询所有用户的统计",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "统计"
+                ],
+                "summary": "获取用户统计数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户UUID（管理员可指定，普通用户自动使用当前用户）",
+                        "name": "user_uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "统计类型：daily/weekly/monthly",
+                        "name": "stat_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期（格式：2024-01-01）",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期（格式：2024-01-31）",
+                        "name": "end_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.UserStatistics"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "未授权",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器错误",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "security": [
@@ -2178,6 +2402,91 @@ const docTemplate = `{
                 "SecretTypeOther"
             ]
         },
+        "github_com_cuihe500_vaulthub_internal_database_models.StatType": {
+            "type": "string",
+            "enum": [
+                "daily",
+                "weekly",
+                "monthly"
+            ],
+            "x-enum-varnames": [
+                "StatDaily",
+                "StatWeekly",
+                "StatMonthly"
+            ]
+        },
+        "github_com_cuihe500_vaulthub_internal_database_models.UserStatistics": {
+            "type": "object",
+            "properties": {
+                "access_count": {
+                    "type": "integer"
+                },
+                "api_key_count": {
+                    "type": "integer"
+                },
+                "certificate_count": {
+                    "type": "integer"
+                },
+                "create_count": {
+                    "description": "操作次数统计",
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "delete_count": {
+                    "type": "integer"
+                },
+                "failed_login_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "login_count": {
+                    "description": "登录统计",
+                    "type": "integer"
+                },
+                "other_count": {
+                    "type": "integer"
+                },
+                "password_count": {
+                    "type": "integer"
+                },
+                "private_key_count": {
+                    "type": "integer"
+                },
+                "ssh_key_count": {
+                    "type": "integer"
+                },
+                "stat_date": {
+                    "type": "string"
+                },
+                "stat_type": {
+                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.StatType"
+                },
+                "total_operations": {
+                    "type": "integer"
+                },
+                "total_secrets": {
+                    "description": "密钥数量统计",
+                    "type": "integer"
+                },
+                "update_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_uuid": {
+                    "description": "统计维度",
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cuihe500_vaulthub_internal_database_models.UserStatus": {
             "type": "integer",
             "enum": [
@@ -2200,6 +2509,54 @@ const docTemplate = `{
                 "UserStatusDisabled",
                 "UserStatusLocked"
             ]
+        },
+        "github_com_cuihe500_vaulthub_internal_service.AuditLogDTO": {
+            "type": "object",
+            "properties": {
+                "action_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "details": {},
+                "error_code": {
+                    "type": "integer"
+                },
+                "error_message": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "resource_name": {
+                    "type": "string"
+                },
+                "resource_type": {
+                    "type": "string"
+                },
+                "resource_uuid": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "user_agent": {
+                    "type": "string"
+                },
+                "user_uuid": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
         },
         "github_com_cuihe500_vaulthub_internal_service.BatchUpdateConfigRequest": {
             "type": "object",
@@ -2285,6 +2642,35 @@ const docTemplate = `{
                 },
                 "user_encryption_key": {
                     "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey"
+                }
+            }
+        },
+        "github_com_cuihe500_vaulthub_internal_service.CurrentStatistics": {
+            "type": "object",
+            "properties": {
+                "api_key_count": {
+                    "type": "integer"
+                },
+                "certificate_count": {
+                    "type": "integer"
+                },
+                "other_count": {
+                    "type": "integer"
+                },
+                "password_count": {
+                    "type": "integer"
+                },
+                "private_key_count": {
+                    "type": "integer"
+                },
+                "ssh_key_count": {
+                    "type": "integer"
+                },
+                "today_operations": {
+                    "type": "integer"
+                },
+                "total_secrets": {
+                    "type": "integer"
                 }
             }
         },
@@ -2779,6 +3165,26 @@ const docTemplate = `{
                     "description": "时间戳（毫秒）",
                     "type": "integer",
                     "example": 1762269490888
+                }
+            }
+        },
+        "internal_api_handlers.QueryAuditLogsResponse": {
+            "type": "object",
+            "properties": {
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.AuditLogDTO"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },

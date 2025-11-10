@@ -11,16 +11,18 @@ import (
 type Scheduler struct {
 	cron               *cron.Cron
 	keyRotationService *service.KeyRotationService
+	statisticsService  *service.StatisticsService
 }
 
 // NewScheduler 创建定时任务调度器实例
-func NewScheduler(keyRotationService *service.KeyRotationService) *Scheduler {
+func NewScheduler(keyRotationService *service.KeyRotationService, statisticsService *service.StatisticsService) *Scheduler {
 	// 使用带秒级精度的cron
 	c := cron.New(cron.WithSeconds())
 
 	return &Scheduler{
 		cron:               c,
 		keyRotationService: keyRotationService,
+		statisticsService:  statisticsService,
 	}
 }
 
@@ -42,6 +44,22 @@ func (s *Scheduler) Start() error {
 
 	if err != nil {
 		logger.Error("添加密钥轮换定时任务失败", logger.Err(err))
+		return err
+	}
+
+	// 每天凌晨3点聚合统计数据
+	// "0 0 3 * * *" = 每天3点0分0秒
+	_, err = s.cron.AddFunc("0 0 3 * * *", func() {
+		logger.Info("开始执行定时任务：聚合统计数据")
+		if err := s.statisticsService.AggregateDaily(); err != nil {
+			logger.Error("聚合统计数据失败", logger.Err(err))
+		} else {
+			logger.Info("完成定时任务：聚合统计数据")
+		}
+	})
+
+	if err != nil {
+		logger.Error("添加统计聚合定时任务失败", logger.Err(err))
 		return err
 	}
 

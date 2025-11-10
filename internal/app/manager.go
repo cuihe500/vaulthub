@@ -8,6 +8,7 @@ import (
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/cuihe500/vaulthub/internal/config"
 	"github.com/cuihe500/vaulthub/internal/database"
+	"github.com/cuihe500/vaulthub/internal/service"
 	"github.com/cuihe500/vaulthub/pkg/jwt"
 	"github.com/cuihe500/vaulthub/pkg/logger"
 	redisClient "github.com/cuihe500/vaulthub/pkg/redis"
@@ -22,6 +23,7 @@ type Manager struct {
 	JWT           *jwt.Manager           // JWT管理器
 	Redis         *redisClient.Client    // Redis客户端
 	ConfigManager *config.ConfigManager  // 系统配置管理器
+	AuditService  *service.AuditService  // 审计服务
 	// Cache *cache.Client // 未来添加其他连接
 }
 
@@ -53,6 +55,11 @@ func (m *Manager) Initialize(cfg *config.Config) error {
 		return fmt.Errorf("初始化配置管理器失败: %w", err)
 	}
 
+	// 初始化审计服务
+	if err := m.initAuditService(); err != nil {
+		return fmt.Errorf("初始化审计服务失败: %w", err)
+	}
+
 	// 未来在这里添加其他连接的初始化
 
 	return nil
@@ -61,6 +68,11 @@ func (m *Manager) Initialize(cfg *config.Config) error {
 // Close 关闭所有连接
 // 在应用关闭时调用，确保所有资源被正确释放
 func (m *Manager) Close() error {
+	// 关闭审计服务（必须在关闭数据库之前）
+	if m.AuditService != nil {
+		m.AuditService.Stop()
+	}
+
 	// 关闭数据库连接
 	if m.DB != nil {
 		sqlDB, err := m.DB.DB()
@@ -148,6 +160,17 @@ func (m *Manager) initConfigManager() error {
 		return fmt.Errorf("创建配置管理器失败: %w", err)
 	}
 	m.ConfigManager = configManager
+	return nil
+}
+
+// initAuditService 初始化审计服务
+func (m *Manager) initAuditService() error {
+	// 审计服务配置：缓冲区1000，worker数量5
+	// 缓冲区满时新审计日志会被丢弃（不阻塞业务）
+	auditService := service.NewAuditService(m.DB, 1000, 5)
+	auditService.Start()
+	m.AuditService = auditService
+	logger.Info("审计服务初始化成功")
 	return nil
 }
 
