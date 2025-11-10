@@ -1,43 +1,29 @@
 import request from './request'
 
 /**
- * 获取密钥库列表
+ * 获取密钥列表
  */
-export const getVaultList = (params) => {
-  return request.get('/v1/vaults', { params })
+export const getSecretList = (params) => {
+  return request.get('/v1/secrets', { params })
 }
 
 /**
- * 获取密钥库详情
+ * 创建密钥
  */
-export const getVaultDetail = (uuid) => {
-  return request.get(`/v1/vaults/${uuid}`)
+export const createSecret = (data) => {
+  return request.post('/v1/secrets', data)
 }
 
 /**
- * 创建密钥库
+ * 删除密钥
  */
-export const createVault = (data) => {
-  return request.post('/v1/vaults', data)
+export const deleteSecret = (uuid) => {
+  return request.delete(`/v1/secrets/${uuid}`)
 }
 
 /**
- * 更新密钥库
+ * 解密密钥
  */
-export const updateVault = (uuid, data) => {
-  return request.put(`/v1/vaults/${uuid}`, data)
-}
-
-/**
- * 删除密钥库
- */
-export const deleteVault = (uuid) => {
-  return request.delete(`/v1/vaults/${uuid}`)
-}
-
-/**
- * 轮换密钥
- */
-export const rotateVault = (uuid) => {
-  return request.post(`/v1/vaults/${uuid}/rotate`)
+export const decryptSecret = (uuid, data) => {
+  return request.post(`/v1/secrets/${uuid}/decrypt`, data)
 }

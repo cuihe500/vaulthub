@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken } from '@/utils/storage'
-import { getSecurityPINStatus } from '@/api/keys'
+import MainLayout from '@/layouts/MainLayout.vue'
 
 const routes = [
   {
@@ -10,50 +10,24 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/register',
-    name: 'Register',
-    component: () => import('@/views/login/Register.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: '/forgot-password',
-    name: 'ForgotPassword',
-    component: () => import('@/views/login/ForgotPassword.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: '/reset-password',
-    name: 'ResetPassword',
-    component: () => import('@/views/login/ResetPassword.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: '/setup-security-pin',
-    name: 'SetupSecurityPin',
-    component: () => import('@/views/security/SetupSecurityPin.vue'),
-    meta: { requiresAuth: true, skipSecurityPinCheck: true }
-  },
-  {
-    path: '/reset-security-pin',
-    name: 'ResetSecurityPin',
-    component: () => import('@/views/security/ResetSecurityPin.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
     path: '/',
-    redirect: '/vault'
-  },
-  {
-    path: '/vault',
-    name: 'Vault',
-    component: () => import('@/views/vault/VaultList.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/user',
-    name: 'User',
-    component: () => import('@/views/user/UserManagement.vue'),
-    meta: { requiresAuth: true }
+    component: MainLayout,
+    redirect: '/vault',
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'vault',
+        name: 'Vault',
+        component: () => import('@/views/vault/VaultList.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'user',
+        name: 'User',
+        component: () => import('@/views/user/UserManagement.vue'),
+        meta: { requiresAuth: true }
+      }
+    ]
   }
 ]
 

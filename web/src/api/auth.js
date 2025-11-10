@@ -25,7 +25,7 @@ export const logout = () => {
  * 获取当前用户信息
  */
 export const getCurrentUser = () => {
-  return request.get('/v1/auth/current')
+  return request.get('/v1/auth/me')
 }
 
 /**
