@@ -29,6 +29,11 @@ func Uint(key string, val uint) Field {
 	return zap.Uint(key, val)
 }
 
+// Uint64 构造uint64字段
+func Uint64(key string, val uint64) Field {
+	return zap.Uint64(key, val)
+}
+
 // Float64 构造浮点数字段
 func Float64(key string, val float64) Field {
 	return zap.Float64(key, val)

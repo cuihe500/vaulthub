@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"time"
 
@@ -39,11 +40,18 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 }
 
 // AuditMiddleware 审计中间件
-// 自动记录所有经过认证的请求，业务handler可通过context设置额外的审计信息
+// 自动记录所有请求（包括未认证、认证失败的请求），业务handler可通过context设置额外的审计信息
 func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 只审计已认证的请求
+		// 提取用户信息（如果有）
 		userUUID, exists := GetCurrentUserUUID(c)
+		var usernameStr string
+		if exists {
+			username, _ := c.Get(UserContextKey)
+			if user, ok := username.(*models.User); ok {
+				usernameStr = user.Username
+			}
+		}
 
 		// 调试日志：记录中间件是否执行
 		logger.Debug("审计中间件执行",
@@ -51,18 +59,6 @@ func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
 			logger.String("method", c.Request.Method),
 			logger.Bool("authenticated", exists),
 			logger.String("user_uuid", userUUID))
-
-		if !exists {
-			logger.Debug("跳过审计：用户未认证", logger.String("path", c.FullPath()))
-			c.Next()
-			return
-		}
-
-		username, _ := c.Get(UserContextKey)
-		var usernameStr string
-		if user, ok := username.(*models.User); ok {
-			usernameStr = user.Username
-		}
 
 		// 获取请求ID（用于追踪）
 		requestID := c.GetString(response.RequestIDKey)
@@ -98,7 +94,31 @@ func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
 		// 提取其他审计信息
 		resourceUUID := stringPtrOrNil(c.GetString(AuditResourceUUIDKey))
 		resourceName := stringPtrOrNil(c.GetString(AuditResourceNameKey))
-		details := c.GetString(AuditDetailsKey)
+
+		// 处理Details - 支持任意类型，正确序列化
+		var details string
+		if val, exists := c.Get(AuditDetailsKey); exists && val != nil {
+			switch v := val.(type) {
+			case string:
+				details = v
+			default:
+				// 非string类型，序列化为JSON
+				if jsonBytes, err := json.Marshal(v); err == nil {
+					// 限制大小避免占用过多空间（65535字节 = TEXT字段上限）
+					if len(jsonBytes) > 65535 {
+						details = string(jsonBytes[:65535]) + "...(truncated)"
+						logger.Warn("审计Details过大，已截断",
+							logger.Int("original_size", len(jsonBytes)))
+					} else {
+						details = string(jsonBytes)
+					}
+				} else {
+					logger.Warn("审计Details序列化失败",
+						logger.Err(err),
+						logger.String("type", string(actionType)))
+				}
+			}
+		}
 
 		// 判断操作状态
 		status := models.AuditSuccess
@@ -121,9 +141,10 @@ func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
 		}
 
 		// 构造审计日志
+		// 注意：未认证的请求UserUUID和Username为空，这是正常的
 		auditLog := &models.AuditLog{
-			UserUUID:     userUUID,
-			Username:     usernameStr,
+			UserUUID:     userUUID,     // 未认证时为空字符串
+			Username:     usernameStr,  // 未认证时为空字符串
 			ActionType:   models.ActionType(actionType),
 			ResourceType: models.ResourceType(resourceType),
 			ResourceUUID: resourceUUID,

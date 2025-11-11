@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cuihe500/vaulthub/internal/database/models"
@@ -13,12 +14,15 @@ import (
 
 // AuditService 审计服务
 type AuditService struct {
-	db         *gorm.DB
-	auditChan  chan *models.AuditLog
-	workerSize int
-	wg         sync.WaitGroup
-	ctx        context.Context
-	cancel     context.CancelFunc
+	db           *gorm.DB
+	auditChan    chan *models.AuditLog
+	workerSize   int
+	wg           sync.WaitGroup
+	ctx          context.Context
+	cancel       context.CancelFunc
+	closed       atomic.Bool  // 标记服务是否已关闭
+	droppedCount atomic.Uint64 // 记录丢弃的日志数量（用于metrics）
+	loggedCount  atomic.Uint64 // 记录成功入队的日志数量（用于metrics）
 }
 
 // NewAuditService 创建审计服务
@@ -49,18 +53,29 @@ func (s *AuditService) Start() {
 
 // Stop 停止审计服务（优雅关闭）
 func (s *AuditService) Stop() {
+	// 使用CAS确保只关闭一次
+	if !s.closed.CompareAndSwap(false, true) {
+		logger.Warn("审计服务已经关闭，跳过重复关闭")
+		return
+	}
+
 	logger.Info("审计服务关闭中")
 
-	// 关闭channel，不再接收新的审计日志
-	close(s.auditChan)
-
-	// 取消context，通知所有worker退出
+	// 取消context，通知所有worker准备退出
 	s.cancel()
 
-	// 等待所有worker处理完剩余的日志
+	// 等待所有worker处理完channel中剩余的日志
 	s.wg.Wait()
 
-	logger.Info("审计服务已关闭")
+	// 最后才关闭channel（此时已无goroutine使用）
+	close(s.auditChan)
+
+	// 输出统计信息
+	dropped := s.droppedCount.Load()
+	logged := s.loggedCount.Load()
+	logger.Info("审计服务已关闭",
+		logger.Uint64("logged_count", logged),
+		logger.Uint64("dropped_count", dropped))
 }
 
 // worker 处理审计日志的工作goroutine
@@ -131,16 +146,52 @@ func (s *AuditService) writeLog(log *models.AuditLog) error {
 
 // LogAsync 异步记录审计日志（非阻塞）
 func (s *AuditService) LogAsync(log *models.AuditLog) {
+	// 检查服务是否已关闭
+	if s.closed.Load() {
+		logger.Debug("审计服务已关闭，跳过日志记录",
+			logger.String("user_uuid", log.UserUUID),
+			logger.String("action", string(log.ActionType)))
+		return
+	}
+
 	select {
 	case s.auditChan <- log:
 		// 成功发送到channel
+		s.loggedCount.Add(1)
+	case <-s.ctx.Done():
+		// context已取消，服务正在关闭
+		logger.Debug("审计服务正在关闭，跳过日志记录",
+			logger.String("user_uuid", log.UserUUID),
+			logger.String("action", string(log.ActionType)))
 	default:
 		// channel已满，记录警告但不阻塞业务
+		s.droppedCount.Add(1)
 		logger.Warn("审计channel已满，丢弃审计日志",
 			logger.String("user_uuid", log.UserUUID),
 			logger.String("action", string(log.ActionType)),
-			logger.String("resource_type", string(log.ResourceType)))
+			logger.String("resource_type", string(log.ResourceType)),
+			logger.Uint64("dropped_count", s.droppedCount.Load()))
 	}
+}
+
+// GetStats 获取审计服务统计信息（用于监控和metrics）
+func (s *AuditService) GetStats() AuditStats {
+	return AuditStats{
+		LoggedCount:  s.loggedCount.Load(),
+		DroppedCount: s.droppedCount.Load(),
+		QueueDepth:   len(s.auditChan),
+		QueueCap:     cap(s.auditChan),
+		IsClosed:     s.closed.Load(),
+	}
+}
+
+// AuditStats 审计服务统计信息
+type AuditStats struct {
+	LoggedCount  uint64 `json:"logged_count"`  // 成功入队的日志数
+	DroppedCount uint64 `json:"dropped_count"` // 丢弃的日志数
+	QueueDepth   int    `json:"queue_depth"`   // 当前队列深度
+	QueueCap     int    `json:"queue_cap"`     // 队列容量
+	IsClosed     bool   `json:"is_closed"`     // 是否已关闭
 }
 
 // QueryLogs 查询审计日志（支持分页和过滤）

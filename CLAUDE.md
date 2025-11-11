@@ -1,4 +1,4 @@
-# VaultHub 章程
+# VaultHub 开发章程
 
 ## 项目元数据（不可更改）
 
@@ -9,7 +9,11 @@
 
 VaultHub 是一个密钥管理系统，旨在安全地存储、管理和轮换加密密钥、API 密钥及其他敏感凭证。
 
+---
+
 ## 技术栈
+
+### 后端技术栈
 
 - **Go**: 1.25.1
 - **Web 框架**: Gin
@@ -26,6 +30,19 @@ VaultHub 是一个密钥管理系统，旨在安全地存储、管理和轮换�
 - **数据库迁移**: golang-migrate/migrate/v4
 - **数据验证**: go-playground/validator/v10
 - **助记词生成**: tyler-smith/go-bip39
+
+### 前端技术栈
+
+- **框架**: Vue 3.x
+- **UI库**: Element Plus
+- **构建工具**: Vite
+- **HTTP客户端**: Axios
+- **路由**: Vue Router
+- **状态管理**: Vuex
+- **代码规范**: ESLint + Prettier
+- **包管理器**: pnpm
+
+---
 
 ## 项目结构
 
@@ -60,30 +77,56 @@ vaulthub/
 │   ├── response/          # 统一响应格式
 │   ├── validator/         # 数据验证工具
 │   └── version/           # 版本信息
+├── web/                   # 前端资源
+│   ├── public/            # 静态资源
+│   ├── src/
+│   │   ├── api/           # API调用层（唯一与后端交互的地方）
+│   │   ├── assets/        # 静态资源（图片、字体等）
+│   │   ├── components/    # 可复用组件
+│   │   │   ├── common/    # 通用基础组件
+│   │   │   └── business/  # 业务组件
+│   │   ├── layouts/       # 布局组件
+│   │   ├── router/        # 路由配置
+│   │   ├── store/         # 状态管理
+│   │   ├── utils/         # 工具函数
+│   │   ├── views/         # 页面组件
+│   │   ├── App.vue
+│   │   └── main.js
+│   └── vite.config.js
 ├── configs/               # 配置文件
 │   ├── config.toml        # 主配置文件
-│   ├── config.toml.example  # 默认配置模板
+│   ├── config.toml.example
 │   ├── rbac_model.conf    # Casbin权限模型
-│   └── .env.example       # 环境变量示例
+│   └── .env.example
 ├── build/                 # 构建输出目录
 ├── docs/                  # 文档
 │   └── swagger/           # Swagger接口文档
 ├── scripts/               # 构建和部署脚本
-├── web/                   # 前端资源
 ├── api-test.http          # HTTP 接口调试脚本
-├── go.mod                 # Go 模块定义
-└── go.sum                 # 依赖校验
-
+├── go.mod
+└── go.sum
 ```
 
-## 设计原则
+---
+
+## 核心设计原则
 
 ### 1. 简洁至上
-- 单一职责：每个包、每个函数只做一件事
+
+**数据结构决定一切**
+- 单一职责：每个包、每个函数、每个组件只做一件事
 - 避免过度抽象：不为"可能的需求"写代码
-- 控制嵌套深度：函数不超过3层缩进
+- 控制嵌套深度：函数/组件不超过3层缩进
+- 扁平化数据结构，消除不必要的嵌套
+
+**消除特殊情况**
+- 好代码没有特殊情况
+- 用数据驱动替代if/else分支
+- 重新设计数据结构来消除条件判断
 
 ### 2. 清晰的分层架构
+
+**后端分层**：
 ```
 HTTP请求 → 路由 → 处理器 → 服务层 → 数据访问层 → 数据库
 ```
@@ -91,31 +134,43 @@ HTTP请求 → 路由 → 处理器 → 服务层 → 数据访问层 → 数据
 - **service**: 核心业务逻辑，与 HTTP 无关
 - **models/database**: 数据持久化，只关心数据
 
-**关键组件说明**：
-- **ConfigManager**: 配置管理器，提供配置热更新、内存缓存、变更监控能力
-- **Scheduler**: 定时任务调度器，基于cron管理密钥轮换等周期性任务
-- **Manager**: 全局资源管理器，统一管理数据库、Redis、Casbin等连接
+**前端分层**：
+```
+用户交互 → 页面组件(Views) → 业务组件(Components) → API层 → 后端
+```
+- **Views**: 页面布局、路由、组合业务组件
+- **Components**: 可复用逻辑、UI交互、数据展示
+- **API层**: 唯一与后端交互的地方，封装所有HTTP请求
+- **Utils**: 纯函数工具，无副作用
 
 ### 3. 安全第一
+
 - 所有敏感数据加密存储
 - 输入验证在处理器层完成
 - 防止常见漏洞：SQL 注入、XSS、CSRF
+- 前端永远不可信，但必须做好第一道防线
+- 遵循"最小适用"原则，反复检查安全隐患
 
 ### 4. 可测试性
+
 - 业务逻辑与框架解耦
 - 依赖注入优于全局变量
 - 单元测试覆盖核心逻辑
 
-## 编码规范
+---
 
-### 命名
+## 后端开发规范
+
+### 编码规范
+
+#### 命名
 - 包名：小写，单个单词
 - 接口：简洁有力（如 `Reader`, `Writer`）
 - 函数/变量：驼峰命名，见名知义
 - 常量：大写+下划线或驼峰
 - 日志、注释：中文优先且作为一等公民支持
 
-### 错误处理
+#### 错误处理
 ```go
 // Bad: 吞掉错误
 _ = doSomething()
@@ -126,12 +181,12 @@ if err := doSomething(); err != nil {
 }
 ```
 
-### 数据库操作
+#### 数据库操作
 - 使用 GORM 的类型安全 API
 - 避免原始 SQL（除非性能关键路径）
 - 事务要有明确的边界
 
-## 开发工作流
+### 开发工作流
 
 1. **新功能开发**
    - 从数据模型开始（`internal/database/models/`）
@@ -145,119 +200,349 @@ if err := doSomething(); err != nil {
    - 是否有安全隐患？
    - 能否用更少的代码实现？
 
-## 数据库约束
+### 数据库约束
 
 注意：下述约束不适用于特殊表格（如casbin_rule），特殊表格需要写清楚注释。
 
-### 一、表名命名规范
+#### 一、表名命名规范
 
 | 项目 | 规范说明 | 示例 |
 |------|----------|------|
-| **命名风格** | 小写字母 + 下划线分隔（snake_case） | `user_account` ✅ <br> `UserAccount` ❌（避免驼峰/帕斯卡） |
-| **语义清晰** | 表名应为名词复数或明确实体，表示存储内容 | `orders`, `product_inventory` ✅ <br> `data1`, `temp_table` ❌ |
-| **前缀/后缀** | 一般不加前缀；可加后缀如 `_log`、`_history` 表示特殊用途 | `payment_log`, `employee_archive` ✅ |
-| **避免保留字** | 不使用 SQL 关键字（如 `order`, `group`, `user`） | `app_user` ✅（替代 `user`） |
+| **命名风格** | 小写字母 + 下划线分隔（snake_case） | `user_account` ✅ <br> `UserAccount` ❌ |
+| **语义清晰** | 表名应为名词复数或明确实体 | `orders`, `product_inventory` ✅ |
+| **前缀/后缀** | 可加后缀如 `_log`、`_history` 表示特殊用途 | `payment_log` ✅ |
+| **避免保留字** | 不使用 SQL 关键字 | `app_user` ✅（替代 `user`） |
 | **长度限制** | ≤ 64 字符，简洁明确 | `customer_address` ✅ |
 
-> ✅ 推荐：`order_item`  
-> ❌ 避免：`OrderItems`, `OI`, `123order`
-
-### 二、字段名命名规范
+#### 二、字段名命名规范
 
 | 项目 | 规范说明 | 示例 |
 |------|----------|------|
 | **命名风格** | 小写 + 下划线（snake_case） | `created_at`, `order_amount` ✅ |
-| **语义明确** | 避免缩写歧义，优先完整英文 | `email_address` ✅ <br> `eml_addr` ❌（除非团队约定） |
-| **主键字段** | 统一命名为 `id`（单列）或 `<table>_id`（复合主键） | `id` BIGINT PRIMARY KEY |
+| **主键字段** | 统一命名为 `id` | `id` BIGINT PRIMARY KEY |
 | **外键字段** | `<引用表名_singular>_id` | `user_id`, `product_id` |
 | **布尔字段** | 以 `is_`, `has_`, `can_`, `enable_` 开头 | `is_active`, `has_children` |
-| **时间字段** | 使用 `_at` 后缀，类型匹配含义 | `created_at` DATETIME, `updated_at` TIMESTAMP |
-| **避免保留字** | 不使用 `desc`, `key`, `type`, `timestamp` 等 | `description` ✅（替代 `desc`） |
-| **统一单位/格式** | 金额用最小货币单位（如分），时间用 UTC | `price_cents` INT, `order_time` TIMESTAMP |
+| **时间字段** | 使用 `_at` 后缀 | `created_at`, `updated_at` |
 
-> ✅ 示例字段：  
-> `id`, `username`, `email`, `is_verified`, `created_at`, `updated_at`
+#### 三、字段类型规范
 
-### 三、字段类型规范（以常见类型为例）
+| 数据类型 | 适用场景 | 推荐类型 |
+|----------|--------|----------|
+| **整数** | ID、计数、状态码 | `BIGINT`、`INT`、`TINYINT` |
+| **字符串** | 短文本（≤255） | `VARCHAR(255)` |
+| **长文本** | 内容、备注、JSON | `TEXT` / `JSON` |
+| **布尔值** | 真/假状态 | `BOOLEAN` 或 `TINYINT(1)` |
+| **金额** | 货币 | `DECIMAL(10,2)` |
+| **日期时间** | 时间戳 | `TIMESTAMP` 或 `DATETIME` |
 
-| 数据类型 | 适用场景 | 推荐类型示例 |
-|----------|--------|-------------|
-| **整数** | ID、计数、状态码 | `BIGINT`（大表主键）、`INT`、`SMALLINT`、`TINYINT`（布尔用 `TINYINT(1)` 或 `BOOLEAN`） |
-| **字符串** | 短文本（≤255） | `VARCHAR(255)` <br> 用户名、手机号、邮箱等 |
-| **长文本** | 内容、备注、JSON | `TEXT` / `JSON`（MySQL 5.7+，PostgreSQL） |
-| **布尔值** | 真/假状态 | `BOOLEAN` 或 `TINYINT(1)`（0=false, 1=true） |
-| **金额/精确小数** | 货币、计算 | `DECIMAL(10,2)`（总10位，小数2位） |
-| **日期时间** | 创建/更新时间 | `TIMESTAMP`（自动更新）或 `DATETIME`（MySQL）<br>`TIMESTAMPTZ`（PostgreSQL 带时区） |
-| **浮点数** | 科学计算、允许误差 | `FLOAT` / `DOUBLE`（慎用于金额） |
-| **二进制数据** | 文件、图片哈希等 | `BLOB` / `BYTEA`（PostgreSQL） |
-| **枚举类型** | 有限固定值 | 优先用 `VARCHAR` + 应用层约束，或 `ENUM`（MySQL）/ 替代方案：`CHECK (status IN ('active','inactive'))` |
+#### 四、通用设计原则
 
-### 四、通用设计原则
+1. **主键**：每张表必须有主键，推荐自增 `BIGINT` 或 UUID
+2. **非空约束**：重要字段加 `NOT NULL`
+3. **默认值**：常用状态、时间字段设默认值
+4. **索引命名**：`idx_<表名>_<字段>`
+5. **注释**：每个表和字段添加 COMMENT 说明业务含义
+6. **字符集**：统一使用 `utf8mb4`
+7. **时区**：数据库存储统一使用 UTC；应用层使用 Asia/Shanghai
+8. **外键约束**：不使用外键约束，使用关联表等方式
+9. **时间戳**：每张表必须包含created_at、updated_at、deleted_at三个字段
 
-1. **主键**：每张表必须有主键，推荐自增 `BIGINT` 或 UUID（需考虑性能）。
-2. **非空约束**：重要字段加 `NOT NULL`，避免 NULL 语义混乱。
-3. **默认值**：常用状态（如 `is_active = TRUE`）、时间字段设默认值。
-4. **索引命名**：`idx_<表名>_<字段>`，如 `idx_user_email`
-5. **注释**：每个表和字段添加 COMMENT 说明业务含义。
-6. **字符集**：统一使用 `utf8mb4`（支持 emoji 和全 Unicode）。
-7. **时区**：数据库存储统一使用 UTC；应用层使用 Asia/Shanghai，在读写时进行转换。
-8. **外键约束**：不使用任何外键约束，而是使用关联表等其他方式。
-9. **时间戳**：每张表必须包含created_at、updated_at、deleted_at三个字段，并且这三个字段优先由数据库层处理(deleted_at除外)，其次由应用层处理。
+---
 
-### 五、命名禁忌
+## 前端开发规范
 
-| ❌ 错误做法 | ✅ 正确做法 |
-|------------|------------|
-| `User`（保留字） | `app_user` |
-| `name`（模糊） | `full_name`, `nickname` |
-| `time`（类型不明确） | `created_at`, `expire_time` |
-| `data`（无意义） | `profile_data`, `extra_info` |
-| 使用空格、中文、特殊符号 | 仅使用 `a-z`, `0-9`, `_` |
+### 编码规范
 
-## 注意（必须遵守）
-1. 所有的构建均放在build/文件夹内。
-2. 所有接口编写完毕后，必须完成详细的swagger接口文档，同时更新api-test.http。
-3. 不要添加任何非文字内容（如emoji、各种非ASCII符号）在日志、注释、文档等。
-4. 在做完任何测试之后，需要删除所有测试文件，保证工作空间干净整洁。
-5. 不要编写任何不必要的文档，除非显式指明。
-6. 所有接口的的HTTP状态码必须是200，所有接口的返回必须使用Base类型封装，错误状态码放置在Base基本类型的Code字段内，0代表成功。
-7. 维护数个枚举（如错误状态码（用于返回值等）、错误类型（用于日志等）），任何错误都必须先补充枚举，所有错误类型都必须从枚举中取值。
-8. 数据库时间字段存储使用UTC时区，应用层处理和展示使用Asia/Shanghai时区。
-9. 所有错误均需要使用统一的errors来处理。
-10. 需要编写简要、无歧义的注释，所有注释均使用中文编写。
-11. 所有日志必须使用内部封装的日志接口，禁止随意打印，禁止使用fmt打印（特殊情况除外，需添加注释说明）。
-12. 对于任何的并发（多线程、goroutine），必须正确显式关闭，并且加入注释说明。
-13. 对于任何可能的竞争关系，必须加入锁机制，同时以注释的形式说明锁机制的意义。
-14. 添加、删除任何实体类或者变更需要关联数据库变更，必须先创建幂等的up/down的sql文件到internal/database/migrations内。
-15. 各类连接（如数据库连接、Redis连接等）必须从Manager中取出，禁止随意创建，若不存在，则必须在应用启动的时候创建连接，特殊情况请加注释说明。
-16. 对于一般新增接口，均需要权限认证。若无需权限认证，则需要添加注释说明。
-17. 权限验证必须基于现有的权限规则，禁止私自增加、修改、删除权限规则，若需要请询问并明确拿到肯定回复才可以，并且要添加注释说明。
-18. 在命令执行的时候，先检索Makefile内的指令，若有可以替代的，优先使用Makefile内的指令而不是原生命令。
-19. 在任何注释中不要提及CLAUDE.md文档的存在，该文档默认是对其他用户不可见的。
-20. 若引入自带日志系统的框架，需要将日志系统替换为项目内封装的日志接口，保证全项目（包括三方框架）日志系统统一。
-21. 要尽可能的注意安全问题，对于可以对用户提权的接口一定要遵循“最小适用”原则，要反复检查是否存在可能的安全问题，并且对该类接口标注好注释。
-22. 一般业务，id(数字类型主键)不对外暴露，也不存储上下文内，只在查询的时候使用。对外暴露UUID或其他唯一标识符。
-23. 若需要连接数据库来完成操作，请先检索toml内的配置，使用配置内的实际地址来完成操作
-24. 各个配置需要区分清楚，将其放置在正确的位置内（配置文件/数据库），并且调用对应的方法完成配置变更。禁止在现有体系之外随意增加、删除、修改各类配置，若现有情况无法满足，则需要询问并且以注释的方式写出详细的原因。
-25. 系统配置分为两类：静态配置（configs/config.toml）用于部署相关设置（如数据库连接、服务器端口），在启动时加载，不可热更新；动态配置（system_config表）用于业务相关参数（如密钥轮换周期、系统参数），通过ConfigManager管理，支持热更新和变更监控。
-26. 任何需要现在时间的地方，都必须调用date命令获取真实的现在时间。
-27. 优先使用MCP能力（如搜索，第三方库检索）等，若MCP无法使用，再回退到原始Web Search模式。
-28. 在引用第三方库之前，必须完全了解该库的情况，包括但不限于实际能力、接口规范等。
-29. 所有文档应该正确放置在docs及其子文件夹下，禁止随意创建文档在其他目录下。
-30. 若该目录必须遵守其他相关的规定，则可以在该目录下新增README.md，该文档将会视为和章程一个优先级的规定。
-31. 若目录下存在README.md，必须先阅读并理解该文档内容，并且将其视为和章程一个优先级。
-32. 对于分页逻辑，若不带有分页参数，则视为全部导出。
-33. ServiceContainer和HandlerContainer必须放在internal/api/routes包内，禁止放在internal/app包内（会导致循环依赖）。
-34. 禁止在routes.go中手动创建服务和handler实例，必须统一通过ServiceContainer和HandlerContainer管理。
-35. 新增服务或handler时，必须先在对应容器中添加字段和构造逻辑，再在路由中使用，禁止跳过容器直接创建。
-36. 容器内部构造顺序必须遵循依赖关系：基础服务优先，依赖其他服务的后创建，确保依赖可用。
-37. 容器只负责组装依赖关系，不允许包含任何业务逻辑、中间件逻辑或路由注册逻辑。
-38. 严格遵循分层架构，禁止出现循环依赖（routes->app->handlers->app），若出现编译错误，优先检查包的依赖关系是否合理。
-39. ChainBuilder中间件链构建器必须放在internal/api/middleware包内，用于提供标准化的中间件组合。
-40. 禁止在routes.go中手动组装中间件链（如手动调用多个middleware函数），必须使用ChainBuilder提供的标准方法。
-41. 新增标准中间件组合时，必须在ChainBuilder中添加新方法，并添加清晰的注释说明使用场景和中间件顺序。
-42. ScopeMiddleware用于统一处理基于用户角色的数据作用域控制，禁止在handler中重复编写角色判断代码。
-43. handler中需要获取作用域限制时，必须使用middleware.GetScopeUserUUID()方法，禁止直接读取用户角色进行判断。
-44. 所有需要基于角色限制数据访问范围的接口（如审计日志、统计数据），必须使用AuthWithAuditAndScope中间件链。
-45. 权限验证逻辑（包括角色判断、作用域控制）必须在中间件层完成，handler只负责业务逻辑，不允许在handler内部判断用户角色。
-46. 中间件链的顺序不能随意调整，必须遵循：RequestID -> Auth -> Audit -> Permission/Scope -> SecurityPIN的顺序，因为后面的中间件依赖前面设置的上下文。
+#### 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 组件文件 | PascalCase | `UserProfile.vue` |
+| 组件名 | PascalCase | `<UserProfile />` |
+| 变量/函数 | camelCase | `getUserInfo()` |
+| 常量 | UPPER_SNAKE_CASE | `API_BASE_URL` |
+| CSS类名 | kebab-case | `user-profile` |
+| 文件夹 | kebab-case | `user-management/` |
+
+#### 组件设计
+
+**单一职责**
+```vue
+<!-- Good: 拆分成独立组件 -->
+<template>
+  <div>
+    <UserForm @submit="handleSubmit" />
+    <UserList :users="users" />
+  </div>
+</template>
+```
+
+**Props定义必须明确类型**
+```javascript
+props: {
+  user: {
+    type: Object,
+    required: true
+  },
+  type: {
+    type: String,
+    default: 'view',
+    validator: v => ['view', 'edit'].includes(v)
+  }
+}
+```
+
+### API调用规范
+
+**统一封装Axios**
+```javascript
+// api/request.js
+import axios from 'axios'
+import { getToken } from '@/utils/storage'
+
+const request = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  timeout: 10000
+})
+
+// 请求拦截: 添加Token
+request.interceptors.request.use(config => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// 响应拦截: 统一处理错误
+request.interceptors.response.use(
+  response => {
+    const { code, data, message } = response.data
+    if (code !== 0) {
+      console.error(message)
+      return Promise.reject(new Error(message))
+    }
+    return data
+  },
+  error => {
+    console.error('请求失败:', error.message)
+    return Promise.reject(error)
+  }
+)
+
+export default request
+```
+
+**API按模块组织**
+```javascript
+// api/vault.js
+import request from './request'
+
+export const getVaultList = (params) => {
+  return request.get('/api/v1/vaults', { params })
+}
+
+export const createVault = (data) => {
+  return request.post('/api/v1/vaults', data)
+}
+```
+
+### 错误处理
+
+```javascript
+// Good: 明确处理
+async loadData() {
+  try {
+    this.data = await fetchData()
+  } catch (error) {
+    console.error('加载数据失败:', error)
+    this.$message.error('加载失败，请重试')
+  }
+}
+```
+
+### 性能优化
+
+1. **列表渲染必须加key**
+```vue
+<div v-for="item in list" :key="item.id">
+  {{ item.name }}
+</div>
+```
+
+2. **路由懒加载**
+```javascript
+const UserManagement = () => import('@/views/user/UserManagement.vue')
+```
+
+### 样式规范
+
+**颜色系统 - 必须使用CSS变量**
+```css
+--color-primary: #667eea;
+--color-success: #10b981;
+--color-warning: #f59e0b;
+--color-error: #ef4444;
+```
+
+**间距系统 - 8px基础单位**
+```css
+--spacing-xs: 4px;
+--spacing-sm: 8px;
+--spacing-md: 16px;
+--spacing-lg: 24px;
+```
+
+**禁止硬编码颜色和魔法数字**
+
+---
+
+## 前后端协作规范
+
+### 1. 接口契约
+
+- 所有接口返回HTTP 200
+- 响应格式统一为Base类型:
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {}
+}
+```
+- 错误状态通过`code`字段判断（0为成功），不使用HTTP状态码
+
+### 2. 时间处理规范
+
+**统一时区规则**：
+- 数据库存储：UTC时区
+- 应用层处理：Asia/Shanghai时区
+- 前后端传输：RFC3339格式（不含毫秒）
+
+**前端发送时间到后端**：
+```javascript
+import { toRFC3339, getTodayStart, getTodayEnd } from '@/utils/date'
+
+// 正确: RFC3339格式（不含毫秒）
+const startTime = getTodayStart()  // "2025-11-09T16:00:00Z" ✅
+const rfc3339Time = toRFC3339(new Date())  // ✅
+
+// 错误: 带毫秒的格式会导致后端参数绑定失败
+const badTime = new Date().toISOString()  // "2025-11-09T16:00:00.123Z" ❌
+```
+
+**前端显示后端返回的时间**：
+```javascript
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+
+// 后端返回UTC时间，前端显示本地时间
+const displayTime = dayjs.utc(utcTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')
+```
+
+### 3. 认证机制
+
+- 使用JWT认证
+- Token存储在localStorage或httpOnly Cookie
+- 每次请求Header携带: `Authorization: Bearer <token>`
+- Token过期后跳转登录页
+
+---
+
+## 通用开发规范（必须遵守）
+
+### 核心约束
+
+1. 所有构建放在build/文件夹内
+2. 所有接口编写完毕后，必须完成详细的swagger文档，同时更新api-test.http
+3. 不要添加任何非文字内容（如emoji、各种非ASCII符号）在日志、注释、文档等
+4. 在做完任何测试之后，需要删除所有测试文件，保证工作空间干净整洁
+5. 不要编写任何不必要的文档，除非显式指明
+6. 所有接口的HTTP状态码必须是200，返回必须使用Base类型封装，错误状态码放在Code字段内，0代表成功
+7. 维护错误枚举（错误状态码、错误类型），任何错误必须先补充枚举，从枚举中取值
+8. 数据库时间字段存储使用UTC时区，应用层处理和展示使用Asia/Shanghai时区
+9. 所有错误均需要使用统一的errors来处理
+10. 需要编写简要、无歧义的注释，所有注释均使用中文编写
+
+### 后端特定约束
+
+11. 所有日志必须使用内部封装的日志接口，禁止随意打印，禁止使用fmt打印
+12. 对于任何并发（多线程、goroutine），必须正确显式关闭，并且加入注释说明
+13. 对于任何可能的竞争关系，必须加入锁机制，同时以注释说明
+14. 添加、删除任何实体类或变更需要先创建幂等的up/down的sql文件到internal/database/migrations内
+15. 各类连接必须从Manager中取出，禁止随意创建，特殊情况需注释说明
+16. 对于一般新增接口，均需要权限认证。若无需权限认证，则需要添加注释说明
+17. 权限验证必须基于现有的权限规则，禁止私自增加、修改、删除权限规则
+18. 在命令执行时，先检索Makefile内的指令，优先使用Makefile指令
+19. 若引入自带日志系统的框架，需要将日志系统替换为项目内封装的日志接口
+20. 要尽可能注意安全问题，对于可以对用户提权的接口遵循"最小适用"原则
+21. 一般业务，id(数字类型主键)不对外暴露，也不存储上下文内，只在查询时使用。对外暴露UUID
+22. 若需要连接数据库来完成操作，请先检索toml内的配置，使用配置内的实际地址
+23. 系统配置分为两类：静态配置（configs/config.toml）用于部署相关设置，启动时加载，不可热更新；动态配置（system_config表）用于业务相关参数，通过ConfigManager管理，支持热更新和变更监控
+24. ServiceContainer和HandlerContainer必须放在internal/api/routes包内，禁止放在internal/app包内（会导致循环依赖）
+25. 禁止在routes.go中手动创建服务和handler实例，必须统一通过ServiceContainer和HandlerContainer管理
+26. 新增服务或handler时，必须先在对应容器中添加字段和构造逻辑，再在路由中使用
+27. 容器内部构造顺序必须遵循依赖关系：基础服务优先，依赖其他服务的后创建
+28. 容器只负责组装依赖关系，不允许包含任何业务逻辑、中间件逻辑或路由注册逻辑
+29. 严格遵循分层架构，禁止出现循环依赖
+30. ChainBuilder中间件链构建器必须放在internal/api/middleware包内，用于提供标准化的中间件组合
+31. 禁止在routes.go中手动组装中间件链，必须使用ChainBuilder提供的标准方法
+32. ScopeMiddleware用于统一处理基于用户角色的数据作用域控制，禁止在handler中重复编写角色判断代码
+33. handler中需要获取作用域限制时，必须使用middleware.GetScopeUserUUID()方法
+34. 所有需要基于角色限制数据访问范围的接口，必须使用AuthWithAuditAndScope中间件链
+35. 权限验证逻辑必须在中间件层完成，handler只负责业务逻辑
+36. 中间件链的顺序不能随意调整，必须遵循：RequestID -> Auth -> Audit -> Permission/Scope -> SecurityPIN的顺序
+
+### 前端特定约束
+
+37. 在调用接口时，一定要先查看api-docs/下的接口文档，确认接口的定义
+38. 组件不直接调用axios，必须通过API层
+39. 能用Props/Emit解决的，不用Vuex/Pinia
+40. 不要随意引入新依赖，需要先评估必要性
+41. 不要在组件中直接操作DOM，用Vue的数据驱动
+42. 不要把业务逻辑写在模板里，超过3个三元运算符就该提取成computed
+43. 单个组件超过300行就该拆分
+44. 不要用var，统一使用const/let
+45. 不要在循环中使用index作为key，使用唯一标识符(如uuid)
+
+### 通用工作流程约束
+
+46. 任何需要现在时间的地方，都必须调用date命令获取真实的现在时间
+47. 优先使用MCP能力（如搜索，第三方库检索），若MCP无法使用，再回退到原始模式
+48. 在引用第三方库之前，必须完全了解该库的情况，包括实际能力、接口规范等
+49. 所有文档应该正确放置在docs及其子文件夹下
+50. 若该目录必须遵守其他相关的规定，则可以在该目录下新增README.md，该文档将会视为和章程一个优先级的规定
+51. 若目录下存在README.md，必须先阅读并理解该文档内容，并且将其视为和章程一个优先级
+52. 对于分页逻辑，若不带有分页参数，则视为全部导出
+
+---
+
+## 代码审查标准
+
+提交代码前自问：
+
+1. 这个功能/组件是否只做了一件事？
+2. 数据结构是否合理，数据流是否清晰？
+3. 有没有不必要的嵌套和条件判断？
+4. 错误处理是否完整？
+5. 有没有安全隐患？
+6. 能否用更少的代码实现？
+
+**如果答案有任何疑问，重构它。**
+
+---
+
+## 总结
+
+记住核心原则：
+
+- **数据结构决定代码质量** - 先想清楚数据怎么组织
+- **消除特殊情况** - 不要用if/else打补丁
+- **单一职责** - 每个包、函数、组件只做一件事
+- **简洁胜过clever** - 代码是给人看的，不是炫技
+- **安全永远第一** - 不信任任何用户输入
+- **分层清晰** - 每层只关心自己的职责
