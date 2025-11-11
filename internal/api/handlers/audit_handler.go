@@ -50,22 +50,15 @@ func (h *AuditHandler) QueryAuditLogs(c *gin.Context) {
 		return
 	}
 
-	// 获取当前用户信息
-	currentUserUUID, exists := middleware.GetCurrentUserUUID(c)
-	if !exists {
-		response.Unauthorized(c, "未授权")
-		return
-	}
-
-	currentRole, _ := middleware.GetCurrentUserRole(c)
-
-	// 权限检查：普通用户只能查询自己的日志
-	if currentRole != "admin" {
-		// 普通用户，强制使用当前用户UUID
-		req.UserUUID = currentUserUUID
+	// 作用域控制：由ScopeMiddleware统一处理
+	// 普通用户：强制只能查询自己的日志
+	// 管理员：可以查询指定用户或所有日志
+	if scopeUUID, restricted := middleware.GetScopeUserUUID(c); restricted {
+		// 作用域受限（普通用户），强制使用受限的用户UUID
+		req.UserUUID = scopeUUID
 	} else if req.UserUUID == "" {
-		// 管理员未指定用户UUID，默认查询所有
-		// 不做限制
+		// 无作用域限制（管理员）且未指定用户UUID，查询所有日志
+		// 不做任何限制
 	}
 
 	// 时间范围验证
@@ -80,7 +73,7 @@ func (h *AuditHandler) QueryAuditLogs(c *gin.Context) {
 	logs, total, err := h.auditService.QueryLogs(&req)
 	if err != nil {
 		logger.Error("查询审计日志失败",
-			logger.String("user_uuid", currentUserUUID),
+			logger.String("user_uuid", req.UserUUID),
 			logger.Err(err))
 		response.InternalError(c, "查询审计日志失败")
 		return
@@ -117,22 +110,15 @@ func (h *AuditHandler) ExportStatistics(c *gin.Context) {
 	// 获取查询参数
 	queryUserUUID := c.Query("user_uuid")
 
-	// 获取当前用户信息
-	currentUserUUID, exists := middleware.GetCurrentUserUUID(c)
-	if !exists {
-		response.Unauthorized(c, "未授权")
-		return
-	}
-
-	currentRole, _ := middleware.GetCurrentUserRole(c)
-
-	// 确定要查询的用户UUID
+	// 作用域控制：由ScopeMiddleware统一处理
+	// 普通用户：强制只能查询自己的统计
+	// 管理员：可以查询指定用户或全局统计
 	targetUserUUID := ""
-	if currentRole != "admin" {
-		// 普通用户，强制使用当前用户UUID
-		targetUserUUID = currentUserUUID
+	if scopeUUID, restricted := middleware.GetScopeUserUUID(c); restricted {
+		// 作用域受限（普通用户），强制使用受限的用户UUID
+		targetUserUUID = scopeUUID
 	} else if queryUserUUID != "" {
-		// 管理员指定用户UUID
+		// 无作用域限制（管理员）且指定了用户UUID
 		targetUserUUID = queryUserUUID
 	}
 	// 管理员未指定用户UUID，targetUserUUID为空字符串，表示查询全局统计
@@ -171,22 +157,15 @@ func (h *AuditHandler) ExportOperationStatistics(c *gin.Context) {
 	startTimeStr := c.Query("start_time")
 	endTimeStr := c.Query("end_time")
 
-	// 获取当前用户信息
-	currentUserUUID, exists := middleware.GetCurrentUserUUID(c)
-	if !exists {
-		response.Unauthorized(c, "未授权")
-		return
-	}
-
-	currentRole, _ := middleware.GetCurrentUserRole(c)
-
-	// 确定要查询的用户UUID
+	// 作用域控制：由ScopeMiddleware统一处理
+	// 普通用户：强制只能查询自己的统计
+	// 管理员：可以查询指定用户或全局统计
 	targetUserUUID := ""
-	if currentRole != "admin" {
-		// 普通用户，强制使用当前用户UUID
-		targetUserUUID = currentUserUUID
+	if scopeUUID, restricted := middleware.GetScopeUserUUID(c); restricted {
+		// 作用域受限（普通用户），强制使用受限的用户UUID
+		targetUserUUID = scopeUUID
 	} else if queryUserUUID != "" {
-		// 管理员指定用户UUID
+		// 无作用域限制（管理员）且指定了用户UUID
 		targetUserUUID = queryUserUUID
 	}
 	// 管理员未指定用户UUID，targetUserUUID为空字符串，表示查询全局统计
