@@ -2,10 +2,8 @@ package routes
 
 import (
 	_ "github.com/cuihe500/vaulthub/docs/swagger" // swagger docs
-	"github.com/cuihe500/vaulthub/internal/api/handlers"
 	"github.com/cuihe500/vaulthub/internal/api/middleware"
 	"github.com/cuihe500/vaulthub/internal/app"
-	"github.com/cuihe500/vaulthub/internal/service"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -19,32 +17,17 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 	// 注意：审计中间件不能在全局注册，因为它依赖AuthMiddleware设置的用户信息
 	// 审计中间件需要在各个路由组的AuthMiddleware之后注册
 
-	// 创建 services
-	// 注意：EmailService 需要先创建，因为 AuthService 依赖它
-	emailService := service.NewEmailService(mgr.DB, mgr.Redis, mgr.ConfigManager)
-	authService := service.NewAuthService(mgr.DB, mgr.JWT, mgr.Redis, emailService)
-	userService := service.NewUserService(mgr.DB)
-	profileService := service.NewUserProfileService(mgr.DB)
-	encryptionService := service.NewEncryptionService(mgr.DB)
-	recoveryService := service.NewRecoveryService(mgr.DB)
-	keyRotationService := service.NewKeyRotationService(mgr.DB, encryptionService, mgr.ConfigManager)
-	systemConfigService := service.NewSystemConfigService(mgr.DB, mgr.ConfigManager)
-	statisticsService := service.NewStatisticsService(mgr.DB)
+	// 创建服务容器和处理器容器
+	// 依赖关系由容器内部管理，避免在此处手动组装
+	svc := NewServiceContainer(mgr)
+	h := NewHandlerContainer(mgr, svc)
 
-	// 创建 handlers
-	healthHandler := handlers.NewHealthHandler(mgr)
-	authHandler := handlers.NewAuthHandler(authService, recoveryService, mgr.DB)
-	userHandler := handlers.NewUserHandler(userService)
-	profileHandler := handlers.NewUserProfileHandler(profileService)
-	secretHandler := handlers.NewSecretHandler(encryptionService)
-	keyManagementHandler := handlers.NewKeyManagementHandler(encryptionService, recoveryService, keyRotationService)
-	systemConfigHandler := handlers.NewSystemConfigHandler(systemConfigService)
-	emailHandler := handlers.NewEmailHandler(emailService)
-	auditHandler := handlers.NewAuditHandler(mgr.AuditService)
-	statisticsHandler := handlers.NewStatisticsHandler(statisticsService)
+	// 创建中间件链构建器
+	// 用于标准化中间件组合，避免重复代码
+	chain := middleware.NewChainBuilder(mgr)
 
 	// 健康检查接口（不需要认证）
-	r.GET("/health", healthHandler.HealthCheck)
+	r.GET("/health", h.Health.HealthCheck)
 
 	// Swagger 文档接口
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -57,12 +40,8 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 邮件发送接口需要严格的限流保护，防止滥用和垃圾邮件攻击
 		email := v1.Group("/email")
 		{
-			email.POST("/send-code",
-				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
-				emailHandler.SendCode)
-			email.POST("/verify-code",
-				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
-				emailHandler.VerifyCode)
+			email.POST("/send-code", append(chain.RateLimit(), h.Email.SendCode)...)
+			email.POST("/verify-code", append(chain.RateLimit(), h.Email.VerifyCode)...)
 		}
 
 		// 认证路由（不需要token）
@@ -70,175 +49,163 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 注册和登录接口需要限流保护，防止暴力攻击（配置从数据库动态读取）
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/register",
-				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
-				authHandler.Register)
-			auth.POST("/login",
-				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
-				authHandler.Login)
-			auth.POST("/login-with-email",
-				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
-				authHandler.LoginWithEmail)
+			auth.POST("/register", append(chain.RateLimit(), h.Auth.Register)...)
+			auth.POST("/login", append(chain.RateLimit(), h.Auth.Login)...)
+			auth.POST("/login-with-email", append(chain.RateLimit(), h.Auth.LoginWithEmail)...)
 
 			// 密码找回路由（不需要认证，需要限流）
-			auth.POST("/request-password-reset",
-				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
-				authHandler.RequestPasswordReset)
-			auth.GET("/verify-reset-token", authHandler.VerifyPasswordResetToken)
-			auth.POST("/reset-password-with-token",
-				middleware.RateLimitMiddleware(mgr.Redis, mgr.ConfigManager),
-				authHandler.ResetPasswordWithToken)
+			auth.POST("/request-password-reset", append(chain.RateLimit(), h.Auth.RequestPasswordReset)...)
+			auth.GET("/verify-reset-token", h.Auth.VerifyPasswordResetToken)
+			auth.POST("/reset-password-with-token", append(chain.RateLimit(), h.Auth.ResetPasswordWithToken)...)
 
-			// 获取当前用户信息需要认证
-			// 注意：这些独立路由需要在handler内手动记录审计日志（Auth中间件后没有Audit中间件）
-			auth.GET("/me", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), middleware.AuditMiddleware(mgr.AuditService), authHandler.GetMe)
-			// 登出需要认证
-			auth.POST("/logout", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), middleware.AuditMiddleware(mgr.AuditService), authHandler.Logout)
-			// 使用恢复密钥重置密码需要认证
-			auth.POST("/reset-password", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), middleware.AuditMiddleware(mgr.AuditService), authHandler.ResetPassword)
-			// 获取安全密码设置状态需要认证
-			auth.GET("/security-pin-status", middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis), middleware.AuditMiddleware(mgr.AuditService), authHandler.GetSecurityPINStatus)
+			// 需要认证的路由（使用认证+审计中间件链）
+			auth.GET("/me", append(chain.AuthWithAudit(), h.Auth.GetMe)...)
+			auth.POST("/logout", append(chain.AuthWithAudit(), h.Auth.Logout)...)
+			auth.POST("/reset-password", append(chain.AuthWithAudit(), h.Auth.ResetPassword)...)
+			auth.GET("/security-pin-status", append(chain.AuthWithAudit(), h.Auth.GetSecurityPINStatus)...)
 		}
 
 		// 用户管理路由（需要认证和管理员权限）
 		// 这里使用Casbin进行权限验证，user资源的管理操作需要admin权限
 		users := v1.Group("/users")
-		users.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
-		users.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 获取用户列表 - 需要user:read权限
-			users.GET("", middleware.RequirePermission(mgr.Enforcer, "user", "read"), userHandler.ListUsers)
+			users.GET("", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionRead), h.User.ListUsers)...)
 
 			// 获取单个用户 - 需要user:read权限
-			users.GET("/:uuid", middleware.RequirePermission(mgr.Enforcer, "user", "read"), userHandler.GetUser)
+			users.GET("/:uuid", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionRead), h.User.GetUser)...)
 
 			// 更新用户状态 - 需要user:write权限
-			users.PUT("/:uuid/status", middleware.RequirePermission(mgr.Enforcer, "user", "write"), userHandler.UpdateUserStatus)
+			users.PUT("/:uuid/status", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionWrite), h.User.UpdateUserStatus)...)
 
 			// 更新用户角色 - 需要user:write权限
-			users.PUT("/:uuid/role", middleware.RequirePermission(mgr.Enforcer, "user", "write"), userHandler.UpdateUserRole)
+			users.PUT("/:uuid/role", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionWrite), h.User.UpdateUserRole)...)
 		}
 
 		// 用户档案路由（需要认证）
 		profile := v1.Group("/profile")
-		profile.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
-		profile.Use(middleware.AuditMiddleware(mgr.AuditService))
+		profile.Use(chain.AuthWithAudit()...)
 		{
 			// 获取当前用户档案 - 用户只能操作自己的档案
-			profile.GET("", profileHandler.GetProfile)
+			profile.GET("", h.Profile.GetProfile)
 
 			// 创建用户档案
-			profile.POST("", profileHandler.CreateProfile)
+			profile.POST("", h.Profile.CreateProfile)
 
 			// 更新用户档案
-			profile.PUT("", profileHandler.UpdateProfile)
+			profile.PUT("", h.Profile.UpdateProfile)
 
 			// 创建或更新用户档案
-			profile.PATCH("", profileHandler.CreateOrUpdateProfile)
+			profile.PATCH("", h.Profile.CreateOrUpdateProfile)
 
 			// 删除用户档案
-			profile.DELETE("", profileHandler.DeleteProfile)
+			profile.DELETE("", h.Profile.DeleteProfile)
 		}
 
-		// 加密密钥管理路由（需要认证）
+		// 加密密钥管理路由（需要认证+权限验证）
 		// 用户只能操作自己的加密密钥
+		// 权限要求：key:read用于查询操作，key:write用于创建/轮换操作
 		keys := v1.Group("/keys")
-		keys.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
-		keys.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
-			// 创建用户加密密钥（首次使用加密功能时调用）
-			keys.POST("/create", keyManagementHandler.CreateUserEncryptionKey)
-			// 验证恢复密钥有效性
-			keys.POST("/verify-recovery", keyManagementHandler.VerifyRecoveryKey)
-			// 手动触发密钥轮换
-			keys.POST("/rotate", keyManagementHandler.RotateDEK)
-			// 查询密钥轮换进度
-			keys.GET("/rotation-status", keyManagementHandler.GetRotationStatus)
+			// 创建用户加密密钥（首次使用加密功能时调用）- 需要key:write权限
+			keys.POST("/create", append(chain.AuthWithPermission(middleware.ResourceKey, middleware.ActionWrite), h.KeyManage.CreateUserEncryptionKey)...)
+
+			// 验证恢复密钥有效性 - 需要key:read权限
+			keys.POST("/verify-recovery", append(chain.AuthWithPermission(middleware.ResourceKey, middleware.ActionRead), h.KeyManage.VerifyRecoveryKey)...)
+
+			// 手动触发密钥轮换 - 需要key:write权限
+			// 注意：readonly角色不应该有此权限（安全关键操作）
+			keys.POST("/rotate", append(chain.AuthWithPermission(middleware.ResourceKey, middleware.ActionWrite), h.KeyManage.RotateDEK)...)
+
+			// 查询密钥轮换进度 - 需要key:read权限
+			keys.GET("/rotation-status", append(chain.AuthWithPermission(middleware.ResourceKey, middleware.ActionRead), h.KeyManage.GetRotationStatus)...)
 		}
 
-		// 秘密管理路由（需要认证）
+		// 秘密管理路由（需要认证+权限验证+安全密码）
 		// 用户只能操作自己的秘密
 		// 注意：秘密管理需要用户先设置安全密码（Security PIN）
+		// 权限要求：secret:read用于查询/解密，secret:write用于创建/删除
 		secrets := v1.Group("/secrets")
-		secrets.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
-		secrets.Use(middleware.AuditMiddleware(mgr.AuditService))
-		secrets.Use(middleware.SecurityPINCheckMiddleware(mgr.DB))
 		{
-			// 获取秘密列表
-			secrets.GET("", secretHandler.ListSecrets)
+			// 获取秘密列表 - 需要secret:read权限
+			secrets.GET("", append(chain.SecureAuthWithPermission(middleware.ResourceSecret, middleware.ActionRead), h.Secret.ListSecrets)...)
 
-			// 创建秘密
-			secrets.POST("", secretHandler.CreateSecret)
+			// 创建秘密 - 需要secret:write权限
+			// 注意：readonly角色不应该有此权限
+			secrets.POST("", append(chain.SecureAuthWithPermission(middleware.ResourceSecret, middleware.ActionWrite), h.Secret.CreateSecret)...)
 
-			// 解密秘密（获取明文）
-			secrets.POST("/:uuid/decrypt", secretHandler.GetSecret)
+			// 解密秘密（获取明文）- 需要secret:read权限
+			secrets.POST("/:uuid/decrypt", append(chain.SecureAuthWithPermission(middleware.ResourceSecret, middleware.ActionRead), h.Secret.GetSecret)...)
 
-			// 删除秘密
-			secrets.DELETE("/:uuid", secretHandler.DeleteSecret)
+			// 删除秘密 - 需要secret:write权限
+			// 注意：readonly角色不应该有此权限
+			secrets.DELETE("/:uuid", append(chain.SecureAuthWithPermission(middleware.ResourceSecret, middleware.ActionWrite), h.Secret.DeleteSecret)...)
 		}
 
 		// 管理员用户档案路由（需要认证和管理员权限）
 		admin := v1.Group("/admin")
-		admin.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
-		admin.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 获取用户档案列表 - 需要profile:read权限
-			admin.GET("/profiles", middleware.RequirePermission(mgr.Enforcer, "profile", "read"), profileHandler.ListProfiles)
+			admin.GET("/profiles", append(chain.AuthWithPermission(middleware.ResourceProfile, middleware.ActionRead), h.Profile.ListProfiles)...)
 
 			// 获取指定用户档案 - 需要profile:read权限
-			admin.GET("/users/:user_id/profile", middleware.RequirePermission(mgr.Enforcer, "profile", "read"), profileHandler.GetUserProfile)
+			admin.GET("/users/:user_id/profile", append(chain.AuthWithPermission(middleware.ResourceProfile, middleware.ActionRead), h.Profile.GetUserProfile)...)
 
 			// 更新指定用户档案 - 需要profile:write权限
-			admin.PUT("/users/:user_id/profile", middleware.RequirePermission(mgr.Enforcer, "profile", "write"), profileHandler.UpdateUserProfile)
+			admin.PUT("/users/:user_id/profile", append(chain.AuthWithPermission(middleware.ResourceProfile, middleware.ActionWrite), h.Profile.UpdateUserProfile)...)
 		}
 
 		// 系统配置路由（需要认证和管理员权限）
 		// 系统配置的管理属于敏感操作，需要config:read和config:write权限
 		configs := v1.Group("/configs")
-		configs.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
-		configs.Use(middleware.AuditMiddleware(mgr.AuditService))
 		{
 			// 获取配置列表 - 需要config:read权限
-			configs.GET("", middleware.RequirePermission(mgr.Enforcer, "config", "read"), systemConfigHandler.ListConfigs)
+			configs.GET("", append(chain.AuthWithPermission(middleware.ResourceConfig, middleware.ActionRead), h.SysConfig.ListConfigs)...)
 
 			// 获取单个配置 - 需要config:read权限
-			configs.GET("/:key", middleware.RequirePermission(mgr.Enforcer, "config", "read"), systemConfigHandler.GetConfig)
+			configs.GET("/:key", append(chain.AuthWithPermission(middleware.ResourceConfig, middleware.ActionRead), h.SysConfig.GetConfig)...)
 
 			// 更新配置 - 需要config:write权限
-			configs.PUT("/:key", middleware.RequirePermission(mgr.Enforcer, "config", "write"), systemConfigHandler.UpdateConfig)
+			configs.PUT("/:key", append(chain.AuthWithPermission(middleware.ResourceConfig, middleware.ActionWrite), h.SysConfig.UpdateConfig)...)
 
 			// 批量更新配置 - 需要config:write权限
-			configs.PUT("/batch", middleware.RequirePermission(mgr.Enforcer, "config", "write"), systemConfigHandler.BatchUpdateConfigs)
+			configs.PUT("/batch", append(chain.AuthWithPermission(middleware.ResourceConfig, middleware.ActionWrite), h.SysConfig.BatchUpdateConfigs)...)
 
 			// 重新加载配置 - 需要config:write权限
-			configs.POST("/reload", middleware.RequirePermission(mgr.Enforcer, "config", "write"), systemConfigHandler.ReloadConfigs)
+			configs.POST("/reload", append(chain.AuthWithPermission(middleware.ResourceConfig, middleware.ActionWrite), h.SysConfig.ReloadConfigs)...)
+
+			// Casbin权限策略管理子路由
+			// 用于运行时热更新权限策略，无需重启服务
+			casbin := configs.Group("/casbin")
+			{
+				// 重新加载Casbin权限策略 - 需要casbin:reload权限
+				casbin.POST("/reload", append(chain.AuthWithPermission(middleware.ResourceCasbin, middleware.ActionReload), h.Casbin.ReloadPolicy)...)
+			}
 		}
 
-		// 审计日志路由（需要认证）
-		// 普通用户只能查询自己的日志，管理员可以查询所有用户的日志
+		// 审计日志路由（需要认证+作用域限制）
+		// 作用域中间件自动处理权限：普通用户只能查询自己的日志，管理员可以查询所有用户的日志
 		audit := v1.Group("/audit")
-		audit.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
-		audit.Use(middleware.AuditMiddleware(mgr.AuditService))
+		audit.Use(chain.AuthWithAuditAndScope()...)
 		{
-			// 查询审计日志 - 所有用户都可以访问（权限在handler内部控制）
-			audit.GET("/logs", auditHandler.QueryAuditLogs)
-			// 导出密钥类型统计 - 所有用户都可以访问（权限在handler内部控制）
-			audit.GET("/logs/export", auditHandler.ExportStatistics)
-			// 导出操作统计 - 所有用户都可以访问（权限在handler内部控制）
-			audit.GET("/operations/export", auditHandler.ExportOperationStatistics)
+			// 查询审计日志
+			audit.GET("/logs", h.Audit.QueryAuditLogs)
+			// 导出密钥类型统计
+			audit.GET("/logs/export", h.Audit.ExportStatistics)
+			// 导出操作统计
+			audit.GET("/operations/export", h.Audit.ExportOperationStatistics)
 		}
 
-		// 统计数据路由（需要认证）
-		// 普通用户只能查询自己的统计，管理员可以查询所有用户的统计
+		// 统计数据路由（需要认证+作用域限制）
+		// 作用域中间件自动处理权限：普通用户只能查询自己的统计，管理员可以查询所有用户的统计
 		statistics := v1.Group("/statistics")
-		statistics.Use(middleware.AuthMiddleware(mgr.JWT, mgr.DB, mgr.Redis))
-		statistics.Use(middleware.AuditMiddleware(mgr.AuditService))
+		statistics.Use(chain.AuthWithAuditAndScope()...)
 		{
-			// 获取用户统计数据（历史统计）- 所有用户都可以访问（权限在handler内部控制）
-			statistics.GET("/user", statisticsHandler.GetUserStatistics)
+			// 获取用户统计数据（历史统计）
+			statistics.GET("/user", h.Statistics.GetUserStatistics)
 
-			// 获取当前统计（实时统计）- 所有用户都可以访问（权限在handler内部控制）
-			statistics.GET("/current", statisticsHandler.GetCurrentStatistics)
+			// 获取当前统计（实时统计）
+			statistics.GET("/current", h.Statistics.GetCurrentStatistics)
 		}
 	}
 }

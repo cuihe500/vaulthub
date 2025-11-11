@@ -52,6 +52,7 @@ vaulthub/
 │   └── service/           # 业务逻辑层
 ├── pkg/                   # 可公开使用的库代码
 │   ├── crypto/            # 加密工具
+│   ├── email/             # 邮件通知与安全告警工具
 │   ├── errors/            # 统一错误处理
 │   ├── jwt/               # JWT工具
 │   ├── logger/            # 日志工具
@@ -61,6 +62,7 @@ vaulthub/
 │   └── version/           # 版本信息
 ├── configs/               # 配置文件
 │   ├── config.toml        # 主配置文件
+│   ├── config.toml.example  # 默认配置模板
 │   ├── rbac_model.conf    # Casbin权限模型
 │   └── .env.example       # 环境变量示例
 ├── build/                 # 构建输出目录
@@ -68,6 +70,7 @@ vaulthub/
 │   └── swagger/           # Swagger接口文档
 ├── scripts/               # 构建和部署脚本
 ├── web/                   # 前端资源
+├── api-test.http          # HTTP 接口调试脚本
 ├── go.mod                 # Go 模块定义
 └── go.sum                 # 依赖校验
 
@@ -244,3 +247,17 @@ if err := doSomething(); err != nil {
 30. 若该目录必须遵守其他相关的规定，则可以在该目录下新增README.md，该文档将会视为和章程一个优先级的规定。
 31. 若目录下存在README.md，必须先阅读并理解该文档内容，并且将其视为和章程一个优先级。
 32. 对于分页逻辑，若不带有分页参数，则视为全部导出。
+33. ServiceContainer和HandlerContainer必须放在internal/api/routes包内，禁止放在internal/app包内（会导致循环依赖）。
+34. 禁止在routes.go中手动创建服务和handler实例，必须统一通过ServiceContainer和HandlerContainer管理。
+35. 新增服务或handler时，必须先在对应容器中添加字段和构造逻辑，再在路由中使用，禁止跳过容器直接创建。
+36. 容器内部构造顺序必须遵循依赖关系：基础服务优先，依赖其他服务的后创建，确保依赖可用。
+37. 容器只负责组装依赖关系，不允许包含任何业务逻辑、中间件逻辑或路由注册逻辑。
+38. 严格遵循分层架构，禁止出现循环依赖（routes->app->handlers->app），若出现编译错误，优先检查包的依赖关系是否合理。
+39. ChainBuilder中间件链构建器必须放在internal/api/middleware包内，用于提供标准化的中间件组合。
+40. 禁止在routes.go中手动组装中间件链（如手动调用多个middleware函数），必须使用ChainBuilder提供的标准方法。
+41. 新增标准中间件组合时，必须在ChainBuilder中添加新方法，并添加清晰的注释说明使用场景和中间件顺序。
+42. ScopeMiddleware用于统一处理基于用户角色的数据作用域控制，禁止在handler中重复编写角色判断代码。
+43. handler中需要获取作用域限制时，必须使用middleware.GetScopeUserUUID()方法，禁止直接读取用户角色进行判断。
+44. 所有需要基于角色限制数据访问范围的接口（如审计日志、统计数据），必须使用AuthWithAuditAndScope中间件链。
+45. 权限验证逻辑（包括角色判断、作用域控制）必须在中间件层完成，handler只负责业务逻辑，不允许在handler内部判断用户角色。
+46. 中间件链的顺序不能随意调整，必须遵循：RequestID -> Auth -> Audit -> Permission/Scope -> SecurityPIN的顺序，因为后面的中间件依赖前面设置的上下文。

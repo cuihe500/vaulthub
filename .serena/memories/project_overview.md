@@ -1,0 +1,6 @@
+# VaultHub Overview
+- Purpose: VaultHub is a Go-based key management system that stores, rotates, and audits encryption/API secrets with a secure service + CLI (Cobra) and Swagger-documented HTTP APIs.
+- Stack: Go 1.25.1, Gin, GORM, MariaDB/MySQL, Redis, Viper (TOML), Casbin, JWT (golang-jwt/jwt/v5), go-redis/v9, Zap, robfig/cron, golang-migrate, go-playground/validator, go-bip39.
+- Architecture: strict layering (HTTP handlers → services → database models) with ConfigManager for dynamic config, Manager for shared resources (DB/Redis/Casbin), Scheduler for cron jobs, and pkg/ for shared utilities (crypto/errors/jwt/logger/redis/response/validator/version).
+- Repo layout highlights: `cmd/vaulthub` (entrypoint), `internal/api` (handlers/middleware/routes), `internal/app` (manager/init/scheduler), `internal/config` (definitions + manager), `internal/database` (migrations/models), `internal/service` (business logic), `pkg/*` (shared libs), `configs/` (TOML + Casbin model + env example), `docs/` (swagger etc.), `scripts/`, `web/` assets, `build/` outputs.
+- Key requirements: all builds/artifacts live in `build/`; new APIs must include Swagger docs + `api-test.http` updates; only Base response wrapper with HTTP 200 (errors via code field).

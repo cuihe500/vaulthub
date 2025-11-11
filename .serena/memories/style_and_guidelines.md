@@ -1,0 +1,10 @@
+# Style & Guidelines
+- Single-responsibility Go code with ≤3 levels nesting; follow layered design (handlers handle HTTP only, services host business logic, database layer persists data). Prohibit circular deps and manual handler/service construction outside Service/Handler containers.
+- Naming: packages lowercase single word; camelCase identifiers; constants upper camel/snake; DB tables/fields snake_case with UTC timestamps (`created_at`, `updated_at`, `deleted_at`).
+- Responses: every HTTP endpoint returns Base wrapper with HTTP 200; success code=0, errors use predefined enums. Maintain shared error/status/type enums before use.
+- Logging & errors: use pkg/logger and pkg/errors only; no fmt prints (unless justified). Sensitive data encrypted; all inputs validated at handler via validator/v10. Concurrency requires explicit close/locking + Chinese comments.
+- Middleware & security: use ChainBuilder combos, Auth/Audit/Scope order fixed (RequestID→Auth→Audit→Permission/Scope→SecurityPIN). ScopeMiddleware supplies access control; handlers must not perform manual role logic. Most endpoints require auth unless clearly documented.
+- Config & resources: static config lives in `configs/config.toml`; dynamic business params live in DB/system_config through ConfigManager. All shared connections retrieved from Manager during init; do not instantiate ad hoc.
+- DB/migrations: any schema/model change requires idempotent up/down SQL in `internal/database/migrations`. Avoid foreign keys; time stored in UTC. Use GORM type-safe APIs, transactions with clear boundaries.
+- Documentation & comments: keep docs under docs/; comments/log messages in Chinese, ASCII only. Update Swagger + api-test.http for interface changes.
+- Misc rules: use `date` command to obtain current time when needed; avoid exposing numeric IDs externally (prefer UUID). No new logging subsystems; ensure build artifacts stay under build/. Use Chinese comments to explain locks/concurrency/security decisions.
