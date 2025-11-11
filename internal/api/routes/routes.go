@@ -49,14 +49,19 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 		// 注册和登录接口需要限流保护，防止暴力攻击（配置从数据库动态读取）
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/register", append(chain.RateLimit(), h.Auth.Register)...)
-			auth.POST("/login", append(chain.RateLimit(), h.Auth.Login)...)
-			auth.POST("/login-with-email", append(chain.RateLimit(), h.Auth.LoginWithEmail)...)
+			// 公开路由（不需要认证，但需要审计和限流）
+			// 注意：现在审计中间件可以处理未认证请求，会记录失败的登录尝试等重要安全事件
+			publicChain := []gin.HandlerFunc{
+				middleware.AuditMiddleware(mgr.AuditService),
+			}
+			auth.POST("/register", append(append(publicChain, chain.RateLimit()...), h.Auth.Register)...)
+			auth.POST("/login", append(append(publicChain, chain.RateLimit()...), h.Auth.Login)...)
+			auth.POST("/login-with-email", append(append(publicChain, chain.RateLimit()...), h.Auth.LoginWithEmail)...)
 
-			// 密码找回路由（不需要认证，需要限流）
-			auth.POST("/request-password-reset", append(chain.RateLimit(), h.Auth.RequestPasswordReset)...)
-			auth.GET("/verify-reset-token", h.Auth.VerifyPasswordResetToken)
-			auth.POST("/reset-password-with-token", append(chain.RateLimit(), h.Auth.ResetPasswordWithToken)...)
+			// 密码找回路由（不需要认证，需要审计和限流）
+			auth.POST("/request-password-reset", append(append(publicChain, chain.RateLimit()...), h.Auth.RequestPasswordReset)...)
+			auth.GET("/verify-reset-token", append(publicChain, h.Auth.VerifyPasswordResetToken)...)
+			auth.POST("/reset-password-with-token", append(append(publicChain, chain.RateLimit()...), h.Auth.ResetPasswordWithToken)...)
 
 			// 需要认证的路由（使用认证+审计中间件链）
 			auth.GET("/me", append(chain.AuthWithAudit(), h.Auth.GetMe)...)

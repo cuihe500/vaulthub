@@ -14,6 +14,7 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Security SecurityConfig `mapstructure:"security"`
 	Logger   LoggerConfig   `mapstructure:"logger"`
+	Audit    AuditConfig    `mapstructure:"audit"`
 }
 
 type ServerConfig struct {
@@ -83,6 +84,12 @@ type LoggerConfig struct {
 	ErrorOutputPaths []string `mapstructure:"error_output_paths"` // 错误输出路径
 }
 
+type AuditConfig struct {
+	BufferSize    int `mapstructure:"buffer_size"`     // 审计日志缓冲区大小
+	WorkerCount   int `mapstructure:"worker_count"`    // 审计日志worker数量
+	MaxDetailSize int `mapstructure:"max_detail_size"` // 审计Details字段最大长度
+}
+
 func Load() *Config {
 	return load("")
 }
@@ -149,6 +156,9 @@ func setDefaults() {
 	viper.SetDefault("logger.encoding", "console")
 	viper.SetDefault("logger.output_paths", []string{"stdout"})
 	viper.SetDefault("logger.error_output_paths", []string{"stderr"})
+	viper.SetDefault("audit.buffer_size", 5000)  // 默认缓冲区5000
+	viper.SetDefault("audit.worker_count", 5)    // 默认5个worker
+	viper.SetDefault("audit.max_detail_size", 65000) // 默认65KB
 }
 
 func setupEnvBinding() {
@@ -186,6 +196,9 @@ func setupEnvBinding() {
 		{"security.admin_password", "SECURITY_ADMIN_PASSWORD"},
 		{"logger.level", "LOGGER_LEVEL"},
 		{"logger.encoding", "LOGGER_ENCODING"},
+		{"audit.buffer_size", "AUDIT_BUFFER_SIZE"},
+		{"audit.worker_count", "AUDIT_WORKER_COUNT"},
+		{"audit.max_detail_size", "AUDIT_MAX_DETAIL_SIZE"},
 	}
 
 	// 注意：此阶段使用标准库fmt而非项目logger，避免循环依赖

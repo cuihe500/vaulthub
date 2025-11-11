@@ -43,9 +43,9 @@ type AuditLog struct {
 	UUID      string    `gorm:"type:char(36);uniqueIndex;not null" json:"uuid"`
 	CreatedAt time.Time `gorm:"type:datetime;not null" json:"created_at"`
 
-	// 操作主体
-	UserUUID string `gorm:"type:char(36);not null;index:idx_user_uuid" json:"user_uuid"`
-	Username string `gorm:"type:varchar(64);not null;index:idx_username" json:"username"`
+	// 操作主体（未认证时可为空）
+	UserUUID string `gorm:"type:char(36);default:null;index:idx_user_uuid" json:"user_uuid"`
+	Username string `gorm:"type:varchar(64);default:null;index:idx_username" json:"username"`
 
 	// 操作内容
 	ActionType   ActionType   `gorm:"type:varchar(32);not null;index:idx_action_type" json:"action_type"`

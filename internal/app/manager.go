@@ -56,7 +56,7 @@ func (m *Manager) Initialize(cfg *config.Config) error {
 	}
 
 	// 初始化审计服务
-	if err := m.initAuditService(); err != nil {
+	if err := m.initAuditService(cfg.Audit); err != nil {
 		return fmt.Errorf("初始化审计服务失败: %w", err)
 	}
 
@@ -164,13 +164,15 @@ func (m *Manager) initConfigManager() error {
 }
 
 // initAuditService 初始化审计服务
-func (m *Manager) initAuditService() error {
-	// 审计服务配置：缓冲区1000，worker数量5
+func (m *Manager) initAuditService(auditCfg config.AuditConfig) error {
+	// 从配置中读取审计服务参数
 	// 缓冲区满时新审计日志会被丢弃（不阻塞业务）
-	auditService := service.NewAuditService(m.DB, 1000, 5)
+	auditService := service.NewAuditService(m.DB, auditCfg.BufferSize, auditCfg.WorkerCount)
 	auditService.Start()
 	m.AuditService = auditService
-	logger.Info("审计服务初始化成功")
+	logger.Info("审计服务初始化成功",
+		logger.Int("buffer_size", auditCfg.BufferSize),
+		logger.Int("worker_count", auditCfg.WorkerCount))
 	return nil
 }
 
