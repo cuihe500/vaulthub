@@ -3,9 +3,9 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     `uuid` CHAR(36) NOT NULL UNIQUE COMMENT '审计日志UUID',
 
-    -- 操作主体
-    `user_uuid` CHAR(36) NOT NULL COMMENT '操作用户UUID',
-    `username` VARCHAR(64) NOT NULL COMMENT '操作用户名（冗余，便于查询）',
+    -- 操作主体（未认证时为NULL，用于审计失败的登录尝试等）
+    `user_uuid` CHAR(36) DEFAULT NULL COMMENT '操作用户UUID（未认证时为NULL）',
+    `username` VARCHAR(64) DEFAULT NULL COMMENT '操作用户名（未认证时为NULL）',
 
     -- 操作内容
     `action_type` VARCHAR(32) NOT NULL COMMENT '操作类型：CREATE/UPDATE/DELETE/ACCESS/LOGIN/LOGOUT',
