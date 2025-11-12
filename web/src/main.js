@@ -1,6 +1,5 @@
 import { createApp } from 'vue'
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
+// Element Plus组件和样式现在通过unplugin按需自动导入,无需手动引入
 import '@/assets/styles/variables.css'
 import App from './App.vue'
 import router from './router'
@@ -8,7 +7,6 @@ import store from './store'
 
 const app = createApp(App)
 
-app.use(ElementPlus)
 app.use(router)
 app.use(store)
 

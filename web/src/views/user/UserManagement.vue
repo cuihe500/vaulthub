@@ -256,7 +256,26 @@ import { getCurrentStatistics } from '@/api/statistics'
 import { exportOperationStatistics } from '@/api/audit'
 import { toRFC3339 } from '@/utils/date'
 import { ElMessage } from 'element-plus'
-import * as echarts from 'echarts'
+
+// ECharts按需异步加载,只引入需要的图表类型(PieChart)和组件,大幅减少bundle大小
+let echartsCore = null
+const loadECharts = async () => {
+  if (echartsCore) return echartsCore
+
+  // 只引入核心和必需的组件,而不是整个echarts库
+  const [{ init, use }, { PieChart }, { TitleComponent, TooltipComponent, LegendComponent }] =
+    await Promise.all([
+      import('echarts/core'),
+      import('echarts/charts'),
+      import('echarts/components')
+    ])
+
+  // 注册需要的组件
+  use([PieChart, TitleComponent, TooltipComponent, LegendComponent])
+
+  echartsCore = { init }
+  return echartsCore
+}
 
 export default {
   name: 'UserManagement',
@@ -424,10 +443,11 @@ export default {
     },
 
     // 初始化密钥类型环形图
-    initKeyTypeChart() {
+    async initKeyTypeChart() {
       if (!this.$refs.keyTypeChartRef) return
 
-      this.keyTypeChart = echarts.init(this.$refs.keyTypeChartRef)
+      const { init } = await loadECharts()
+      this.keyTypeChart = init(this.$refs.keyTypeChartRef)
 
       const option = {
         tooltip: {
@@ -479,10 +499,11 @@ export default {
     },
 
     // 初始化今日操作饼状图
-    initOperationChart() {
+    async initOperationChart() {
       if (!this.$refs.operationChartRef) return
 
-      this.operationChart = echarts.init(this.$refs.operationChartRef)
+      const { init } = await loadECharts()
+      this.operationChart = init(this.$refs.operationChartRef)
 
       const option = {
         tooltip: {
