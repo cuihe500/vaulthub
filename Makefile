@@ -43,17 +43,24 @@ LDFLAGS=-ldflags "\
 .PHONY: all
 all: build
 
-# 构建
+# 构建前端
+.PHONY: build-frontend
+build-frontend:
+	@echo "Building frontend..."
+	@cd web && npm run build
+	@echo "Frontend build complete: web/dist/"
+
+# 构建后端（依赖前端构建）
 .PHONY: build
-build:
+build: build-frontend
 	@echo "Building $(BINARY_NAME) version $(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
 	go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
 	@echo "Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
 
-# 构建（生产环境）
+# 构建（生产环境，依赖前端构建）
 .PHONY: build-prod
-build-prod:
+build-prod: build-frontend
 	@echo "Building $(BINARY_NAME) for production..."
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
@@ -70,6 +77,7 @@ run: build
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BUILD_DIR)
+	@rm -rf web/dist
 	@echo "Clean complete"
 
 # 测试
@@ -216,10 +224,11 @@ help:
 	@echo "VaultHub Makefile Commands:"
 	@echo ""
 	@echo "Build & Run:"
-	@echo "  make build       - Build the binary"
-	@echo "  make build-prod  - Build for production (Linux/amd64)"
-	@echo "  make run         - Build and run the application"
-	@echo "  make clean       - Remove build artifacts"
+	@echo "  make build-frontend - Build frontend only"
+	@echo "  make build          - Build frontend and backend binary"
+	@echo "  make build-prod     - Build for production (Linux/amd64)"
+	@echo "  make run            - Build and run the application"
+	@echo "  make clean          - Remove build artifacts (backend + frontend)"
 	@echo ""
 	@echo "Testing & Quality:"
 	@echo "  make test        - Run tests"
