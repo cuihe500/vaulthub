@@ -44,6 +44,7 @@ make help           # 查看所有命令
 
 - [用户指南](docs/guide.md) - 安装、配置、API 使用
 - [开发指南](docs/developer.md) - 架构、数据库、贡献
+- [GitHub Actions 使用指南](docs/github-actions.md) - 自动化构建和发布
 - [变更日志](docs/CHANGELOG.md) - 版本记录
 - [Swagger API](http://localhost:8080/swagger/index.html) - 启动后访问
 

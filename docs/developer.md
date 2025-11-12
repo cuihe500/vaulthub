@@ -278,6 +278,27 @@ make migrate-up     # 数据库迁移
 make clean          # 清理
 ```
 
+## CI/CD 流程
+
+VaultHub 使用 GitHub Actions 实现自动化构建和发布,详见 [GitHub Actions 使用指南](./github-actions.md)。
+
+**主要工作流**:
+- **CI**: 每次推送到 main/develop 或创建 PR 时自动运行测试和代码检查
+- **Release**: 推送 `v*.*.*` 标签时自动构建多平台二进制文件和 Docker 镜像
+
+**本地验证发布前构建**:
+```bash
+# 运行完整测试
+make test
+
+# 构建生产版本
+make build-prod
+
+# 验证 Docker 镜像
+make docker-build
+make docker-run
+```
+
 ## 许可证
 
 Apache 2.0
