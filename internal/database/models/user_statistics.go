@@ -25,9 +25,9 @@ type UserStatistics struct {
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// 统计维度
-	UserUUID string   `gorm:"type:char(36);not null;uniqueIndex:idx_user_date_type" json:"user_uuid"`
+	UserUUID string    `gorm:"type:char(36);not null;uniqueIndex:idx_user_date_type" json:"user_uuid"`
 	StatDate time.Time `gorm:"type:date;not null;uniqueIndex:idx_user_date_type;index:idx_stat_date" json:"stat_date"`
-	StatType StatType `gorm:"type:varchar(16);not null;uniqueIndex:idx_user_date_type;index:idx_stat_type" json:"stat_type"`
+	StatType StatType  `gorm:"type:varchar(16);not null;uniqueIndex:idx_user_date_type;index:idx_stat_type" json:"stat_type"`
 
 	// 密钥数量统计
 	TotalSecrets     int `gorm:"not null;default:0" json:"total_secrets"`

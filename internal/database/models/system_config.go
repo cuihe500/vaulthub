@@ -50,10 +50,10 @@ const (
 	ConfigValueKeyRotationBatchSleepMSDefault = "100" // 默认批次间休眠100ms
 
 	// 邮件默认配置值
-	ConfigValueEmailSMTPHostDefault     = "smtp.gmail.com"   // 默认SMTP服务器（Gmail）
-	ConfigValueEmailSMTPPortDefault     = "587"              // 默认SMTP端口
-	ConfigValueEmailSMTPUseTLSDefault   = "true"             // 默认使用TLS
-	ConfigValueEmailCodeExpiryDefault   = "300"              // 默认验证码有效期5分钟
-	ConfigValueEmailRateLimitDefault    = "60"               // 默认发送间隔60秒
+	ConfigValueEmailSMTPHostDefault     = "smtp.gmail.com"  // 默认SMTP服务器（Gmail）
+	ConfigValueEmailSMTPPortDefault     = "587"             // 默认SMTP端口
+	ConfigValueEmailSMTPUseTLSDefault   = "true"            // 默认使用TLS
+	ConfigValueEmailCodeExpiryDefault   = "300"             // 默认验证码有效期5分钟
+	ConfigValueEmailRateLimitDefault    = "60"              // 默认发送间隔60秒
 	ConfigValueEmailSMTPFromNameDefault = "VaultHub System" // 默认发件人名称
 )

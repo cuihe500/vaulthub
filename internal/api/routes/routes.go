@@ -1,9 +1,14 @@
 package routes
 
 import (
+	"net/http"
+	"os"
+	"path/filepath"
+
 	_ "github.com/cuihe500/vaulthub/docs/swagger" // swagger docs
 	"github.com/cuihe500/vaulthub/internal/api/middleware"
 	"github.com/cuihe500/vaulthub/internal/app"
+	"github.com/cuihe500/vaulthub/pkg/logger"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -212,5 +217,39 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			// 获取当前统计（实时统计）
 			statistics.GET("/current", h.Statistics.GetCurrentStatistics)
 		}
+	}
+
+	// 静态文件服务（前端资源）
+	// 从环境变量VAULTHUB_STATIC_DIR读取前端静态文件路径
+	// 支持Vue Router的history模式，所有未匹配的路由fallback到index.html
+	staticDir := os.Getenv("VAULTHUB_STATIC_DIR")
+	if staticDir == "" {
+		staticDir = "./web/dist" // 默认路径
+	}
+
+	// 检查静态文件目录是否存在
+	if _, err := os.Stat(staticDir); err == nil {
+		logger.Info("启用前端静态文件服务", logger.String("path", staticDir))
+
+		// 静态资源路由（优先匹配）
+		r.StaticFS("/assets", http.Dir(filepath.Join(staticDir, "assets")))
+		r.StaticFile("/favicon.ico", filepath.Join(staticDir, "favicon.ico"))
+
+		// SPA fallback：所有未匹配的路由返回index.html
+		r.NoRoute(func(c *gin.Context) {
+			// 检查是否是API请求（避免API请求返回HTML）
+			if len(c.Request.URL.Path) >= 4 && c.Request.URL.Path[:4] == "/api" {
+				c.JSON(http.StatusNotFound, gin.H{
+					"code":    404,
+					"message": "接口不存在",
+				})
+				return
+			}
+			c.File(filepath.Join(staticDir, "index.html"))
+		})
+	} else {
+		logger.Warn("前端静态文件目录不存在，跳过静态文件服务",
+			logger.String("path", staticDir),
+			logger.Err(err))
 	}
 }

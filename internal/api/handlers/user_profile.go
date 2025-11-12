@@ -3,8 +3,8 @@ package handlers
 import (
 	"strconv"
 
-	_ "github.com/cuihe500/vaulthub/internal/database/models" // 仅用于Swagger文档类型引用
 	"github.com/cuihe500/vaulthub/internal/api/middleware"
+	_ "github.com/cuihe500/vaulthub/internal/database/models" // 仅用于Swagger文档类型引用
 	"github.com/cuihe500/vaulthub/internal/service"
 	"github.com/cuihe500/vaulthub/pkg/errors"
 	"github.com/cuihe500/vaulthub/pkg/logger"

@@ -16,10 +16,10 @@ type ConfigChangeCallback func(key, oldValue, newValue string)
 // ConfigManager 系统配置管理器
 // 提供内存缓存、配置监控和热更新能力
 type ConfigManager struct {
-	db        *gorm.DB
-	cache     map[string]string                // 配置缓存
-	watchers  map[string][]ConfigChangeCallback // 配置观察者
-	mu        sync.RWMutex                      // 读写锁，保护cache和watchers
+	db       *gorm.DB
+	cache    map[string]string                 // 配置缓存
+	watchers map[string][]ConfigChangeCallback // 配置观察者
+	mu       sync.RWMutex                      // 读写锁，保护cache和watchers
 }
 
 // NewConfigManager 创建配置管理器

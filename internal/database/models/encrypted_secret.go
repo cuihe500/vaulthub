@@ -10,20 +10,20 @@ import (
 type SecretType string
 
 const (
-	SecretTypeAPIKey        SecretType = "api_key"        // API密钥
-	SecretTypeDBCredential  SecretType = "db_credential"  // 数据库凭证
-	SecretTypeCertificate   SecretType = "certificate"    // 证书
-	SecretTypeSSHKey        SecretType = "ssh_key"        // SSH密钥
-	SecretTypeToken         SecretType = "token"          // 令牌
-	SecretTypePassword      SecretType = "password"       // 密码
-	SecretTypeOther         SecretType = "other"          // 其他
+	SecretTypeAPIKey       SecretType = "api_key"       // API密钥
+	SecretTypeDBCredential SecretType = "db_credential" // 数据库凭证
+	SecretTypeCertificate  SecretType = "certificate"   // 证书
+	SecretTypeSSHKey       SecretType = "ssh_key"       // SSH密钥
+	SecretTypeToken        SecretType = "token"         // 令牌
+	SecretTypePassword     SecretType = "password"      // 密码
+	SecretTypeOther        SecretType = "other"         // 其他
 )
 
 // SecretMetadata 秘密元数据（存储为JSON）
 type SecretMetadata struct {
-	ExpiresAt *time.Time `json:"expires_at,omitempty"` // 过期时间
-	Tags      []string   `json:"tags,omitempty"`       // 标签
-	Extra     map[string]interface{} `json:"extra,omitempty"` // 额外信息
+	ExpiresAt *time.Time             `json:"expires_at,omitempty"` // 过期时间
+	Tags      []string               `json:"tags,omitempty"`       // 标签
+	Extra     map[string]interface{} `json:"extra,omitempty"`      // 额外信息
 }
 
 // Scan 实现sql.Scanner接口，用于从数据库读取
@@ -50,8 +50,8 @@ func (m SecretMetadata) Value() (driver.Value, error) {
 // 存储用户加密后的敏感数据
 type EncryptedSecret struct {
 	BaseModel
-	UserUUID   string     `gorm:"type:char(36);not null;index" json:"user_uuid"`
-	SecretUUID string     `gorm:"type:char(36);uniqueIndex;not null" json:"secret_uuid"`
+	UserUUID   string `gorm:"type:char(36);not null;index" json:"user_uuid"`
+	SecretUUID string `gorm:"type:char(36);uniqueIndex;not null" json:"secret_uuid"`
 
 	// 业务信息
 	SecretName  string     `gorm:"type:varchar(255);not null" json:"secret_name"`

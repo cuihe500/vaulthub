@@ -210,11 +210,11 @@ type ListProfilesRequest struct {
 
 // ListProfilesResponse 用户档案列表响应
 type ListProfilesResponse struct {
-	Profiles  []*models.SafeUserProfile `json:"profiles"`
-	Total     int64                     `json:"total"`
-	Page      int                       `json:"page"`
-	PageSize  int                       `json:"page_size"`
-	TotalPages int                      `json:"total_pages"`
+	Profiles   []*models.SafeUserProfile `json:"profiles"`
+	Total      int64                     `json:"total"`
+	Page       int                       `json:"page"`
+	PageSize   int                       `json:"page_size"`
+	TotalPages int                       `json:"total_pages"`
 }
 
 // ListProfiles 获取用户档案列表（仅管理员）
