@@ -7,6 +7,43 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-11-13
+
+### Added
+
+#### 前端应用
+- 使用 Vue 3、Vite 和 Element Plus 初始化 Web 应用程序
+- 实现登录页面并建立完整的样式系统（CSS 变量定义）
+- 完成主页面设计与开发
+- 实现用户管理视图（包含图表和表单）
+- 添加审计日志、密钥管理、配置管理、秘密管理和统计 API
+
+#### 基础设施
+- 增加邮箱支持功能（#6）
+- 设计并实现审计日志和数据收集功能（#11）
+- 增加 Docker 镜像构建支持（#20）
+- 添加 GitHub Actions CI/CD 支持（#22）
+- 添加前端构建目标并更新 Makefile 帮助信息
+- 添加 release 文档，补全开发章程内容
+
+### Fixed
+- 修复响应代码处理逻辑，统一前端请求处理与后端成功状态码（0）对齐
+- 修复不规范的 SQL 语句
+- 允许审计日志表中的 user_uuid 和 username 字段为空，以支持未认证请求的审计
+- 重构代码结构以提高可读性和可维护性
+- 更新 golangci-lint 版本至 v8
+- 更新编码后检查操作，增加生成文档的要求
+
+### Changed
+- 重新整理 route.go 结构（#14）
+- 优化整合数据库迁移 SQL 文件（#17）
+- 优化审计功能（#15）
+
+### Performance
+- 优化前端文件大小，提升加载速度（#25）
+- 提高 chunk 大小警告阈值至 900KB，以支持 ECharts 懒加载
+- 更新 package-lock.json 以优化依赖管理
+
 ## [0.1.0] - 2025-11-07
 
 ### Added
@@ -76,5 +113,6 @@ Apache 2.0
 
 ---
 
-[Unreleased]: https://github.com/cuihe500/vaulthub/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/cuihe500/vaulthub/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/cuihe500/vaulthub/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/cuihe500/vaulthub/releases/tag/v0.1.0
