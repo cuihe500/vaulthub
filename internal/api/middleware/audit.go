@@ -143,8 +143,8 @@ func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
 		// 构造审计日志
 		// 注意：未认证的请求UserUUID和Username为空，这是正常的
 		auditLog := &models.AuditLog{
-			UserUUID:     userUUID,     // 未认证时为空字符串
-			Username:     usernameStr,  // 未认证时为空字符串
+			UserUUID:     userUUID,    // 未认证时为空字符串
+			Username:     usernameStr, // 未认证时为空字符串
 			ActionType:   models.ActionType(actionType),
 			ResourceType: models.ResourceType(resourceType),
 			ResourceUUID: resourceUUID,

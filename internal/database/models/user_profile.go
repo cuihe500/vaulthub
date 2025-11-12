@@ -12,10 +12,10 @@ import (
 // UserProfile 用户基本信息模型
 type UserProfile struct {
 	BaseModel
-	UserID        uint   `gorm:"uniqueIndex;not null;comment:关联用户ID" json:"user_id"`                        // 外键关联 users 表
-	Nickname      string `gorm:"type:varchar(50);not null;comment:用户昵称" json:"nickname"`                      // 昵称
-	Phone         string `gorm:"type:varchar(20);comment:手机号" json:"phone"`                                   // 手机号（可选）
-	Email         string `gorm:"type:varchar(100);not null;comment:邮箱地址" json:"email"`                        // 邮箱
+	UserID        uint   `gorm:"uniqueIndex;not null;comment:关联用户ID" json:"user_id"`                       // 外键关联 users 表
+	Nickname      string `gorm:"type:varchar(50);not null;comment:用户昵称" json:"nickname"`                   // 昵称
+	Phone         string `gorm:"type:varchar(20);comment:手机号" json:"phone"`                                // 手机号（可选）
+	Email         string `gorm:"type:varchar(100);not null;comment:邮箱地址" json:"email"`                     // 邮箱
 	EmailVerified bool   `gorm:"type:tinyint(1);not null;default:0;comment:邮箱是否已验证" json:"email_verified"` // 邮箱验证状态
 	User          User   `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user,omitempty"`
 }

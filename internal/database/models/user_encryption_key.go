@@ -23,14 +23,14 @@ type UserEncryptionKey struct {
 	SecurityPINHash string `gorm:"type:varchar(255)" json:"-"` // 安全密码哈希不对外暴露
 
 	// 恢复密钥
-	RecoveryKeyHash       string `gorm:"type:char(64);not null" json:"-"`          // 恢复密钥哈希不对外暴露
-	EncryptedDEKRecovery  []byte `gorm:"type:varbinary(512);not null" json:"-"`    // 恢复密钥加密的DEK不对外暴露
-	LastRotationAt        *time.Time `gorm:"type:datetime" json:"last_rotation_at"` // 最后一次密钥轮换时间
+	RecoveryKeyHash      string     `gorm:"type:char(64);not null" json:"-"`       // 恢复密钥哈希不对外暴露
+	EncryptedDEKRecovery []byte     `gorm:"type:varbinary(512);not null" json:"-"` // 恢复密钥加密的DEK不对外暴露
+	LastRotationAt       *time.Time `gorm:"type:datetime" json:"last_rotation_at"` // 最后一次密钥轮换时间
 
 	// 密钥轮换相关
-	EncryptedDEKOld    []byte     `gorm:"type:varbinary(512)" json:"-"`                      // 旧DEK（轮换期间暂存）
-	RotationStatus     string     `gorm:"type:varchar(20);not null;default:'none'" json:"rotation_status"` // 轮换状态
-	RotationStartedAt  *time.Time `gorm:"type:datetime" json:"rotation_started_at,omitempty"` // 轮换开始时间
+	EncryptedDEKOld   []byte     `gorm:"type:varbinary(512)" json:"-"`                                    // 旧DEK（轮换期间暂存）
+	RotationStatus    string     `gorm:"type:varchar(20);not null;default:'none'" json:"rotation_status"` // 轮换状态
+	RotationStartedAt *time.Time `gorm:"type:datetime" json:"rotation_started_at,omitempty"`              // 轮换开始时间
 }
 
 // TableName 指定表名

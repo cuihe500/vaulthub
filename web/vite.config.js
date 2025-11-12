@@ -26,12 +26,10 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
+    // 使用esbuild压缩(Vite默认,速度更快)
+    minify: 'esbuild',
+    esbuild: {
+      drop: ['console', 'debugger']
     }
   }
 })

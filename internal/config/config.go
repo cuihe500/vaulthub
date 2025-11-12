@@ -156,8 +156,8 @@ func setDefaults() {
 	viper.SetDefault("logger.encoding", "console")
 	viper.SetDefault("logger.output_paths", []string{"stdout"})
 	viper.SetDefault("logger.error_output_paths", []string{"stderr"})
-	viper.SetDefault("audit.buffer_size", 5000)  // 默认缓冲区5000
-	viper.SetDefault("audit.worker_count", 5)    // 默认5个worker
+	viper.SetDefault("audit.buffer_size", 5000)      // 默认缓冲区5000
+	viper.SetDefault("audit.worker_count", 5)        // 默认5个worker
 	viper.SetDefault("audit.max_detail_size", 65000) // 默认65KB
 }
 
@@ -196,6 +196,8 @@ func setupEnvBinding() {
 		{"security.admin_password", "SECURITY_ADMIN_PASSWORD"},
 		{"logger.level", "LOGGER_LEVEL"},
 		{"logger.encoding", "LOGGER_ENCODING"},
+		{"logger.output_paths", "LOGGER_OUTPUT_PATHS"},
+		{"logger.error_output_paths", "LOGGER_ERROR_OUTPUT_PATHS"},
 		{"audit.buffer_size", "AUDIT_BUFFER_SIZE"},
 		{"audit.worker_count", "AUDIT_WORKER_COUNT"},
 		{"audit.max_detail_size", "AUDIT_MAX_DETAIL_SIZE"},

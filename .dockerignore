@@ -1,0 +1,41 @@
+# Git元数据
+.git
+.gitignore
+.gitattributes
+
+# 构建产物
+build/
+web/dist/
+web/node_modules/
+
+# 开发工具配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# 测试和CI配置
+.github/
+*.test
+coverage/
+
+# 文档（保留swagger生成的代码）
+docs/*
+!docs/swagger/
+*.md
+!README.md
+
+# 配置文件示例
+*.example
+!configs/.env.docker.example
+
+# 其他
+.env
+.env.local

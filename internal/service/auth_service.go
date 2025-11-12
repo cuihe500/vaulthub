@@ -37,9 +37,9 @@ func NewAuthService(db *gorm.DB, jwtManager *jwt.Manager, redis *redisClient.Cli
 type RegisterRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=32"`
 	Password string `json:"password" binding:"required,min=8"`
-	Email    string `json:"email" binding:"omitempty,email"`              // 邮箱（可选，但如果提供则必须验证）
-	Code     string `json:"code" binding:"omitempty,len=6,numeric"`       // 验证码（可选，与email配合使用）
-	Nickname string `json:"nickname" binding:"omitempty,min=1,max=50"`    // 昵称（可选，默认使用username）
+	Email    string `json:"email" binding:"omitempty,email"`           // 邮箱（可选，但如果提供则必须验证）
+	Code     string `json:"code" binding:"omitempty,len=6,numeric"`    // 验证码（可选，与email配合使用）
+	Nickname string `json:"nickname" binding:"omitempty,min=1,max=50"` // 昵称（可选，默认使用username）
 }
 
 // RegisterResponse 注册响应

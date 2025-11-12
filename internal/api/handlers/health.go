@@ -15,30 +15,30 @@ import (
 
 // ComponentStatus 组件状态
 type ComponentStatus struct {
-	Name        string    `json:"name" example:"database"`                  // 组件名称
-	Status      string    `json:"status" example:"healthy"`                 // 状态：healthy, degraded, unhealthy
-	latency     time.Duration `json:"-"`                                    // 延迟，不序列化到JSON
-	Message     string    `json:"message,omitempty" example:"数据库连接正常"` // 状态描述
-	LastChecked time.Time `json:"last_checked" example:"2025-11-06T10:30:00+08:00"` // 最后检查时间
+	Name        string        `json:"name" example:"database"`                          // 组件名称
+	Status      string        `json:"status" example:"healthy"`                         // 状态：healthy, degraded, unhealthy
+	latency     time.Duration `json:"-"`                                                // 延迟，不序列化到JSON
+	Message     string        `json:"message,omitempty" example:"数据库连接正常"`              // 状态描述
+	LastChecked time.Time     `json:"last_checked" example:"2025-11-06T10:30:00+08:00"` // 最后检查时间
 }
 
 // HealthData health check 响应数据
 type HealthData struct {
-	Status    string                     `json:"status" example:"healthy"`     // 整体状态：healthy, degraded, unhealthy
-	Timestamp int64                      `json:"timestamp" example:"1762269490888"` // 检查时间戳（毫秒）
-	Uptime    int64                      `json:"uptime" example:"3600000"`     // 服务运行时间（毫秒）
-	Version   string                     `json:"version" example:"dev"`        // 服务版本
-	Components map[string]ComponentStatus `json:"components"`                   // 各组件状态详情
-	System    SystemInfo                 `json:"system"`                       // 系统信息
+	Status     string                     `json:"status" example:"healthy"`          // 整体状态：healthy, degraded, unhealthy
+	Timestamp  int64                      `json:"timestamp" example:"1762269490888"` // 检查时间戳（毫秒）
+	Uptime     int64                      `json:"uptime" example:"3600000"`          // 服务运行时间（毫秒）
+	Version    string                     `json:"version" example:"dev"`             // 服务版本
+	Components map[string]ComponentStatus `json:"components"`                        // 各组件状态详情
+	System     SystemInfo                 `json:"system"`                            // 系统信息
 }
 
 // SystemInfo 系统信息
 type SystemInfo struct {
-	GoVersion    string `json:"go_version" example:"go1.25.1"`     // Go版本
-	Goroutines   int    `json:"goroutines" example:"10"`           // 当前goroutine数量
-	MemoryUsed   uint64 `json:"memory_used" example:"5242880"`     // 内存使用量（字节）
-	NumCPU       int    `json:"num_cpu" example:"8"`               // CPU核心数
-	NumGoroutine int    `json:"num_goroutine" example:"10"`        // Goroutine数量
+	GoVersion    string `json:"go_version" example:"go1.25.1"` // Go版本
+	Goroutines   int    `json:"goroutines" example:"10"`       // 当前goroutine数量
+	MemoryUsed   uint64 `json:"memory_used" example:"5242880"` // 内存使用量（字节）
+	NumCPU       int    `json:"num_cpu" example:"8"`           // CPU核心数
+	NumGoroutine int    `json:"num_goroutine" example:"10"`    // Goroutine数量
 }
 
 // HealthResponse 健康检查响应
@@ -52,14 +52,14 @@ type HealthResponse struct {
 
 // HealthHandler 健康检查处理器
 type HealthHandler struct {
-	mgr     *app.Manager
+	mgr       *app.Manager
 	startTime time.Time // 服务启动时间
 }
 
 // NewHealthHandler 创建健康检查处理器
 func NewHealthHandler(mgr *app.Manager) *HealthHandler {
 	return &HealthHandler{
-		mgr:        mgr,
+		mgr:       mgr,
 		startTime: time.Now(),
 	}
 }
@@ -247,10 +247,10 @@ func (h *HealthHandler) getSystemInfo() SystemInfo {
 	runtime.ReadMemStats(&m)
 
 	return SystemInfo{
-		GoVersion:     runtime.Version(),
-		Goroutines:    runtime.NumGoroutine(),
-		MemoryUsed:    m.Alloc,
-		NumCPU:        runtime.NumCPU(),
-		NumGoroutine:  runtime.NumGoroutine(),
+		GoVersion:    runtime.Version(),
+		Goroutines:   runtime.NumGoroutine(),
+		MemoryUsed:   m.Alloc,
+		NumCPU:       runtime.NumCPU(),
+		NumGoroutine: runtime.NumGoroutine(),
 	}
 }

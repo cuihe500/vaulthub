@@ -45,6 +45,7 @@ func GenerateBIP39Mnemonic() (string, error) {
 // 使用PBKDF2算法，迭代100000次，输出32字节密钥
 // 参数:
 //   - mnemonic: BIP39助记词（24个单词，空格分隔）
+//
 // 返回:
 //   - 32字节密钥和可能的错误
 func DeriveKeyFromMnemonic(mnemonic string) ([]byte, error) {
@@ -70,6 +71,7 @@ func DeriveKeyFromMnemonic(mnemonic string) ([]byte, error) {
 // 检查助记词格式、长度和校验和
 // 参数:
 //   - mnemonic: 待验证的助记词
+//
 // 返回:
 //   - true表示有效，false表示无效
 func IsMnemonicValid(mnemonic string) bool {
@@ -80,6 +82,7 @@ func IsMnemonicValid(mnemonic string) bool {
 // 用于在数据库中存储恢复密钥的哈希值，以便验证用户输入的恢复密钥是否正确
 // 参数:
 //   - recoveryKey: 从助记词派生的32字节密钥
+//
 // 返回:
 //   - 64字符的十六进制哈希字符串
 func HashRecoveryKey(recoveryKey []byte) string {

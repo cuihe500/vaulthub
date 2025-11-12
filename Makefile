@@ -13,6 +13,20 @@ else
     CONFIG_FLAG=
 endif
 
+# Docker 镜像配置
+REGISTRY ?=
+IMAGE_NAME ?= vaulthub
+IMAGE_TAG ?= $(VERSION)
+DOCKER_PLATFORM ?= linux/amd64
+CONFIG_DIR ?= $(CURDIR)/configs
+DOCKER_RUN_ARGS ?=
+
+ifeq ($(strip $(REGISTRY)),)
+IMAGE_REF := $(IMAGE_NAME):$(IMAGE_TAG)
+else
+IMAGE_REF := $(REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
+endif
+
 # 版本信息
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -85,6 +99,38 @@ lint:
 	@echo "Running linter..."
 	golangci-lint run ./...
 	@echo "Lint complete"
+
+.PHONY: docker-build
+docker-build:
+	@echo "Building Docker image $(IMAGE_REF) ..."
+	docker buildx build --load --platform $(DOCKER_PLATFORM) \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_COMMIT=$(GIT_COMMIT) \
+		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		-t $(IMAGE_REF) .
+	@echo "Docker image ready: $(IMAGE_REF)"
+
+.PHONY: docker-run
+docker-run:
+	@if [ ! -d "$(CONFIG_DIR)" ]; then \
+		echo "Warning: CONFIG_DIR $(CONFIG_DIR) does not exist. Creating it for bind mount..."; \
+		mkdir -p "$(CONFIG_DIR)"; \
+	fi
+	@echo "Starting container from $(IMAGE_REF)..."
+	docker run --rm -it \
+		$(DOCKER_RUN_ARGS) \
+		-p 8080:8080 \
+		-v $(CONFIG_DIR):/app/configs \
+		$(IMAGE_REF)
+
+.PHONY: docker-push
+docker-push:
+	@if [ -z "$(strip $(REGISTRY))" ]; then \
+		echo "Error: REGISTRY is required for docker-push (e.g. make docker-push REGISTRY=myrepo)"; \
+		exit 1; \
+	fi
+	@echo "Pushing image $(IMAGE_REF) ..."
+	docker push $(IMAGE_REF)
 
 # 安装依赖
 .PHONY: deps

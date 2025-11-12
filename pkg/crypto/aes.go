@@ -23,6 +23,7 @@ const (
 // 参数:
 //   - plaintext: 待加密的明文数据
 //   - key: 加密密钥（必须是32字节）
+//
 // 返回:
 //   - ciphertext: 密文数据
 //   - nonce: 随机生成的Nonce（12字节，每次加密必须唯一）
@@ -75,6 +76,7 @@ func EncryptAESGCM(plaintext, key []byte) (ciphertext, nonce, authTag []byte, er
 //   - key: 解密密钥（必须是32字节）
 //   - nonce: 加密时使用的Nonce（12字节）
 //   - authTag: 认证标签（16字节）
+//
 // 返回:
 //   - []byte: 解密后的明文数据
 //   - error: 错误信息（如果认证失败，说明数据被篡改）

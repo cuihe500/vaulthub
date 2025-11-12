@@ -23,7 +23,7 @@ func NewRecoveryService(db *gorm.DB) *RecoveryService {
 // VerifyRecoveryKeyRequest 验证恢复密钥请求
 // 用于验证用户输入的恢复助记词是否正确，不执行实际的密码重置
 type VerifyRecoveryKeyRequest struct {
-	UserUUID        string `json:"-"` // 不从请求体解析，由handler从上下文设置
+	UserUUID         string `json:"-"` // 不从请求体解析，由handler从上下文设置
 	RecoveryMnemonic string `json:"recovery_mnemonic" binding:"required"`
 }
 
@@ -83,8 +83,8 @@ func (s *RecoveryService) VerifyRecoveryKey(req *VerifyRecoveryKeyRequest) (*Ver
 
 // ResetPasswordWithRecoveryRequest 使用恢复密钥重置安全密码请求
 type ResetPasswordWithRecoveryRequest struct {
-	UserUUID         string `json:"-"`                                  // 不从请求体解析，由handler从上下文设置
-	RecoveryMnemonic string `json:"recovery_mnemonic" binding:"required"` // 恢复助记词
+	UserUUID         string `json:"-"`                                         // 不从请求体解析，由handler从上下文设置
+	RecoveryMnemonic string `json:"recovery_mnemonic" binding:"required"`      // 恢复助记词
 	NewSecurityPIN   string `json:"new_security_pin" binding:"required,min=8"` // 新的安全密码（独立于登录密码）
 }
 
@@ -209,8 +209,8 @@ func (s *RecoveryService) ResetPasswordWithRecovery(req *ResetPasswordWithRecove
 		if err := tx.Model(&userKey).Updates(map[string]interface{}{
 			"kek_salt":               newKEKSalt,
 			"encrypted_dek":          newEncryptedDEKBlob,
-			"security_pin_hash":      newSecurityPINHash,       // 更新安全密码哈希
-			"recovery_key_hash":      newRecoveryKeyHash,       // 更新恢复密钥哈希
+			"security_pin_hash":      newSecurityPINHash,          // 更新安全密码哈希
+			"recovery_key_hash":      newRecoveryKeyHash,          // 更新恢复密钥哈希
 			"encrypted_dek_recovery": newEncryptedDEKRecoveryBlob, // 更新恢复密钥加密的DEK
 		}).Error; err != nil {
 			return err

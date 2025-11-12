@@ -316,12 +316,12 @@ type GetStatisticsRequest struct {
 
 // CurrentStatistics 当前统计数据
 type CurrentStatistics struct {
-	TotalSecrets      int64 `json:"total_secrets"`
-	APIKeyCount       int64 `json:"api_key_count"`
-	PasswordCount     int64 `json:"password_count"`
-	CertificateCount  int64 `json:"certificate_count"`
-	SSHKeyCount       int64 `json:"ssh_key_count"`
-	PrivateKeyCount   int64 `json:"private_key_count"`
-	OtherCount        int64 `json:"other_count"`
-	TodayOperations   int64 `json:"today_operations"`
+	TotalSecrets     int64 `json:"total_secrets"`
+	APIKeyCount      int64 `json:"api_key_count"`
+	PasswordCount    int64 `json:"password_count"`
+	CertificateCount int64 `json:"certificate_count"`
+	SSHKeyCount      int64 `json:"ssh_key_count"`
+	PrivateKeyCount  int64 `json:"private_key_count"`
+	OtherCount       int64 `json:"other_count"`
+	TodayOperations  int64 `json:"today_operations"`
 }

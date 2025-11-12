@@ -24,7 +24,7 @@ func NewEncryptionService(db *gorm.DB) *EncryptionService {
 // CreateUserEncryptionKeyRequest 创建用户加密密钥请求
 // 注意：UserUUID 由服务端从认证上下文中提取，不需要客户端传入
 type CreateUserEncryptionKeyRequest struct {
-	UserUUID    string `json:"-"`                                  // 不从请求体解析，由handler从上下文设置
+	UserUUID    string `json:"-"`                                     // 不从请求体解析，由handler从上下文设置
 	SecurityPIN string `json:"security_pin" binding:"required,min=8"` // 安全密码，用于保护加密数据（独立于登录密码）
 }
 
@@ -155,7 +155,7 @@ func (s *EncryptionService) CreateUserEncryptionKey(req *CreateUserEncryptionKey
 // EncryptAndStoreSecretRequest 加密并存储秘密请求
 // 注意：UserUUID 由服务端从认证上下文中提取，不需要客户端传入
 type EncryptAndStoreSecretRequest struct {
-	UserUUID    string                 `json:"-"`                           // 不从请求体解析，由handler从上下文设置
+	UserUUID    string                 `json:"-"`                               // 不从请求体解析，由handler从上下文设置
 	SecurityPIN string                 `json:"security_pin" binding:"required"` // 安全密码，用于解密DEK
 	SecretName  string                 `json:"secret_name" binding:"required"`
 	SecretType  models.SecretType      `json:"secret_type" binding:"required"`
@@ -239,8 +239,8 @@ func (s *EncryptionService) EncryptAndStoreSecret(req *EncryptAndStoreSecretRequ
 // DecryptSecretRequest 解密秘密请求
 // 注意：UserUUID 和 SecretUUID 由服务端从认证上下文和URL路径中提取，不需要客户端传入
 type DecryptSecretRequest struct {
-	UserUUID    string `json:"-"`                           // 不从请求体解析，由handler从上下文设置
-	SecretUUID  string `json:"-"`                           // 不从请求体解析，由handler从URL路径设置
+	UserUUID    string `json:"-"`                               // 不从请求体解析，由handler从上下文设置
+	SecretUUID  string `json:"-"`                               // 不从请求体解析，由handler从URL路径设置
 	SecurityPIN string `json:"security_pin" binding:"required"` // 安全密码，用于解密DEK
 }
 

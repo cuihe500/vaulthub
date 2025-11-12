@@ -123,16 +123,16 @@ func (s *KeyRotationService) getKeyRotationConfig() (batchSize int, batchSleepMS
 
 // MigrationTask 数据迁移任务状态
 type MigrationTask struct {
-	UserUUID        string    `json:"user_uuid"`
-	OldVersion      int       `json:"old_version"`
-	NewVersion      int       `json:"new_version"`
-	TotalSecrets    int64     `json:"total_secrets"`
-	MigratedSecrets int64     `json:"migrated_secrets"`
-	FailedSecrets   int64     `json:"failed_secrets"`
-	Status          string    `json:"status"` // running, completed, failed
-	StartedAt       time.Time `json:"started_at"`
+	UserUUID        string     `json:"user_uuid"`
+	OldVersion      int        `json:"old_version"`
+	NewVersion      int        `json:"new_version"`
+	TotalSecrets    int64      `json:"total_secrets"`
+	MigratedSecrets int64      `json:"migrated_secrets"`
+	FailedSecrets   int64      `json:"failed_secrets"`
+	Status          string     `json:"status"` // running, completed, failed
+	StartedAt       time.Time  `json:"started_at"`
 	CompletedAt     *time.Time `json:"completed_at,omitempty"`
-	Error           string    `json:"error,omitempty"`
+	Error           string     `json:"error,omitempty"`
 	ctx             context.Context
 	cancel          context.CancelFunc
 	mu              sync.RWMutex
@@ -140,7 +140,7 @@ type MigrationTask struct {
 
 // RotateDEKRequest 密钥轮换请求
 type RotateDEKRequest struct {
-	UserUUID    string `json:"-"`                           // 由handler从上下文设置
+	UserUUID    string `json:"-"`                               // 由handler从上下文设置
 	SecurityPIN string `json:"security_pin" binding:"required"` // 安全密码，用于验证和解密DEK
 }
 
@@ -524,11 +524,11 @@ func (s *KeyRotationService) GetRotationStatus(userUUID string) (*MigrationTask,
 
 	// 构造历史状态响应
 	task := &MigrationTask{
-		UserUUID:     userUUID,
-		NewVersion:   userKey.DEKVersion,
-		Status:       userKey.RotationStatus,
-		StartedAt:    *userKey.RotationStartedAt,
-		CompletedAt:  userKey.LastRotationAt,
+		UserUUID:    userUUID,
+		NewVersion:  userKey.DEKVersion,
+		Status:      userKey.RotationStatus,
+		StartedAt:   *userKey.RotationStartedAt,
+		CompletedAt: userKey.LastRotationAt,
 	}
 
 	return task, nil

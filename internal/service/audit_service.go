@@ -20,7 +20,7 @@ type AuditService struct {
 	wg           sync.WaitGroup
 	ctx          context.Context
 	cancel       context.CancelFunc
-	closed       atomic.Bool  // 标记服务是否已关闭
+	closed       atomic.Bool   // 标记服务是否已关闭
 	droppedCount atomic.Uint64 // 记录丢弃的日志数量（用于metrics）
 	loggedCount  atomic.Uint64 // 记录成功入队的日志数量（用于metrics）
 }
