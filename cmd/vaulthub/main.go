@@ -108,7 +108,9 @@ func runServer(cmd *cobra.Command, args []string) {
 	if err := initLogger(cfg); err != nil {
 		logger.Fatal("初始化日志失败", logger.Err(err))
 	}
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync() // 日志同步失败不影响程序退出
+	}()
 
 	// 3. 初始化参数校验翻译器
 	if err := validator.Init(); err != nil {
@@ -133,7 +135,11 @@ func runServer(cmd *cobra.Command, args []string) {
 	if err := mgr.Initialize(cfg); err != nil {
 		logger.Fatal("初始化连接管理器失败", logger.Err(err))
 	}
-	defer mgr.Close()
+	defer func() {
+		if err := mgr.Close(); err != nil {
+			logger.Error("关闭连接管理器失败", logger.Err(err))
+		}
+	}()
 
 	// 7. 初始化定时任务调度器
 	scheduler := initScheduler(mgr)

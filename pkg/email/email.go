@@ -101,14 +101,18 @@ func (s *Sender) sendMailTLS(addr string, auth smtp.Auth, from string, to []stri
 	if err != nil {
 		return fmt.Errorf("TLS连接失败: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close() // 连接关闭失败不影响邮件发送结果
+	}()
 
 	// 创建SMTP客户端
 	client, err := smtp.NewClient(conn, s.config.Host)
 	if err != nil {
 		return fmt.Errorf("创建SMTP客户端失败: %w", err)
 	}
-	defer client.Quit()
+	defer func() {
+		_ = client.Quit() // 客户端退出失败不影响邮件发送结果
+	}()
 
 	// 认证
 	if auth != nil {

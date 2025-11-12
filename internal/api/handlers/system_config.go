@@ -41,7 +41,7 @@ func (h *SystemConfigHandler) ListConfigs(c *gin.Context) {
 	result, err := h.configService.ListConfigs()
 	if err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
-			logger.Warn("获取配置列表失败", logger.String("code", string(appErr.Code)))
+			logger.Warn("获取配置列表失败", logger.Int("code", appErr.Code))
 			response.AppError(c, appErr)
 			return
 		}
@@ -82,7 +82,7 @@ func (h *SystemConfigHandler) GetConfig(c *gin.Context) {
 		if appErr, ok := err.(*errors.AppError); ok {
 			logger.Warn("获取配置失败",
 				logger.String("key", key),
-				logger.String("code", string(appErr.Code)))
+				logger.Int("code", appErr.Code))
 			response.AppError(c, appErr)
 			return
 		}
@@ -133,7 +133,7 @@ func (h *SystemConfigHandler) UpdateConfig(c *gin.Context) {
 		if appErr, ok := err.(*errors.AppError); ok {
 			logger.Warn("更新配置失败",
 				logger.String("key", key),
-				logger.String("code", string(appErr.Code)))
+				logger.Int("code", appErr.Code))
 			response.AppError(c, appErr)
 			return
 		}
@@ -173,7 +173,7 @@ func (h *SystemConfigHandler) BatchUpdateConfigs(c *gin.Context) {
 
 	if err := h.configService.BatchUpdateConfigs(&req); err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
-			logger.Warn("批量更新配置失败", logger.String("code", string(appErr.Code)))
+			logger.Warn("批量更新配置失败", logger.Int("code", appErr.Code))
 			response.AppError(c, appErr)
 			return
 		}
@@ -203,7 +203,7 @@ func (h *SystemConfigHandler) ReloadConfigs(c *gin.Context) {
 
 	if err := h.configService.ReloadConfigs(); err != nil {
 		if appErr, ok := err.(*errors.AppError); ok {
-			logger.Warn("重新加载配置失败", logger.String("code", string(appErr.Code)))
+			logger.Warn("重新加载配置失败", logger.Int("code", appErr.Code))
 			response.AppError(c, appErr)
 			return
 		}

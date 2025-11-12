@@ -45,7 +45,11 @@ func ensureDatabaseMigration(cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("创建迁移器失败: %w", err)
 	}
-	defer migrator.Close()
+	defer func() {
+		if err := migrator.Close(); err != nil {
+			logger.Error("关闭迁移器失败", logger.Err(err))
+		}
+	}()
 
 	// 执行迁移，如果已是最新版本则跳过
 	if err := migrator.Up(); err != nil {
@@ -68,8 +72,15 @@ func ensureSuperAdmin(cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("连接数据库失败: %w", err)
 	}
-	sqlDB, _ := db.DB()
-	defer sqlDB.Close()
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("获取数据库连接失败: %w", err)
+	}
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			logger.Error("关闭数据库连接失败", logger.Err(err))
+		}
+	}()
 
 	// 检查admin_initialized标志
 	var sysConfig models.SystemConfig

@@ -496,6 +496,7 @@ const displayTime = dayjs.utc(utcTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH
 34. 所有需要基于角色限制数据访问范围的接口，必须使用AuthWithAuditAndScope中间件链
 35. 权限验证逻辑必须在中间件层完成，handler只负责业务逻辑
 36. 中间件链的顺序不能随意调整，必须遵循：RequestID -> Auth -> Audit -> Permission/Scope -> SecurityPIN的顺序
+37. 在编码完成后，必须执行make fmt 和 make line等检查操作（单元测试默认不执行，除非显式指明），并且修复存在的问题。
 
 ### 前端特定约束
 

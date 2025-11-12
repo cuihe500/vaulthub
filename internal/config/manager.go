@@ -104,7 +104,7 @@ func (m *ConfigManager) GetWithDefault(key, defaultValue string) string {
 func (m *ConfigManager) Set(key, value string) error {
 	// 获取旧值用于通知观察者
 	m.mu.RLock()
-	oldValue, _ := m.cache[key]
+	oldValue := m.cache[key]
 	m.mu.RUnlock()
 
 	// 更新数据库
