@@ -215,7 +215,6 @@ swag:
 	swag init -g $(CMD_DIR)/main.go -o docs/swagger --parseDependency --parseInternal
 	@echo "Copying swagger documentation to web/api-docs..."
 	@mkdir -p web/api-docs
-	@cp -r docs/swagger/* web/api-docs/
 	@echo "Swagger documentation generated in docs/swagger/ and web/api-docs/"
 
 # 帮助

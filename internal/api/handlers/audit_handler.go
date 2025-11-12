@@ -56,10 +56,8 @@ func (h *AuditHandler) QueryAuditLogs(c *gin.Context) {
 	if scopeUUID, restricted := middleware.GetScopeUserUUID(c); restricted {
 		// 作用域受限（普通用户），强制使用受限的用户UUID
 		req.UserUUID = scopeUUID
-	} else if req.UserUUID == "" {
-		// 无作用域限制（管理员）且未指定用户UUID，查询所有日志
-		// 不做任何限制
 	}
+	// 无作用域限制（管理员）且未指定用户UUID，查询所有日志（不做任何限制）
 
 	// 时间范围验证
 	if !req.StartTime.IsZero() && !req.EndTime.IsZero() {

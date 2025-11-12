@@ -65,7 +65,7 @@ func init() {
 
 	// force 命令参数
 	migrateForceCmd.Flags().IntVarP(&forceVersion, "version", "v", 0, "要强制设置的版本号")
-	migrateForceCmd.MarkFlagRequired("version")
+	_ = migrateForceCmd.MarkFlagRequired("version") // 标记为必需参数
 
 	// 添加到根命令
 	rootCmd.AddCommand(migrateCmd)
@@ -77,13 +77,19 @@ func runMigrateUp(cmd *cobra.Command, args []string) {
 	if err := initLogger(cfg); err != nil {
 		logger.Fatal("初始化日志失败", logger.Err(err))
 	}
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync() // 日志同步失败不影响程序退出
+	}()
 
 	migrator, err := database.NewMigrator(cfg.Database)
 	if err != nil {
 		logger.Fatal("创建迁移器失败", logger.Err(err))
 	}
-	defer migrator.Close()
+	defer func() {
+		if err := migrator.Close(); err != nil {
+			logger.Error("关闭迁移器失败", logger.Err(err))
+		}
+	}()
 
 	if err := migrator.Up(); err != nil {
 		logger.Fatal("数据库升级失败", logger.Err(err))
@@ -96,13 +102,19 @@ func runMigrateDown(cmd *cobra.Command, args []string) {
 	if err := initLogger(cfg); err != nil {
 		logger.Fatal("初始化日志失败", logger.Err(err))
 	}
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync() // 日志同步失败不影响程序退出
+	}()
 
 	migrator, err := database.NewMigrator(cfg.Database)
 	if err != nil {
 		logger.Fatal("创建迁移器失败", logger.Err(err))
 	}
-	defer migrator.Close()
+	defer func() {
+		if err := migrator.Close(); err != nil {
+			logger.Error("关闭迁移器失败", logger.Err(err))
+		}
+	}()
 
 	if err := migrator.Down(); err != nil {
 		logger.Fatal("回滚失败", logger.Err(err))
@@ -115,13 +127,19 @@ func runMigrateVersion(cmd *cobra.Command, args []string) {
 	if err := initLogger(cfg); err != nil {
 		logger.Fatal("初始化日志失败", logger.Err(err))
 	}
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync() // 日志同步失败不影响程序退出
+	}()
 
 	migrator, err := database.NewMigrator(cfg.Database)
 	if err != nil {
 		logger.Fatal("创建迁移器失败", logger.Err(err))
 	}
-	defer migrator.Close()
+	defer func() {
+		if err := migrator.Close(); err != nil {
+			logger.Error("关闭迁移器失败", logger.Err(err))
+		}
+	}()
 
 	version, dirty, err := migrator.Version()
 	if err != nil {
@@ -143,13 +161,19 @@ func runMigrateSteps(cmd *cobra.Command, args []string) {
 	if err := initLogger(cfg); err != nil {
 		logger.Fatal("初始化日志失败", logger.Err(err))
 	}
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync() // 日志同步失败不影响程序退出
+	}()
 
 	migrator, err := database.NewMigrator(cfg.Database)
 	if err != nil {
 		logger.Fatal("创建迁移器失败", logger.Err(err))
 	}
-	defer migrator.Close()
+	defer func() {
+		if err := migrator.Close(); err != nil {
+			logger.Error("关闭迁移器失败", logger.Err(err))
+		}
+	}()
 
 	if err := migrator.Steps(migrateSteps); err != nil {
 		logger.Fatal("数据库操作失败", logger.Err(err))
@@ -162,13 +186,19 @@ func runMigrateForce(cmd *cobra.Command, args []string) {
 	if err := initLogger(cfg); err != nil {
 		logger.Fatal("初始化日志失败", logger.Err(err))
 	}
-	defer logger.Sync()
+	defer func() {
+		_ = logger.Sync() // 日志同步失败不影响程序退出
+	}()
 
 	migrator, err := database.NewMigrator(cfg.Database)
 	if err != nil {
 		logger.Fatal("创建迁移器失败", logger.Err(err))
 	}
-	defer migrator.Close()
+	defer func() {
+		if err := migrator.Close(); err != nil {
+			logger.Error("关闭迁移器失败", logger.Err(err))
+		}
+	}()
 
 	logger.Warn("警告：强制设置版本可能导致数据不一致，请谨慎使用", logger.Int("version", forceVersion))
 

@@ -478,7 +478,7 @@ func (s *AuthService) RequestPasswordReset(req *RequestPasswordResetRequest, bas
 			logger.Info("密码重置请求的邮箱不存在",
 				logger.String("email", req.Email))
 			// 设置频率限制，防止滥用
-			s.redis.Set(ctx, limitKey, "1", 5*time.Minute)
+			_ = s.redis.Set(ctx, limitKey, "1", 5*time.Minute) // 频率限制失败不影响业务流程
 			return &RequestPasswordResetResponse{
 				Message: "如果该邮箱已注册，您将收到密码重置邮件",
 			}, nil
@@ -503,7 +503,7 @@ func (s *AuthService) RequestPasswordReset(req *RequestPasswordResetRequest, bas
 		logger.Warn("尝试为已禁用的用户重置密码",
 			logger.String("uuid", user.UUID))
 		// 返回通用消息，不泄露账户状态
-		s.redis.Set(ctx, limitKey, "1", 5*time.Minute)
+		_ = s.redis.Set(ctx, limitKey, "1", 5*time.Minute) // 频率限制失败不影响业务流程
 		return &RequestPasswordResetResponse{
 			Message: "如果该邮箱已注册，您将收到密码重置邮件",
 		}, nil
