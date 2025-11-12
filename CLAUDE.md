@@ -157,6 +157,51 @@ HTTP请求 → 路由 → 处理器 → 服务层 → 数据访问层 → 数据
 - 依赖注入优于全局变量
 - 单元测试覆盖核心逻辑
 
+### 5. 按需加载与性能优化
+
+**前端按需加载原则**：
+- **UI库按需导入**: 使用unplugin-auto-import/unplugin-vue-components自动按需加载,禁止全量引入
+- **图表库懒加载**: ECharts等大型库必须异步加载,且只引入使用的图表类型(如PieChart),禁止`import * as echarts`
+- **路由懒加载**: 所有路由组件(包括布局组件)必须使用`() => import()`懒加载
+- **代码拆分**: 配置manualChunks将Vue核心、UI库、图表库、通用vendor分别拆分为独立chunk
+- **Bundle监控**: CI中强制检查bundle大小,主入口不超过50KB(gzip),单个chunk不超过350KB(gzip)
+- **可视化分析**: 使用rollup-plugin-visualizer生成bundle分析报告,持续优化
+
+**强制规范**：
+```javascript
+// Bad: 全量引入Element Plus
+import ElementPlus from 'element-plus'
+app.use(ElementPlus)
+
+// Good: 按需自动导入(通过unplugin配置)
+// 无需手动导入,组件自动按需加载
+
+// Bad: 全量引入ECharts
+import * as echarts from 'echarts'
+
+// Good: 按需异步加载
+const loadECharts = async () => {
+  const [{ init, use }, { PieChart }, { TooltipComponent }] = await Promise.all([
+    import('echarts/core'),
+    import('echarts/charts'),
+    import('echarts/components')
+  ])
+  use([PieChart, TooltipComponent])
+  return { init }
+}
+
+// Bad: 同步导入布局
+import MainLayout from '@/layouts/MainLayout.vue'
+
+// Good: 异步懒加载
+component: () => import('@/layouts/MainLayout.vue')
+```
+
+**性能目标**：
+- 主入口bundle(gzip): ≤ 50KB
+- 首屏加载总量(gzip): ≤ 200KB
+- 单个chunk(gzip): ≤ 350KB (ECharts等大型库除外,但必须懒加载)
+
 ---
 
 ## 后端开发规范
@@ -500,25 +545,30 @@ const displayTime = dayjs.utc(utcTime).tz('Asia/Shanghai').format('YYYY-MM-DD HH
 
 ### 前端特定约束
 
-37. 在调用接口时，一定要先查看api-docs/下的接口文档，确认接口的定义
-38. 组件不直接调用axios，必须通过API层
-39. 能用Props/Emit解决的，不用Vuex/Pinia
-40. 不要随意引入新依赖，需要先评估必要性
-41. 不要在组件中直接操作DOM，用Vue的数据驱动
-42. 不要把业务逻辑写在模板里，超过3个三元运算符就该提取成computed
-43. 单个组件超过300行就该拆分
-44. 不要用var，统一使用const/let
-45. 不要在循环中使用index作为key，使用唯一标识符(如uuid)
+38. 在调用接口时，一定要先查看api-docs/下的接口文档，确认接口的定义
+39. 组件不直接调用axios，必须通过API层
+40. 禁止全量引入UI库,必须使用unplugin-auto-import/unplugin-vue-components实现按需加载
+41. 禁止使用`import * as echarts`,必须按需异步加载图表组件(如PieChart)
+42. 所有路由组件(包括布局)必须使用`() => import()`懒加载
+43. 必须配置manualChunks拆分vendor,主入口bundle(gzip)不得超过50KB
+44. CI构建时必须检查bundle大小,超过阈值直接失败
+45. 能用Props/Emit解决的，不用Vuex/Pinia
+46. 不要随意引入新依赖，需要先评估必要性
+47. 不要在组件中直接操作DOM，用Vue的数据驱动
+48. 不要把业务逻辑写在模板里，超过3个三元运算符就该提取成computed
+49. 单个组件超过300行就该拆分
+50. 不要用var，统一使用const/let
+51. 不要在循环中使用index作为key，使用唯一标识符(如uuid)
 
 ### 通用工作流程约束
 
-46. 任何需要现在时间的地方，都必须调用date命令获取真实的现在时间
-47. 优先使用MCP能力（如搜索，第三方库检索），若MCP无法使用，再回退到原始模式
-48. 在引用第三方库之前，必须完全了解该库的情况，包括实际能力、接口规范等
-49. 所有文档应该正确放置在docs及其子文件夹下
-50. 若该目录必须遵守其他相关的规定，则可以在该目录下新增README.md，该文档将会视为和章程一个优先级的规定
-51. 若目录下存在README.md，必须先阅读并理解该文档内容，并且将其视为和章程一个优先级
-52. 对于分页逻辑，若不带有分页参数，则视为全部导出
+52. 任何需要现在时间的地方，都必须调用date命令获取真实的现在时间
+53. 优先使用MCP能力（如搜索，第三方库检索），若MCP无法使用，再回退到原始模式
+54. 在引用第三方库之前，必须完全了解该库的情况，包括实际能力、接口规范等
+55. 所有文档应该正确放置在docs及其子文件夹下
+56. 若该目录必须遵守其他相关的规定，则可以在该目录下新增README.md，该文档将会视为和章程一个优先级的规定
+57. 若目录下存在README.md，必须先阅读并理解该文档内容，并且将其视为和章程一个优先级
+58. 对于分页逻辑，若不带有分页参数，则视为全部导出
 
 ---
 

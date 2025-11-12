@@ -12,7 +12,7 @@ on:
 
 jobs:
   lint-and-test:
-    name: Lint and Test
+    name: Lint Test and Build
     runs-on: ubuntu-latest
 
     steps:
@@ -58,6 +58,46 @@ jobs:
 
       - name: Build frontend
         run: make build-frontend
+
+      - name: Check frontend bundle size
+        run: |
+          cd web
+          echo "检查前端bundle大小..."
+
+          # 定义阈值(gzip后的大小,单位KB)
+          MAX_MAIN_BUNDLE_SIZE=50
+          MAX_CHUNK_SIZE=350
+
+          # 检查主入口bundle
+          MAIN_BUNDLE=$(find dist/assets/js -name "index-*.js" -type f)
+          if [ -n "$MAIN_BUNDLE" ]; then
+            MAIN_SIZE=$(gzip -c "$MAIN_BUNDLE" | wc -c)
+            MAIN_SIZE_KB=$((MAIN_SIZE / 1024))
+            echo "主入口bundle大小: ${MAIN_SIZE_KB}KB (gzip)"
+
+            if [ "$MAIN_SIZE_KB" -gt "$MAX_MAIN_BUNDLE_SIZE" ]; then
+              echo "主入口bundle过大! 超过${MAX_MAIN_BUNDLE_SIZE}KB阈值"
+              exit 1
+            fi
+          fi
+
+          # 检查最大的chunk
+          LARGEST_CHUNK=$(find dist/assets/js -name "chunk-*.js" -type f -exec gzip -c {} \; | wc -c | sort -nr | head -1)
+          if [ -n "$LARGEST_CHUNK" ]; then
+            for file in dist/assets/js/chunk-*.js; do
+              SIZE=$(gzip -c "$file" | wc -c)
+              SIZE_KB=$((SIZE / 1024))
+              FILENAME=$(basename "$file")
+              echo "  $FILENAME: ${SIZE_KB}KB (gzip)"
+
+              if [ "$SIZE_KB" -gt "$MAX_CHUNK_SIZE" ]; then
+                echo "chunk过大! $FILENAME 超过${MAX_CHUNK_SIZE}KB阈值"
+                exit 1
+              fi
+            done
+          fi
+
+          echo "bundle大小检查通过"
 
       - name: Run tests with coverage
         run: make coverage

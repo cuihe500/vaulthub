@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken } from '@/utils/storage'
 import { getSecurityPINStatus } from '@/api/keys'
-import MainLayout from '@/layouts/MainLayout.vue'
 
 const routes = [
   {
@@ -18,7 +17,8 @@ const routes = [
   },
   {
     path: '/',
-    component: MainLayout,
+    // MainLayout改为懒加载,避免在登录页就被打进主bundle
+    component: () => import('@/layouts/MainLayout.vue'),
     redirect: '/vault',
     meta: { requiresAuth: true },
     children: [
