@@ -54,8 +54,8 @@ export default defineConfig({
     esbuild: {
       drop: ['console', 'debugger']
     },
-    // 提高chunk大小警告阈值至700KB
-    chunkSizeWarningLimit: 700,
+    // 提高chunk大小警告阈值至900KB (ECharts懒加载chunk约876KB,不影响首屏)
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         // 手动拆分vendor chunk
