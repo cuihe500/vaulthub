@@ -10,6 +10,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/login/Register.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/setup-security-pin',
     name: 'SetupSecurityPin',
     component: () => import('@/views/security/SetupSecurityPin.vue'),

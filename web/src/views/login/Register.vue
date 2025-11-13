@@ -51,10 +51,30 @@
         <el-form-item prop="email">
           <el-input
             v-model="registerForm.email"
-            placeholder="请输入邮箱（可选）"
+            placeholder="请输入邮箱"
             :prefix-icon="Message"
             size="large"
           />
+        </el-form-item>
+
+        <el-form-item prop="code">
+          <el-input
+            v-model="registerForm.code"
+            placeholder="请输入6位验证码"
+            maxlength="6"
+            size="large"
+          >
+            <template #append>
+              <el-button
+                :disabled="countdown > 0"
+                @click="handleSendCode"
+                :loading="sendingCode"
+                style="width: 120px"
+              >
+                {{ countdown > 0 ? `${countdown}秒后重试` : '发送验证码' }}
+              </el-button>
+            </template>
+          </el-input>
         </el-form-item>
 
         <el-form-item prop="nickname">
@@ -89,11 +109,12 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Message, UserFilled } from '@element-plus/icons-vue'
 import { register } from '@/api/auth'
+import { sendVerificationCode } from '@/api/email'
 
 export default {
   name: 'Register',
@@ -107,11 +128,12 @@ export default {
       password: '',
       confirmPassword: '',
       email: '',
+      code: '',
       nickname: ''
     })
 
     // 自定义验证器：确认密码
-    const validateConfirmPassword = (rule, value, callback) => {
+    const validateConfirmPassword = (_rule, value, callback) => {
       if (value === '') {
         callback(new Error('请再次输入密码'))
       } else if (value !== registerForm.password) {
@@ -134,12 +156,70 @@ export default {
         { required: true, validator: validateConfirmPassword, trigger: 'blur' }
       ],
       email: [
+        { required: true, message: '请输入邮箱', trigger: 'blur' },
         { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+      ],
+      code: [
+        { required: true, message: '请输入验证码', trigger: 'blur' },
+        { len: 6, message: '验证码为6位数字', trigger: 'blur' },
+        { pattern: /^\d{6}$/, message: '验证码必须是6位数字', trigger: 'blur' }
       ],
       nickname: [
         { min: 1, max: 50, message: '昵称长度为1-50个字符', trigger: 'blur' }
       ]
     }
+
+    // 发送验证码相关状态
+    const sendingCode = ref(false)
+    const countdown = ref(0)
+    let timer = null
+
+    // 发送验证码
+    const handleSendCode = async () => {
+      if (!registerForm.email) {
+        ElMessage.warning('请先输入邮箱地址')
+        return
+      }
+
+      // 验证邮箱格式
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(registerForm.email)) {
+        ElMessage.warning('请输入有效的邮箱地址')
+        return
+      }
+
+      try {
+        sendingCode.value = true
+        await sendVerificationCode({
+          email: registerForm.email,
+          purpose: 'register'
+        })
+
+        ElMessage.success('验证码已发送，请查收邮箱')
+
+        // 启动倒计时
+        countdown.value = 60
+        timer = setInterval(() => {
+          countdown.value--
+          if (countdown.value <= 0) {
+            clearInterval(timer)
+            timer = null
+          }
+        }, 1000)
+      } catch (error) {
+        console.error('发送验证码失败:', error)
+      } finally {
+        sendingCode.value = false
+      }
+    }
+
+    // 组件卸载时清理定时器
+    onUnmounted(() => {
+      if (timer) {
+        clearInterval(timer)
+        timer = null
+      }
+    })
 
     const handleRegister = async () => {
       try {
@@ -151,13 +231,12 @@ export default {
         // 构造请求数据，移除 confirmPassword
         const requestData = {
           username: registerForm.username,
-          password: registerForm.password
+          password: registerForm.password,
+          email: registerForm.email,
+          code: registerForm.code
         }
 
-        // 只在有值时添加可选字段
-        if (registerForm.email) {
-          requestData.email = registerForm.email
-        }
+        // 添加可选字段
         if (registerForm.nickname) {
           requestData.nickname = registerForm.nickname
         }
@@ -178,7 +257,10 @@ export default {
       rules,
       registerFormRef,
       loading,
+      sendingCode,
+      countdown,
       handleRegister,
+      handleSendCode,
       User,
       Lock,
       Message,

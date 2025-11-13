@@ -21,6 +21,12 @@ Content-Type: application/json
 ### ============================================
 ### 2. 邮件接口
 ### ============================================
+### 使用流程：
+### 1. 配置邮件服务器：执行 docs/email_config.sql
+### 2. 发送验证码：调用 2.1/2.2/2.3 接口（根据用途选择）
+### 3. 查收邮箱：获取6位数字验证码（有效期5分钟）
+### 4. 使用验证码：在注册/登录/重置密码时提供验证码
+### 注意：同一邮箱60秒内只能发送一次验证码
 
 ### 2.1 发送注册验证码
 POST {{baseUrl}}/api/v1/email/send-code
@@ -63,17 +69,13 @@ Content-Type: application/json
 ### 3. 认证接口
 ### ============================================
 
-### 3.1 用户注册（仅用户名密码，不验证邮箱）
-POST {{baseUrl}}/api/v1/auth/register
-Content-Type: application/json
-
-{
-  "username": "cuihe500",
-  "password": "Ch870219176!"
-}
-
-### 3.1.1 用户注册（带邮箱验证）
-### 注意：需要先执行 2.1 发送注册验证码，并替换下方的验证码
+### 3.1 用户注册（必须邮箱验证）
+### 完整流程：
+### 1. 执行 2.1 发送注册验证码到指定邮箱
+### 2. 查收邮箱获取6位验证码
+### 3. 将验证码填入下方的 "code" 字段
+### 4. 执行此接口完成注册
+### 说明：邮箱和验证码都是必填项；注册成功后邮箱状态为"已验证"
 POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
@@ -273,7 +275,9 @@ Content-Type: application/json
 
 {
   "username": "ab",
-  "password": "testpass123456"
+  "password": "testpass123456",
+  "email": "test@example.com",
+  "code": "123456"
 }
 
 ### 4.2 注册（用户名过长）
@@ -282,7 +286,9 @@ Content-Type: application/json
 
 {
   "username": "abcdefghijklmnopqrstuvwxyz1234567",
-  "password": "testpass123456"
+  "password": "testpass123456",
+  "email": "test@example.com",
+  "code": "123456"
 }
 
 ### 4.3 注册（密码过短）
@@ -291,7 +297,40 @@ Content-Type: application/json
 
 {
   "username": "testuser",
-  "password": "short"
+  "password": "short",
+  "email": "test@example.com",
+  "code": "123456"
+}
+
+### 4.3.1 注册（缺少邮箱）
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "TestPass123!",
+  "code": "123456"
+}
+
+### 4.3.2 注册（缺少验证码）
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "TestPass123!",
+  "email": "test@example.com"
+}
+
+### 4.3.3 注册（验证码错误）
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "TestPass123!",
+  "email": "test@example.com",
+  "code": "000000"
 }
 
 ### 4.4 登录（错误的密码）
