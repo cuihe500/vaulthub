@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
+# Build arguments for version control
+ARG NODE_VERSION=20
+ARG GO_VERSION=1.25.1
+
 ########################################
 # Stage 1 - Frontend build (Vue3 via Vite)
 ########################################
-FROM node:20-alpine AS frontend-builder
+FROM node:${NODE_VERSION}-alpine AS frontend-builder
 WORKDIR /app/web
 
 # Install dependencies first to leverage Docker layer caching
@@ -16,9 +20,9 @@ COPY web/ .
 RUN npm run build
 
 ########################################
-# Stage 2 - Backend build (Go 1.25.1)
+# Stage 2 - Backend build (Go)
 ########################################
-FROM golang:1.25.1-alpine AS backend-builder
+FROM golang:${GO_VERSION}-alpine AS backend-builder
 WORKDIR /app
 
 # Install build tooling and download Go modules
