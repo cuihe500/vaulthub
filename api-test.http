@@ -1142,3 +1142,17 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/v1/audit/operations/export?start_time=2025-11-01T00:00:00Z&end_time=2025-11-30T23:59:59Z
 Content-Type: application/json
 Authorization: Bearer {{token}}
+
+### ============================================
+### 菜单接口
+### ============================================
+
+### 获取当前用户可访问的菜单
+GET {{baseUrl}}/api/v1/menus
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### 获取所有菜单（管理员用）
+GET {{baseUrl}}/api/v1/menus/all
+Authorization: Bearer {{token}}
+Content-Type: application/json

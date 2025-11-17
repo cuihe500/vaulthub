@@ -20,6 +20,7 @@ type ServiceContainer struct {
 	KeyRotation  *service.KeyRotationService
 	SystemConfig *service.SystemConfigService
 	Statistics   *service.StatisticsService
+	Menu         *service.MenuService
 }
 
 // NewServiceContainer 创建服务容器
@@ -36,6 +37,7 @@ func NewServiceContainer(mgr *app.Manager) *ServiceContainer {
 	sc.Profile = service.NewUserProfileService(mgr.DB)
 	sc.Encryption = service.NewEncryptionService(mgr.DB)
 	sc.Recovery = service.NewRecoveryService(mgr.DB)
+	sc.Menu = service.NewMenuService(mgr.DB)
 
 	// 第二层：依赖其他服务的服务
 	sc.Auth = service.NewAuthService(mgr.DB, mgr.JWT, mgr.Redis, sc.Email)

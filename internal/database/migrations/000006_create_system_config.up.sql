@@ -34,3 +34,21 @@ VALUES (
     '{"/api/v1/auth/login": {"requests": 10, "period": "minute"}, "/api/v1/auth/register": {"requests": 5, "period": "hour"}}',
     '接口级限流配置：登录每分钟10次，注册每小时5次'
 );
+
+-- 邮箱SMTP配置
+INSERT IGNORE INTO system_config (config_key, config_value, description)
+VALUES
+    ('email_smtp_host', '', 'SMTP服务器地址'),
+    ('email_smtp_port', '587', 'SMTP服务器端口（默认587）'),
+    ('email_smtp_username', '', 'SMTP认证用户名'),
+    ('email_smtp_password', '', 'SMTP认证密码'),
+    ('email_smtp_from', '', '发件人邮箱地址'),
+    ('email_smtp_from_name', 'VaultHub', '发件人显示名称'),
+    ('email_smtp_enable_tls', 'true', '是否启用TLS加密传输');
+
+-- 审计日志配置
+INSERT IGNORE INTO system_config (config_key, config_value, description)
+VALUES
+    ('audit_buffer_size', '5000', '审计日志缓冲区大小'),
+    ('audit_worker_count', '5', '审计日志worker数量'),
+    ('audit_max_detail_size', '65000', '审计Details字段最大长度（字节）');

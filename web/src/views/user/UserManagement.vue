@@ -263,15 +263,20 @@ const loadECharts = async () => {
   if (echartsCore) return echartsCore
 
   // 只引入核心和必需的组件,而不是整个echarts库
-  const [{ init, use }, { PieChart }, { TitleComponent, TooltipComponent, LegendComponent }] =
-    await Promise.all([
-      import('echarts/core'),
-      import('echarts/charts'),
-      import('echarts/components')
-    ])
+  const [coreModule, chartsModule, componentsModule, renderersModule] = await Promise.all([
+    import('echarts/core'),
+    import('echarts/charts'),
+    import('echarts/components'),
+    import('echarts/renderers')
+  ])
 
-  // 注册需要的组件
-  use([PieChart, TitleComponent, TooltipComponent, LegendComponent])
+  const { init, use } = coreModule
+  const { PieChart } = chartsModule
+  const { TitleComponent, TooltipComponent, LegendComponent } = componentsModule
+  const { CanvasRenderer } = renderersModule
+
+  // 注册需要的组件,必须包含渲染器
+  use([PieChart, TitleComponent, TooltipComponent, LegendComponent, CanvasRenderer])
 
   echartsCore = { init }
   return echartsCore

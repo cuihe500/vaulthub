@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"strconv"
 	"time"
 
+	"github.com/cuihe500/vaulthub/internal/config"
 	"github.com/cuihe500/vaulthub/internal/database/models"
 	"github.com/cuihe500/vaulthub/internal/service"
 	"github.com/cuihe500/vaulthub/pkg/logger"
@@ -41,7 +43,8 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 
 // AuditMiddleware 审计中间件
 // 自动记录所有请求（包括未认证、认证失败的请求），业务handler可通过context设置额外的审计信息
-func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
+// configManager用于读取审计配置（如max_detail_size）
+func AuditMiddleware(auditService *service.AuditService, configManager *config.ConfigManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 提取用户信息（如果有）
 		userUUID, exists := GetCurrentUserUUID(c)
@@ -104,11 +107,21 @@ func AuditMiddleware(auditService *service.AuditService) gin.HandlerFunc {
 			default:
 				// 非string类型，序列化为JSON
 				if jsonBytes, err := json.Marshal(v); err == nil {
-					// 限制大小避免占用过多空间（65535字节 = TEXT字段上限）
-					if len(jsonBytes) > 65535 {
-						details = string(jsonBytes[:65535]) + "...(truncated)"
+					// 从system_config读取Details字段最大长度限制
+					maxSizeStr := configManager.GetWithDefault("audit_max_detail_size", "65000")
+					maxSize, parseErr := strconv.Atoi(maxSizeStr)
+					if parseErr != nil {
+						logger.Warn("审计max_detail_size配置无效，使用默认值65000",
+							logger.String("value", maxSizeStr))
+						maxSize = 65000
+					}
+
+					// 限制大小避免占用过多空间
+					if len(jsonBytes) > maxSize {
+						details = string(jsonBytes[:maxSize]) + "...(truncated)"
 						logger.Warn("审计Details过大，已截断",
-							logger.Int("original_size", len(jsonBytes)))
+							logger.Int("original_size", len(jsonBytes)),
+							logger.Int("max_size", maxSize))
 					} else {
 						details = string(jsonBytes)
 					}

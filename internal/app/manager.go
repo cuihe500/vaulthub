@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -55,8 +56,8 @@ func (m *Manager) Initialize(cfg *config.Config) error {
 		return fmt.Errorf("初始化配置管理器失败: %w", err)
 	}
 
-	// 初始化审计服务
-	if err := m.initAuditService(cfg.Audit); err != nil {
+	// 初始化审计服务（从system_config读取配置）
+	if err := m.initAuditService(); err != nil {
 		return fmt.Errorf("初始化审计服务失败: %w", err)
 	}
 
@@ -164,15 +165,35 @@ func (m *Manager) initConfigManager() error {
 }
 
 // initAuditService 初始化审计服务
-func (m *Manager) initAuditService(auditCfg config.AuditConfig) error {
-	// 从配置中读取审计服务参数
+// 从system_config表读取配置，支持热更新
+func (m *Manager) initAuditService() error {
+	// 从ConfigManager读取审计服务参数
+	bufferSizeStr := m.ConfigManager.GetWithDefault("audit_buffer_size", "5000")
+	workerCountStr := m.ConfigManager.GetWithDefault("audit_worker_count", "5")
+
+	// 转换为int
+	bufferSize, err := strconv.Atoi(bufferSizeStr)
+	if err != nil {
+		logger.Error("审计缓冲区大小配置无效，使用默认值5000", logger.String("value", bufferSizeStr))
+		bufferSize = 5000
+	}
+
+	workerCount, err := strconv.Atoi(workerCountStr)
+	if err != nil {
+		logger.Error("审计worker数量配置无效，使用默认值5", logger.String("value", workerCountStr))
+		workerCount = 5
+	}
+
+	// 创建并启动审计服务
 	// 缓冲区满时新审计日志会被丢弃（不阻塞业务）
-	auditService := service.NewAuditService(m.DB, auditCfg.BufferSize, auditCfg.WorkerCount)
+	auditService := service.NewAuditService(m.DB, bufferSize, workerCount)
 	auditService.Start()
 	m.AuditService = auditService
+
 	logger.Info("审计服务初始化成功",
-		logger.Int("buffer_size", auditCfg.BufferSize),
-		logger.Int("worker_count", auditCfg.WorkerCount))
+		logger.Int("buffer_size", bufferSize),
+		logger.Int("worker_count", workerCount))
+
 	return nil
 }
 

@@ -57,7 +57,7 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			// 公开路由（不需要认证，但需要审计和限流）
 			// 注意：现在审计中间件可以处理未认证请求，会记录失败的登录尝试等重要安全事件
 			publicChain := []gin.HandlerFunc{
-				middleware.AuditMiddleware(mgr.AuditService),
+				middleware.AuditMiddleware(mgr.AuditService, mgr.ConfigManager),
 			}
 			auth.POST("/register", append(append(publicChain, chain.RateLimit()...), h.Auth.Register)...)
 			auth.POST("/login", append(append(publicChain, chain.RateLimit()...), h.Auth.Login)...)
@@ -73,6 +73,17 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			auth.POST("/logout", append(chain.AuthWithAudit(), h.Auth.Logout)...)
 			auth.POST("/reset-password", append(chain.AuthWithAudit(), h.Auth.ResetPassword)...)
 			auth.GET("/security-pin-status", append(chain.AuthWithAudit(), h.Auth.GetSecurityPINStatus)...)
+		}
+
+		// 菜单路由（需要认证）
+		// 用于前端动态路由，根据用户角色返回可访问的菜单
+		menus := v1.Group("/menus")
+		{
+			// 获取当前用户可访问的菜单
+			menus.GET("", append(chain.AuthWithAudit(), h.Menu.GetUserMenus)...)
+
+			// 获取所有菜单（管理员用）- 未来可用于菜单管理功能
+			menus.GET("/all", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionRead), h.Menu.GetAllMenus)...)
 		}
 
 		// 用户管理路由（需要认证和管理员权限）

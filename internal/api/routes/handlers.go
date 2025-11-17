@@ -22,6 +22,7 @@ type HandlerContainer struct {
 	Audit      *handlers.AuditHandler
 	Statistics *handlers.StatisticsHandler
 	Casbin     *handlers.CasbinHandler
+	Menu       *handlers.MenuHandler
 }
 
 // NewHandlerContainer 创建处理器容器
@@ -43,5 +44,6 @@ func NewHandlerContainer(mgr *app.Manager, svc *ServiceContainer) *HandlerContai
 		Audit:      handlers.NewAuditHandler(mgr.AuditService),
 		Statistics: handlers.NewStatisticsHandler(svc.Statistics),
 		Casbin:     handlers.NewCasbinHandler(mgr.Enforcer),
+		Menu:       handlers.NewMenuHandler(svc.Menu),
 	}
 }

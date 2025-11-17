@@ -26,7 +26,7 @@ func NewChainBuilder(mgr *app.Manager) *ChainBuilder {
 func (b *ChainBuilder) AuthWithAudit() []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		AuthMiddleware(b.mgr.JWT, b.mgr.DB, b.mgr.Redis),
-		AuditMiddleware(b.mgr.AuditService),
+		AuditMiddleware(b.mgr.AuditService, b.mgr.ConfigManager),
 	}
 }
 
@@ -40,7 +40,7 @@ func (b *ChainBuilder) AuthWithAudit() []gin.HandlerFunc {
 func (b *ChainBuilder) AuthWithPermission(resource, action string) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		AuthMiddleware(b.mgr.JWT, b.mgr.DB, b.mgr.Redis),
-		AuditMiddleware(b.mgr.AuditService),
+		AuditMiddleware(b.mgr.AuditService, b.mgr.ConfigManager),
 		RequirePermission(b.mgr.Enforcer, resource, action),
 	}
 }
@@ -52,7 +52,7 @@ func (b *ChainBuilder) AuthWithPermission(resource, action string) []gin.Handler
 func (b *ChainBuilder) SecureAuth() []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		AuthMiddleware(b.mgr.JWT, b.mgr.DB, b.mgr.Redis),
-		AuditMiddleware(b.mgr.AuditService),
+		AuditMiddleware(b.mgr.AuditService, b.mgr.ConfigManager),
 		SecurityPINCheckMiddleware(b.mgr.DB),
 	}
 }
@@ -69,7 +69,7 @@ func (b *ChainBuilder) SecureAuth() []gin.HandlerFunc {
 func (b *ChainBuilder) SecureAuthWithPermission(resource, action string) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		AuthMiddleware(b.mgr.JWT, b.mgr.DB, b.mgr.Redis),
-		AuditMiddleware(b.mgr.AuditService),
+		AuditMiddleware(b.mgr.AuditService, b.mgr.ConfigManager),
 		RequirePermission(b.mgr.Enforcer, resource, action),
 		SecurityPINCheckMiddleware(b.mgr.DB),
 	}
@@ -101,7 +101,7 @@ func (b *ChainBuilder) Auth() []gin.HandlerFunc {
 func (b *ChainBuilder) AuthWithAuditAndScope() []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		AuthMiddleware(b.mgr.JWT, b.mgr.DB, b.mgr.Redis),
-		AuditMiddleware(b.mgr.AuditService),
+		AuditMiddleware(b.mgr.AuditService, b.mgr.ConfigManager),
 		ScopeMiddleware(b.mgr.Enforcer),
 	}
 }

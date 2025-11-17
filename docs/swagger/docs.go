@@ -1030,6 +1030,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/configs/casbin/reload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从数据库重新加载Casbin权限策略到内存（管理员权限）。用于在运行时修改casbin_rule表后使策略生效，无需重启服务",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "系统管理"
+                ],
+                "summary": "重新加载权限策略",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/configs/reload": {
             "post": {
                 "security": [
@@ -1550,6 +1609,92 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_service.VerifyRecoveryKeyResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/menus": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "根据当前用户角色返回可访问的菜单列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "菜单"
+                ],
+                "summary": "获取用户菜单",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.MenuItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/menus/all": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取所有菜单配置（管理员权限）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "菜单"
+                ],
+                "summary": "获取所有菜单",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.MenuItem"
+                                            }
                                         }
                                     }
                                 }
@@ -2539,6 +2684,35 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cuihe500_vaulthub_internal_database_models.MenuItem": {
+            "type": "object",
+            "properties": {
+                "icon": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cuihe500_vaulthub_internal_database_models.SafeEncryptedSecret": {
             "type": "object",
             "properties": {
@@ -3227,16 +3401,18 @@ const docTemplate = `{
         "github_com_cuihe500_vaulthub_internal_service.RegisterRequest": {
             "type": "object",
             "required": [
+                "code",
+                "email",
                 "password",
                 "username"
             ],
             "properties": {
                 "code": {
-                    "description": "验证码（可选，与email配合使用）",
+                    "description": "验证码（必填）",
                     "type": "string"
                 },
                 "email": {
-                    "description": "邮箱（可选，但如果提供则必须验证）",
+                    "description": "邮箱（必填）",
                     "type": "string"
                 },
                 "nickname": {

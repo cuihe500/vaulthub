@@ -18,13 +18,15 @@
         router
         class="sidebar-menu"
       >
-        <el-menu-item index="/vault">
-          <el-icon><Lock /></el-icon>
-          <template #title>密钥管理</template>
-        </el-menu-item>
-        <el-menu-item index="/user">
-          <el-icon><User /></el-icon>
-          <template #title>用户管理</template>
+        <el-menu-item
+          v-for="menu in menus"
+          :key="menu.uuid"
+          :index="menu.path"
+        >
+          <el-icon>
+            <component :is="menu.icon" />
+          </el-icon>
+          <template #title>{{ menu.title }}</template>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -74,8 +76,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Lock, User, Expand, Fold, SwitchButton } from '@element-plus/icons-vue'
+import { Lock, User, Setting, Expand, Fold, SwitchButton } from '@element-plus/icons-vue'
 import { logout, getCurrentUser } from '@/api/auth'
+import { getUserMenus } from '@/api/menu'
 import { removeToken } from '@/utils/storage'
 
 const router = useRouter()
@@ -86,6 +89,9 @@ const isCollapse = ref(false)
 
 // 用户信息
 const username = ref('用户')
+
+// 菜单列表
+const menus = ref([])
 
 // 切换侧边栏折叠
 const toggleCollapse = () => {
@@ -107,6 +113,16 @@ const fetchUserInfo = async () => {
     username.value = userInfo.username || '用户'
   } catch (error) {
     console.error('获取用户信息失败:', error)
+  }
+}
+
+// 获取用户菜单
+const fetchMenus = async () => {
+  try {
+    menus.value = await getUserMenus()
+  } catch (error) {
+    console.error('获取菜单失败:', error)
+    ElMessage.error('获取菜单失败')
   }
 }
 
@@ -141,9 +157,10 @@ const handleCommand = async (command) => {
   }
 }
 
-// 组件挂载时获取用户信息
+// 组件挂载时获取用户信息和菜单
 onMounted(() => {
   fetchUserInfo()
+  fetchMenus()
 })
 </script>
 
