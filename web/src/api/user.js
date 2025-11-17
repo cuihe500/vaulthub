@@ -41,3 +41,31 @@ export const deleteUser = (uuid) => {
 export const changePassword = (data) => {
   return request.post('/v1/users/change-password', data)
 }
+
+/**
+ * 更新用户状态
+ */
+export const updateUserStatus = (uuid, status) => {
+  return request.put(`/v1/users/${uuid}/status`, { status })
+}
+
+/**
+ * 更新用户角色
+ */
+export const updateUserRole = (uuid, role) => {
+  return request.put(`/v1/users/${uuid}/role`, { role })
+}
+
+/**
+ * 更新用户基本信息
+ */
+export const updateUserInfo = (uuid, data) => {
+  return request.put(`/v1/users/${uuid}/info`, data)
+}
+
+/**
+ * 重置用户密码（管理员操作）
+ */
+export const resetUserPassword = (uuid, password) => {
+  return request.post(`/v1/users/${uuid}/reset-password`, { password })
+}

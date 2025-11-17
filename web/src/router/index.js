@@ -45,6 +45,12 @@ const routes = [
         name: 'System',
         component: () => import('@/views/system/SystemConfig.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'admin/users',
+        name: 'AdminUserManagement',
+        component: () => import('@/views/system/AdminUserManagement.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   }
