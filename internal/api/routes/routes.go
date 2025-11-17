@@ -93,14 +93,26 @@ func Setup(r *gin.Engine, mgr *app.Manager) {
 			// 获取用户列表 - 需要user:read权限
 			users.GET("", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionRead), h.User.ListUsers)...)
 
+			// 创建用户 - 需要user:write权限
+			users.POST("", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionWrite), h.User.CreateUser)...)
+
 			// 获取单个用户 - 需要user:read权限
 			users.GET("/:uuid", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionRead), h.User.GetUser)...)
+
+			// 删除用户 - 需要user:write权限
+			users.DELETE("/:uuid", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionWrite), h.User.DeleteUser)...)
 
 			// 更新用户状态 - 需要user:write权限
 			users.PUT("/:uuid/status", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionWrite), h.User.UpdateUserStatus)...)
 
 			// 更新用户角色 - 需要user:write权限
 			users.PUT("/:uuid/role", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionWrite), h.User.UpdateUserRole)...)
+
+			// 更新用户基本信息 - 需要user:write权限
+			users.PUT("/:uuid/info", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionWrite), h.User.UpdateUserInfo)...)
+
+			// 重置用户密码 - 需要user:write权限
+			users.POST("/:uuid/reset-password", append(chain.AuthWithPermission(middleware.ResourceUser, middleware.ActionWrite), h.User.ResetUserPassword)...)
 		}
 
 		// 用户档案路由（需要认证）

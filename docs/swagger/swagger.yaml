@@ -354,6 +354,35 @@ definitions:
       user_encryption_key:
         $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserEncryptionKey'
     type: object
+  github_com_cuihe500_vaulthub_internal_service.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      nickname:
+        maxLength: 50
+        minLength: 1
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+      role:
+        enum:
+        - admin
+        - user
+        - readonly
+        type: string
+      username:
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - role
+    - username
+    type: object
   github_com_cuihe500_vaulthub_internal_service.CurrentStatistics:
     properties:
       api_key_count:
@@ -591,6 +620,14 @@ definitions:
     - new_security_pin
     - recovery_mnemonic
     type: object
+  github_com_cuihe500_vaulthub_internal_service.ResetUserPasswordRequest:
+    properties:
+      password:
+        minLength: 8
+        type: string
+    required:
+    - password
+    type: object
   github_com_cuihe500_vaulthub_internal_service.RotateDEKRequest:
     properties:
       security_pin:
@@ -635,6 +672,17 @@ definitions:
         type: string
       phone:
         maxLength: 20
+        type: string
+    type: object
+  github_com_cuihe500_vaulthub_internal_service.UpdateUserInfoRequest:
+    properties:
+      email:
+        type: string
+      nickname:
+        maxLength: 50
+        minLength: 1
+        type: string
+      phone:
         type: string
     type: object
   github_com_cuihe500_vaulthub_internal_service.UpdateUserRoleRequest:
@@ -2372,7 +2420,57 @@ paths:
       summary: 获取用户列表
       tags:
       - 用户管理
+    post:
+      consumes:
+      - application/json
+      description: 管理员创建新用户（可指定角色）
+      parameters:
+      - description: 创建用户请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUser'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 创建用户
+      tags:
+      - 用户管理
   /api/v1/users/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: 软删除用户（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除用户
+      tags:
+      - 用户管理
     get:
       consumes:
       - application/json
@@ -2398,6 +2496,69 @@ paths:
       security:
       - BearerAuth: []
       summary: 获取用户信息
+      tags:
+      - 用户管理
+  /api/v1/users/{uuid}/info:
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新用户的昵称、邮箱、手机号（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: 更新用户信息请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.UpdateUserInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: 更新用户基本信息
+      tags:
+      - 用户管理
+  /api/v1/users/{uuid}/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: 管理员重置用户密码（需要管理员权限）
+      parameters:
+      - description: 用户UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: 重置密码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cuihe500_vaulthub_internal_service.ResetUserPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_cuihe500_vaulthub_pkg_response.Response'
+      security:
+      - BearerAuth: []
+      summary: 重置用户密码
       tags:
       - 用户管理
   /api/v1/users/{uuid}/role:
