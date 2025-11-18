@@ -1,4 +1,5 @@
 -- 创建系统配置表
+
 CREATE TABLE IF NOT EXISTS system_config (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     config_key VARCHAR(64) NOT NULL UNIQUE COMMENT '配置键',

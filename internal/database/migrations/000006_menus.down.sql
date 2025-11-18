@@ -1,2 +1,3 @@
--- 删除菜单表
+-- 删除菜单配置表
+
 DROP TABLE IF EXISTS menus;

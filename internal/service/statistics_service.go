@@ -176,8 +176,6 @@ func (s *StatisticsService) aggregateUserDaily(userUUID string, startOfDay, endO
 	totalOps := opStats.Create + opStats.Update + opStats.Delete + opStats.Access
 
 	// 创建或更新统计记录
-	// 注意：数据库中PrivateKeyCount字段实际用于存储DBCredential+Token的总和
-	combinedCount := int(secretStats.DBCred + secretStats.Token)
 	stats := &models.UserStatistics{
 		UserUUID:         userUUID,
 		StatDate:         startOfDay,
@@ -187,7 +185,9 @@ func (s *StatisticsService) aggregateUserDaily(userUUID string, startOfDay, endO
 		PasswordCount:    int(secretStats.Password),
 		CertificateCount: int(secretStats.Certificate),
 		SSHKeyCount:      int(secretStats.SSHKey),
-		PrivateKeyCount:  combinedCount, // 复用此字段存储DBCredential+Token
+		PrivateKeyCount:  0, // 系统中无private_key类型，保留字段备用
+		DatabaseCount:    int(secretStats.DBCred),
+		TokenCount:       int(secretStats.Token),
 		OtherCount:       int(secretStats.Other),
 		CreateCount:      int(opStats.Create),
 		UpdateCount:      int(opStats.Update),

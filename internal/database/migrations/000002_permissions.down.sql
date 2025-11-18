@@ -1,2 +1,3 @@
--- 删除Casbin规则表
+-- 删除权限系统表
+
 DROP TABLE IF EXISTS casbin_rule;

@@ -1,3 +1,5 @@
+-- 创建审计和统计相关表
+
 -- 创建审计日志表
 CREATE TABLE IF NOT EXISTS `audit_logs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
@@ -57,6 +59,8 @@ CREATE TABLE IF NOT EXISTS `user_statistics` (
     `certificate_count` INT NOT NULL DEFAULT 0 COMMENT '证书类型数量',
     `ssh_key_count` INT NOT NULL DEFAULT 0 COMMENT 'SSH密钥数量',
     `private_key_count` INT NOT NULL DEFAULT 0 COMMENT '私钥数量',
+    `database_count` INT NOT NULL DEFAULT 0 COMMENT '数据库凭证数量',
+    `token_count` INT NOT NULL DEFAULT 0 COMMENT 'Token数量',
     `other_count` INT NOT NULL DEFAULT 0 COMMENT '其他类型数量',
 
     -- 操作次数统计
@@ -81,22 +85,3 @@ CREATE TABLE IF NOT EXISTS `user_statistics` (
     INDEX `idx_stat_type` (`stat_type`),
     INDEX `idx_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户统计表';
-
--- 创建密码重置token表
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    uuid CHAR(36) NOT NULL COMMENT '对外唯一标识符',
-    user_id BIGINT UNSIGNED NOT NULL COMMENT '关联用户ID',
-    token_hash VARCHAR(255) NOT NULL COMMENT 'Token哈希值（SHA256）',
-    expires_at DATETIME NOT NULL COMMENT '过期时间（UTC）',
-    used_at DATETIME DEFAULT NULL COMMENT '使用时间（UTC，NULL表示未使用）',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间（UTC）',
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间（UTC）',
-    deleted_at DATETIME DEFAULT NULL COMMENT '删除时间（UTC，软删除）',
-    PRIMARY KEY (id),
-    UNIQUE KEY idx_password_reset_tokens_uuid (uuid),
-    KEY idx_password_reset_tokens_user_id (user_id),
-    KEY idx_password_reset_tokens_token_hash (token_hash),
-    KEY idx_password_reset_tokens_expires_at (expires_at),
-    KEY idx_password_reset_tokens_deleted_at (deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='密码重置token表';

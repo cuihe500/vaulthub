@@ -3127,6 +3127,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "database_count": {
+                    "type": "integer"
+                },
                 "delete_count": {
                     "type": "integer"
                 },
@@ -3157,6 +3160,9 @@ const docTemplate = `{
                 },
                 "stat_type": {
                     "$ref": "#/definitions/github_com_cuihe500_vaulthub_internal_database_models.StatType"
+                },
+                "token_count": {
+                    "type": "integer"
                 },
                 "total_operations": {
                     "type": "integer"

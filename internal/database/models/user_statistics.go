@@ -36,6 +36,8 @@ type UserStatistics struct {
 	CertificateCount int `gorm:"not null;default:0" json:"certificate_count"`
 	SSHKeyCount      int `gorm:"not null;default:0" json:"ssh_key_count"`
 	PrivateKeyCount  int `gorm:"not null;default:0" json:"private_key_count"`
+	DatabaseCount    int `gorm:"not null;default:0" json:"database_count"`
+	TokenCount       int `gorm:"not null;default:0" json:"token_count"`
 	OtherCount       int `gorm:"not null;default:0" json:"other_count"`
 
 	// 操作次数统计

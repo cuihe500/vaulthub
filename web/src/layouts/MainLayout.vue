@@ -76,7 +76,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Lock, User, Setting, Document, Expand, Fold, SwitchButton } from '@element-plus/icons-vue'
+import { Lock, User, Setting, Document, TrendCharts, Expand, Fold, SwitchButton } from '@element-plus/icons-vue'
 import { logout, getCurrentUser } from '@/api/auth'
 import { getUserMenus } from '@/api/menu'
 import { removeToken } from '@/utils/storage'

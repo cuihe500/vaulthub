@@ -1,4 +1,5 @@
--- 创建菜单表
+-- 创建菜单配置表
+
 CREATE TABLE IF NOT EXISTS menus (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     uuid CHAR(36) NOT NULL UNIQUE COMMENT '菜单UUID',
@@ -22,4 +23,6 @@ CREATE TABLE IF NOT EXISTS menus (
 INSERT INTO menus (uuid, path, name, icon, title, roles, sort_order, is_visible) VALUES
 (UUID(), '/vault', 'Vault', 'Lock', '密钥管理', JSON_ARRAY(), 1, TRUE),
 (UUID(), '/user', 'User', 'User', '用户管理', JSON_ARRAY(), 2, TRUE),
-(UUID(), '/system', 'System', 'Setting', '系统配置', JSON_ARRAY('admin'), 3, TRUE);
+(UUID(), '/user/statistics', 'UserStatistics', 'TrendCharts', '我的统计', JSON_ARRAY(), 3, TRUE),
+(UUID(), '/system', 'System', 'Setting', '系统配置', JSON_ARRAY('admin'), 4, TRUE),
+(UUID(), '/audit', 'AuditLog', 'Document', '审计日志', JSON_ARRAY(), 5, TRUE);

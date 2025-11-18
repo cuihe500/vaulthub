@@ -257,30 +257,8 @@ import { exportOperationStatistics } from '@/api/audit'
 import { toRFC3339 } from '@/utils/date'
 import { ElMessage } from 'element-plus'
 
-// ECharts按需异步加载,只引入需要的图表类型(PieChart)和组件,大幅减少bundle大小
-let echartsCore = null
-const loadECharts = async () => {
-  if (echartsCore) return echartsCore
-
-  // 只引入核心和必需的组件,而不是整个echarts库
-  const [coreModule, chartsModule, componentsModule, renderersModule] = await Promise.all([
-    import('echarts/core'),
-    import('echarts/charts'),
-    import('echarts/components'),
-    import('echarts/renderers')
-  ])
-
-  const { init, use } = coreModule
-  const { PieChart } = chartsModule
-  const { TitleComponent, TooltipComponent, LegendComponent } = componentsModule
-  const { CanvasRenderer } = renderersModule
-
-  // 注册需要的组件,必须包含渲染器
-  use([PieChart, TitleComponent, TooltipComponent, LegendComponent, CanvasRenderer])
-
-  echartsCore = { init }
-  return echartsCore
-}
+// 使用统一的ECharts加载工具
+import { loadECharts, useChartResize } from '@/utils/echarts'
 
 export default {
   name: 'UserManagement',
@@ -451,7 +429,7 @@ export default {
     async initKeyTypeChart() {
       if (!this.$refs.keyTypeChartRef) return
 
-      const { init } = await loadECharts()
+      const { init } = await loadECharts(['Pie'])
       this.keyTypeChart = init(this.$refs.keyTypeChartRef)
 
       const option = {
@@ -507,7 +485,7 @@ export default {
     async initOperationChart() {
       if (!this.$refs.operationChartRef) return
 
-      const { init } = await loadECharts()
+      const { init } = await loadECharts(['Pie'])
       this.operationChart = init(this.$refs.operationChartRef)
 
       const option = {

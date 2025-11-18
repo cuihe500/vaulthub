@@ -1,3 +1,5 @@
+-- 创建权限系统表
+
 -- 创建Casbin规则表并初始化完整权限策略
 -- 特例豁免：此表为 Casbin 框架标准表结构，不包含 created_at/updated_at/deleted_at 字段
 -- 原因：Casbin 适配器依赖固定的表结构，添加额外字段可能影响框架功能
