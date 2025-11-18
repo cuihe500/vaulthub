@@ -89,9 +89,9 @@ func AuditMiddleware(auditService *service.AuditService, configManager *config.C
 			actionType = inferActionType(c.Request.Method)
 		}
 
-		// 如果没有设置资源类型，从路径推断（可选）
+		// 如果没有设置资源类型，直接使用请求路径
 		if resourceType == "" {
-			resourceType = inferResourceType(c.FullPath())
+			resourceType = c.FullPath()
 		}
 
 		// 提取其他审计信息
@@ -226,18 +226,6 @@ func inferActionType(method string) string {
 	default:
 		return string(models.ActionAccess)
 	}
-}
-
-// inferResourceType 从路径推断资源类型
-func inferResourceType(path string) string {
-	// 简单的路径匹配推断
-	// 可以根据实际路由规则扩展
-	if len(path) > 0 {
-		// 例如：/api/v1/secrets -> secret
-		// 这里简化处理，实际应该更精确
-		return "unknown"
-	}
-	return "unknown"
 }
 
 // stringPtrOrNil 如果字符串为空返回nil，否则返回指针

@@ -45,6 +45,12 @@ const routes = [
         name: 'System',
         component: () => import('@/views/system/SystemConfig.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'audit',
+        name: 'AuditLog',
+        component: () => import('@/views/audit/AuditLog.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   }
