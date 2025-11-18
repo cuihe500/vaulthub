@@ -265,6 +265,45 @@ Authorization: Bearer {{token}}
   "role": "readonly"
 }
 
+### 3.17 创建新用户（管理员操作）
+POST {{baseUrl}}/api/v1/users
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "username": "testuser001",
+  "password": "Test@12345",
+  "role": "user",
+  "nickname": "测试用户001",
+  "email": "testuser001@example.com",
+  "phone": "13800138000"
+}
+
+### 3.18 更新用户基本信息
+PUT {{baseUrl}}/api/v1/users/{{userUuid}}/info
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nickname": "新昵称",
+  "email": "newemail@example.com",
+  "phone": "13900139000"
+}
+
+### 3.19 重置用户密码
+POST {{baseUrl}}/api/v1/users/{{userUuid}}/reset-password
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "password": "NewPassword@123"
+}
+
+### 3.20 删除用户（软删除）
+DELETE {{baseUrl}}/api/v1/users/{{userUuid}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
 ### ============================================
 ### 4. 错误测试场景
 ### ============================================

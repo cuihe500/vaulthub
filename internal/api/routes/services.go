@@ -25,21 +25,21 @@ type ServiceContainer struct {
 
 // NewServiceContainer 创建服务容器
 // 按照依赖顺序构建服务实例：
-// 1. 基础服务（无依赖）：Email, User, Profile, Encryption, Recovery
-// 2. 依赖基础服务的服务：Auth(依赖Email), KeyRotation(依赖Encryption)
+// 1. 基础服务（无依赖）：Email, Profile, Encryption, Recovery, Menu
+// 2. 依赖基础服务的服务：User(依赖Profile), Auth(依赖Email), KeyRotation(依赖Encryption)
 // 3. 系统服务：SystemConfig, Statistics
 func NewServiceContainer(mgr *app.Manager) *ServiceContainer {
 	sc := &ServiceContainer{}
 
 	// 第一层：基础服务（无其他服务依赖）
 	sc.Email = service.NewEmailService(mgr.DB, mgr.Redis, mgr.ConfigManager)
-	sc.User = service.NewUserService(mgr.DB)
 	sc.Profile = service.NewUserProfileService(mgr.DB)
 	sc.Encryption = service.NewEncryptionService(mgr.DB)
 	sc.Recovery = service.NewRecoveryService(mgr.DB)
 	sc.Menu = service.NewMenuService(mgr.DB)
 
 	// 第二层：依赖其他服务的服务
+	sc.User = service.NewUserService(mgr.DB, sc.Profile) // User依赖Profile
 	sc.Auth = service.NewAuthService(mgr.DB, mgr.JWT, mgr.Redis, sc.Email)
 	sc.KeyRotation = service.NewKeyRotationService(mgr.DB, sc.Encryption, mgr.ConfigManager)
 

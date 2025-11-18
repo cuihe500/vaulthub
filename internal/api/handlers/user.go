@@ -164,3 +164,144 @@ func (h *UserHandler) UpdateUserRole(c *gin.Context) {
 
 	response.Success(c, user)
 }
+
+// CreateUser 创建用户
+// @Summary 创建用户
+// @Description 管理员创建新用户（可指定角色）
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body service.CreateUserRequest true "创建用户请求"
+// @Success 200 {object} response.Response{data=github_com_cuihe500_vaulthub_internal_database_models.SafeUser}
+// @Router /api/v1/users [post]
+func (h *UserHandler) CreateUser(c *gin.Context) {
+	var req service.CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warn("创建用户请求参数无效", logger.Err(err))
+		response.ValidationError(c, validator.TranslateError(err))
+		return
+	}
+
+	user, err := h.userService.CreateUser(&req)
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			response.AppError(c, appErr)
+		} else {
+			logger.Error("创建用户失败", logger.Err(err))
+			response.InternalError(c, "创建用户失败")
+		}
+		return
+	}
+
+	response.Success(c, user)
+}
+
+// DeleteUser 删除用户
+// @Summary 删除用户
+// @Description 软删除用户（需要管理员权限）
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param uuid path string true "用户UUID"
+// @Success 200 {object} response.Response
+// @Router /api/v1/users/{uuid} [delete]
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	userUUID := c.Param("uuid")
+	if userUUID == "" {
+		response.MissingParam(c, "uuid参数必填")
+		return
+	}
+
+	err := h.userService.DeleteUser(userUUID)
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			response.AppError(c, appErr)
+		} else {
+			logger.Error("删除用户失败", logger.String("uuid", userUUID), logger.Err(err))
+			response.InternalError(c, "删除用户失败")
+		}
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// ResetUserPassword 重置用户密码
+// @Summary 重置用户密码
+// @Description 管理员重置用户密码（需要管理员权限）
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param uuid path string true "用户UUID"
+// @Param request body service.ResetUserPasswordRequest true "重置密码请求"
+// @Success 200 {object} response.Response
+// @Router /api/v1/users/{uuid}/reset-password [post]
+func (h *UserHandler) ResetUserPassword(c *gin.Context) {
+	userUUID := c.Param("uuid")
+	if userUUID == "" {
+		response.MissingParam(c, "uuid参数必填")
+		return
+	}
+
+	var req service.ResetUserPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warn("重置密码请求参数无效", logger.Err(err))
+		response.ValidationError(c, validator.TranslateError(err))
+		return
+	}
+
+	err := h.userService.ResetUserPassword(userUUID, &req)
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			response.AppError(c, appErr)
+		} else {
+			logger.Error("重置密码失败", logger.String("uuid", userUUID), logger.Err(err))
+			response.InternalError(c, "重置密码失败")
+		}
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// UpdateUserInfo 更新用户基本信息
+// @Summary 更新用户基本信息
+// @Description 管理员更新用户的昵称、邮箱、手机号（需要管理员权限）
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param uuid path string true "用户UUID"
+// @Param request body service.UpdateUserInfoRequest true "更新用户信息请求"
+// @Success 200 {object} response.Response{data=github_com_cuihe500_vaulthub_internal_database_models.SafeUserProfile}
+// @Router /api/v1/users/{uuid}/info [put]
+func (h *UserHandler) UpdateUserInfo(c *gin.Context) {
+	userUUID := c.Param("uuid")
+	if userUUID == "" {
+		response.MissingParam(c, "uuid参数必填")
+		return
+	}
+
+	var req service.UpdateUserInfoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Warn("更新用户信息请求参数无效", logger.Err(err))
+		response.ValidationError(c, validator.TranslateError(err))
+		return
+	}
+
+	profile, err := h.userService.UpdateUserInfo(userUUID, &req)
+	if err != nil {
+		if appErr, ok := err.(*errors.AppError); ok {
+			response.AppError(c, appErr)
+		} else {
+			logger.Error("更新用户信息失败", logger.String("uuid", userUUID), logger.Err(err))
+			response.InternalError(c, "更新用户信息失败")
+		}
+		return
+	}
+
+	response.Success(c, profile)
+}

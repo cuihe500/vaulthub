@@ -2,20 +2,24 @@ package service
 
 import (
 	"github.com/cuihe500/vaulthub/internal/database/models"
+	"github.com/cuihe500/vaulthub/pkg/crypto"
 	"github.com/cuihe500/vaulthub/pkg/errors"
 	"github.com/cuihe500/vaulthub/pkg/logger"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // UserService 用户服务
 type UserService struct {
-	db *gorm.DB
+	db             *gorm.DB
+	profileService *UserProfileService
 }
 
 // NewUserService 创建用户服务实例
-func NewUserService(db *gorm.DB) *UserService {
+func NewUserService(db *gorm.DB, profileService *UserProfileService) *UserService {
 	return &UserService{
-		db: db,
+		db:             db,
+		profileService: profileService,
 	}
 }
 
@@ -169,4 +173,191 @@ func (s *UserService) UpdateUserRole(userUUID string, req *UpdateUserRoleRequest
 	logger.Info("用户角色已更新", logger.String("uuid", userUUID), logger.String("role", req.Role))
 
 	return user.ToSafeUser(), nil
+}
+
+// CreateUserRequest 创建用户请求
+type CreateUserRequest struct {
+	Username string `json:"username" binding:"required,min=3,max=32"`
+	Password string `json:"password" binding:"required,min=8"`
+	Role     string `json:"role" binding:"required,oneof=admin user readonly"`
+	Nickname string `json:"nickname" binding:"omitempty,min=1,max=50"`
+	Email    string `json:"email" binding:"required,email"`
+	Phone    string `json:"phone" binding:"omitempty"`
+}
+
+// CreateUser 管理员创建用户（不同于注册，可直接设置角色）
+func (s *UserService) CreateUser(req *CreateUserRequest) (*models.SafeUser, error) {
+	// 检查用户名是否已存在
+	var existingUser models.User
+	if err := s.db.Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
+		return nil, errors.New(errors.CodeResourceAlreadyExists, "用户名已存在")
+	} else if err != gorm.ErrRecordNotFound {
+		logger.Error("检查用户名失败", logger.String("username", req.Username), logger.Err(err))
+		return nil, errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	// 加密密码
+	passwordHash, err := crypto.HashPassword(req.Password)
+	if err != nil {
+		logger.Error("密码加密失败", logger.Err(err))
+		return nil, errors.Wrap(errors.CodeCryptoError, err)
+	}
+
+	// 开启事务创建用户和档案
+	tx := s.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 创建用户（管理员可指定角色）
+	user := &models.User{
+		UUID:         uuid.New().String(),
+		Username:     req.Username,
+		PasswordHash: passwordHash,
+		Status:       models.UserStatusActive,
+		Role:         req.Role,
+	}
+
+	if err := tx.Create(user).Error; err != nil {
+		tx.Rollback()
+		logger.Error("创建用户失败", logger.String("username", req.Username), logger.Err(err))
+		return nil, errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	// 创建用户档案
+	nickname := req.Nickname
+	if nickname == "" {
+		nickname = req.Username // 默认使用用户名作为昵称
+	}
+
+	profile := &models.UserProfile{
+		UserID:        user.ID,
+		Nickname:      nickname,
+		Email:         req.Email,
+		Phone:         req.Phone,
+		EmailVerified: false, // 管理员创建的用户邮箱未验证
+	}
+
+	if err := tx.Create(profile).Error; err != nil {
+		tx.Rollback()
+		logger.Error("创建用户档案失败",
+			logger.Uint("user_id", uint(user.ID)),
+			logger.String("email", req.Email),
+			logger.Err(err))
+		return nil, errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		logger.Error("提交事务失败", logger.Err(err))
+		return nil, errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	logger.Info("管理员已创建用户",
+		logger.String("username", req.Username),
+		logger.String("role", req.Role),
+		logger.String("uuid", user.UUID))
+
+	return user.ToSafeUser(), nil
+}
+
+// DeleteUser 软删除用户
+func (s *UserService) DeleteUser(userUUID string) error {
+	var user models.User
+	if err := s.db.Where("uuid = ?", userUUID).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.New(errors.CodeResourceNotFound, "用户不存在")
+		}
+		logger.Error("查询用户失败", logger.String("uuid", userUUID), logger.Err(err))
+		return errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	// 软删除用户（GORM会自动设置deleted_at字段）
+	if err := s.db.Delete(&user).Error; err != nil {
+		logger.Error("删除用户失败", logger.String("uuid", userUUID), logger.Err(err))
+		return errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	// 同时软删除用户档案
+	if err := s.db.Where("user_id = ?", user.ID).Delete(&models.UserProfile{}).Error; err != nil {
+		logger.Error("删除用户档案失败", logger.Uint("user_id", uint(user.ID)), logger.Err(err))
+		// 不返回错误，因为主要操作（删除用户）已成功
+	}
+
+	logger.Info("用户已删除", logger.String("uuid", userUUID), logger.String("username", user.Username))
+
+	return nil
+}
+
+// ResetUserPasswordRequest 重置用户密码请求
+type ResetUserPasswordRequest struct {
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+// ResetUserPassword 管理员重置用户密码
+func (s *UserService) ResetUserPassword(userUUID string, req *ResetUserPasswordRequest) error {
+	var user models.User
+	if err := s.db.Where("uuid = ?", userUUID).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.New(errors.CodeResourceNotFound, "用户不存在")
+		}
+		logger.Error("查询用户失败", logger.String("uuid", userUUID), logger.Err(err))
+		return errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	// 加密新密码
+	passwordHash, err := crypto.HashPassword(req.Password)
+	if err != nil {
+		logger.Error("密码加密失败", logger.Err(err))
+		return errors.Wrap(errors.CodeCryptoError, err)
+	}
+
+	// 更新密码
+	user.PasswordHash = passwordHash
+	if err := s.db.Save(&user).Error; err != nil {
+		logger.Error("重置密码失败", logger.String("uuid", userUUID), logger.Err(err))
+		return errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	logger.Info("管理员已重置用户密码", logger.String("uuid", userUUID), logger.String("username", user.Username))
+
+	return nil
+}
+
+// UpdateUserInfoRequest 更新用户基本信息请求
+type UpdateUserInfoRequest struct {
+	Nickname *string `json:"nickname" binding:"omitempty,min=1,max=50"`
+	Email    *string `json:"email" binding:"omitempty,email"`
+	Phone    *string `json:"phone" binding:"omitempty"`
+}
+
+// UpdateUserInfo 管理员更新用户基本信息（委托给UserProfileService）
+func (s *UserService) UpdateUserInfo(userUUID string, req *UpdateUserInfoRequest) (*models.SafeUserProfile, error) {
+	// 先根据UUID查询用户获取内部ID
+	var user models.User
+	if err := s.db.Where("uuid = ?", userUUID).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errors.New(errors.CodeResourceNotFound, "用户不存在")
+		}
+		logger.Error("查询用户失败", logger.String("uuid", userUUID), logger.Err(err))
+		return nil, errors.Wrap(errors.CodeDatabaseError, err)
+	}
+
+	// 委托给UserProfileService更新档案
+	updateReq := &UpdateProfileRequest{
+		Nickname: req.Nickname,
+		Email:    req.Email,
+		Phone:    req.Phone,
+	}
+
+	profile, err := s.profileService.UpdateProfile(user.ID, updateReq)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Info("管理员已更新用户信息", logger.String("uuid", userUUID), logger.String("username", user.Username))
+
+	return profile, nil
 }
