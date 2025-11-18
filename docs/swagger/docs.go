@@ -308,7 +308,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "资源类型：vault/secret/user/config",
+                        "description": "资源路径（如：/api/v1/secrets）",
                         "name": "resource_type",
                         "in": "query"
                     },

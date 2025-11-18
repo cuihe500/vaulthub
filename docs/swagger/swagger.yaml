@@ -1119,7 +1119,7 @@ paths:
         in: query
         name: action_type
         type: string
-      - description: 资源类型：vault/secret/user/config
+      - description: 资源路径（如：/api/v1/secrets）
         in: query
         name: resource_type
         type: string

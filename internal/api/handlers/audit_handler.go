@@ -31,7 +31,7 @@ func NewAuditHandler(auditService *service.AuditService) *AuditHandler {
 // @Security ApiKeyAuth
 // @Param user_uuid query string false "用户UUID（管理员可指定，普通用户自动使用当前用户）"
 // @Param action_type query string false "操作类型：CREATE/UPDATE/DELETE/ACCESS/LOGIN/LOGOUT"
-// @Param resource_type query string false "资源类型：vault/secret/user/config"
+// @Param resource_type query string false "资源路径（如：/api/v1/secrets）"
 // @Param status query string false "操作状态：success/failed"
 // @Param start_time query string false "开始时间（RFC3339格式，如2024-01-01T00:00:00Z）"
 // @Param end_time query string false "结束时间（RFC3339格式）"
