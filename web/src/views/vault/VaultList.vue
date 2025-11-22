@@ -205,7 +205,107 @@
             <el-option label="其他" value="other" />
           </el-select>
         </el-form-item>
-        <el-form-item label="密钥内容" prop="plain_data">
+        <template v-if="createForm.secret_type === 'api_key'">
+          <el-form-item label="接口地址" prop="api_url">
+            <el-input v-model="createForm.api_url" placeholder="请输入接口地址" />
+          </el-form-item>
+          <el-form-item label="访问密钥 (AK)" prop="api_ak">
+            <el-input v-model="createForm.api_ak" placeholder="请输入访问密钥 (Access Key)" />
+          </el-form-item>
+          <el-form-item label="安全密钥 (SK)" prop="api_sk">
+            <el-input
+              v-model="createForm.api_sk"
+              type="password"
+              placeholder="请输入安全密钥 (Secret Key)"
+              show-password
+            />
+          </el-form-item>
+        </template>
+        <template v-else-if="createForm.secret_type === 'db_credential'">
+          <el-form-item label="主机地址" prop="db_host">
+            <el-input v-model="createForm.db_host" placeholder="请输入数据库主机地址" />
+          </el-form-item>
+          <el-form-item label="端口" prop="db_port">
+            <el-input v-model="createForm.db_port" placeholder="请输入数据库端口" />
+          </el-form-item>
+          <el-form-item label="用户名" prop="db_username">
+            <el-input v-model="createForm.db_username" placeholder="请输入数据库用户名" />
+          </el-form-item>
+          <el-form-item label="密码" prop="db_password">
+            <el-input
+              v-model="createForm.db_password"
+              type="password"
+              placeholder="请输入数据库密码"
+              show-password
+            />
+          </el-form-item>
+          <el-form-item label="数据库名" prop="db_name">
+            <el-input v-model="createForm.db_name" placeholder="请输入数据库名称" />
+          </el-form-item>
+        </template>
+        <template v-else-if="createForm.secret_type === 'certificate'">
+          <el-form-item label="证书内容" prop="cert_content">
+            <el-input
+              v-model="createForm.cert_content"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入证书内容 (PEM格式)"
+            />
+          </el-form-item>
+          <el-form-item label="私钥" prop="cert_key">
+            <el-input
+              v-model="createForm.cert_key"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入私钥内容 (PEM格式)"
+            />
+          </el-form-item>
+        </template>
+        <template v-else-if="createForm.secret_type === 'ssh_key'">
+          <el-form-item label="私钥" prop="ssh_private_key">
+            <el-input
+              v-model="createForm.ssh_private_key"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入私钥内容 (PEM格式)"
+            />
+          </el-form-item>
+          <el-form-item label="公钥" prop="ssh_public_key">
+            <el-input
+              v-model="createForm.ssh_public_key"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入公钥内容 (可选)"
+            />
+          </el-form-item>
+        </template>
+        <template v-else-if="createForm.secret_type === 'token'">
+          <el-form-item label="令牌内容" prop="token_content">
+            <el-input
+              v-model="createForm.token_content"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入令牌内容"
+            />
+          </el-form-item>
+        </template>
+        <template v-else-if="createForm.secret_type === 'password'">
+          <el-form-item label="登录地址" prop="password_url">
+            <el-input v-model="createForm.password_url" placeholder="请输入登录地址 (可选)" />
+          </el-form-item>
+          <el-form-item label="用户名" prop="password_username">
+            <el-input v-model="createForm.password_username" placeholder="请输入用户名 (可选)" />
+          </el-form-item>
+          <el-form-item label="密码" prop="password_content">
+            <el-input
+              v-model="createForm.password_content"
+              type="password"
+              placeholder="请输入密码"
+              show-password
+            />
+          </el-form-item>
+        </template>
+        <el-form-item v-else label="密钥内容" prop="plain_data">
           <el-input
             v-model="createForm.plain_data"
             type="textarea"
@@ -245,7 +345,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Key, View, Delete, CopyDocument } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
@@ -285,23 +385,93 @@ const createForm = reactive({
   secret_type: '',
   plain_data: '',
   description: '',
-  security_pin: ''
+  security_pin: '',
+  api_url: '',
+  api_ak: '',
+  api_sk: '',
+  db_host: '',
+  db_port: '',
+  db_username: '',
+  db_password: '',
+  db_username: '',
+  db_password: '',
+  db_name: '',
+  cert_content: '',
+  cert_key: '',
+  ssh_private_key: '',
+  ssh_public_key: '',
+  token_content: '',
+  password_url: '',
+  password_username: '',
+  password_content: ''
 })
 
-const createFormRules = {
-  secret_name: [
-    { required: true, message: '请输入密钥名称', trigger: 'blur' }
-  ],
-  secret_type: [
-    { required: true, message: '请选择密钥类型', trigger: 'change' }
-  ],
-  plain_data: [
-    { required: true, message: '请输入密钥内容', trigger: 'blur' }
-  ],
-  security_pin: [
-    { required: true, message: '请输入安全PIN码', trigger: 'blur' }
-  ]
-}
+const createFormRules = computed(() => {
+  const rules = {
+    secret_name: [
+      { required: true, message: '请输入密钥名称', trigger: 'blur' }
+    ],
+    secret_type: [
+      { required: true, message: '请选择密钥类型', trigger: 'change' }
+    ],
+    security_pin: [
+      { required: true, message: '请输入安全PIN码', trigger: 'blur' }
+    ]
+  }
+
+  if (createForm.secret_type === 'api_key') {
+    rules.api_url = [
+      { required: true, message: '请输入接口地址', trigger: 'blur' }
+    ]
+    rules.api_ak = [
+      { required: true, message: '请输入访问密钥', trigger: 'blur' }
+    ]
+    rules.api_sk = [
+      { required: true, message: '请输入安全密钥', trigger: 'blur' }
+    ]
+  } else if (createForm.secret_type === 'db_credential') {
+    rules.db_host = [
+      { required: true, message: '请输入数据库主机地址', trigger: 'blur' }
+    ]
+    rules.db_port = [
+      { required: true, message: '请输入数据库端口', trigger: 'blur' }
+    ]
+    rules.db_username = [
+      { required: true, message: '请输入数据库用户名', trigger: 'blur' }
+    ]
+    rules.db_password = [
+      { required: true, message: '请输入数据库密码', trigger: 'blur' }
+    ]
+    rules.db_name = [
+      { required: true, message: '请输入数据库名称', trigger: 'blur' }
+    ]
+  } else if (createForm.secret_type === 'certificate') {
+    rules.cert_content = [
+      { required: true, message: '请输入证书内容', trigger: 'blur' }
+    ]
+    rules.cert_key = [
+      { required: true, message: '请输入私钥内容', trigger: 'blur' }
+    ]
+  } else if (createForm.secret_type === 'ssh_key') {
+    rules.ssh_private_key = [
+      { required: true, message: '请输入私钥内容', trigger: 'blur' }
+    ]
+  } else if (createForm.secret_type === 'token') {
+    rules.token_content = [
+      { required: true, message: '请输入令牌内容', trigger: 'blur' }
+    ]
+  } else if (createForm.secret_type === 'password') {
+    rules.password_content = [
+      { required: true, message: '请输入密码', trigger: 'blur' }
+    ]
+  } else {
+    rules.plain_data = [
+      { required: true, message: '请输入密钥内容', trigger: 'blur' }
+    ]
+  }
+
+  return rules
+})
 
 // 获取密钥列表
 const fetchSecretList = async () => {
@@ -352,6 +522,49 @@ const handleConfirmCreate = async () => {
     await createFormRef.value.validate()
     creating.value = true
 
+    // 处理API Key类型的数据
+    if (createForm.secret_type === 'api_key') {
+      const apiData = {
+        url: createForm.api_url,
+        ak: createForm.api_ak,
+        sk: createForm.api_sk
+      }
+      createForm.plain_data = JSON.stringify(apiData)
+    } else if (createForm.secret_type === 'db_credential') {
+      const dbData = {
+        host: createForm.db_host,
+        port: createForm.db_port,
+        username: createForm.db_username,
+        password: createForm.db_password,
+        dbname: createForm.db_name
+      }
+      createForm.plain_data = JSON.stringify(dbData)
+    } else if (createForm.secret_type === 'certificate') {
+      const certData = {
+        cert: createForm.cert_content,
+        key: createForm.cert_key
+      }
+      createForm.plain_data = JSON.stringify(certData)
+    } else if (createForm.secret_type === 'ssh_key') {
+      const sshData = {
+        private_key: createForm.ssh_private_key,
+        public_key: createForm.ssh_public_key
+      }
+      createForm.plain_data = JSON.stringify(sshData)
+    } else if (createForm.secret_type === 'token') {
+      const tokenData = {
+        token: createForm.token_content
+      }
+      createForm.plain_data = JSON.stringify(tokenData)
+    } else if (createForm.secret_type === 'password') {
+      const passwordData = {
+        url: createForm.password_url,
+        username: createForm.password_username,
+        password: createForm.password_content
+      }
+      createForm.plain_data = JSON.stringify(passwordData)
+    }
+
     await createSecret(createForm)
     ElMessage.success('密钥创建成功')
     createDialogVisible.value = false
@@ -373,7 +586,23 @@ const handleCreateDialogClose = () => {
     secret_type: '',
     plain_data: '',
     description: '',
-    security_pin: ''
+    security_pin: '',
+    api_url: '',
+    api_ak: '',
+    api_sk: '',
+    db_host: '',
+    db_port: '',
+    db_username: '',
+    db_password: '',
+    db_name: '',
+    cert_content: '',
+    cert_key: '',
+    ssh_private_key: '',
+    ssh_public_key: '',
+    token_content: '',
+    password_url: '',
+    password_username: '',
+    password_content: ''
   })
 }
 
