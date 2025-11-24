@@ -12,6 +12,7 @@ permissions:
 env:
   GO_VERSION: '1.25.1'
   NODE_VERSION: '20'
+  PNPM_VERSION: '9'
 
 jobs:
   create-release:
@@ -57,46 +58,9 @@ jobs:
             --draft=false \
             --prerelease=false
 
-  build-frontend:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: web/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('web/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install frontend dependencies
-        run: |
-          cd web
-          npm ci --prefer-offline
-
-      - name: Build frontend
-        run: make build-frontend
-
-      - name: Upload frontend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: web/dist/
-          retention-days: 1
-
   build-binaries:
     name: Build Binaries
-    needs: [create-release, build-frontend]
+    needs: create-release
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -120,19 +84,32 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: web/pnpm-lock.yaml
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: web/dist/
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: web
 
-      - name: Build binary for ${{ matrix.goos }}/${{ matrix.goarch }}
+      - name: Install backend dependencies
+        run: go mod download
+
+      - name: Build (frontend + backend) for ${{ matrix.goos }}/${{ matrix.goarch }}
         env:
           CGO_ENABLED: 0
           GOOS: ${{ matrix.goos }}
@@ -142,6 +119,11 @@ jobs:
           GIT_COMMIT=$(git rev-parse --short HEAD)
           BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+          # 构建前端
+          cd web && pnpm run build && cd ..
+
+          # 构建后端
+          mkdir -p build
           go build -v \
             -ldflags "-s -w -X github.com/cuihe500/vaulthub/pkg/version.Version=${VERSION} \
                       -X github.com/cuihe500/vaulthub/pkg/version.GitCommit=${GIT_COMMIT} \
@@ -200,7 +182,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64

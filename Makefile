@@ -47,7 +47,7 @@ all: build
 .PHONY: build-frontend
 build-frontend:
 	@echo "Building frontend..."
-	@cd web && npm run build
+	@cd web && pnpm run build
 	@echo "Frontend build complete: web/dist/"
 
 # 构建后端（依赖前端构建）
