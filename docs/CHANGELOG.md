@@ -7,6 +7,37 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2025-11-24
+
+### Added
+
+#### 用户与权限
+- 添加邮箱注册功能，包含验证码发送与验证
+- 建立用户管理后台（#29）
+- 增加查看审计日志功能（#28）
+- 添加用户统计功能
+
+#### 保险库功能
+- 通过动态表单增强保险库创建以支持结构化密钥类型
+
+#### 前端应用
+- 完成动态路由配置
+- 添加多个图表组件（PieChart、BarChart等）
+- 更新用户统计视图中的导入路径
+
+#### 配置管理
+- 将邮箱配置转移到系统配置内
+- 完善系统配置项
+
+### Changed
+- 更新 CI/CD 配置以使用 pnpm 替代 npm，并优化构建步骤
+- 继续完善 GitHub Actions（#27）
+- 重构数据库迁移文件
+- 增加新的前后端开发约束规范
+
+### Fixed
+- 去除错误的菜单项
+
 ## [0.1.1] - 2025-11-13
 
 ### Added
@@ -113,6 +144,7 @@ Apache 2.0
 
 ---
 
-[Unreleased]: https://github.com/cuihe500/vaulthub/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/cuihe500/vaulthub/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/cuihe500/vaulthub/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/cuihe500/vaulthub/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/cuihe500/vaulthub/releases/tag/v0.1.0
