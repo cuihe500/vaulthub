@@ -1,100 +1,102 @@
 <template>
   <div class="audit-log">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h2 class="section-title">审计日志</h2>
-        </div>
-      </template>
-
-      <!-- 搜索过滤条件 -->
-      <div class="filter-section">
-        <el-form :inline="true" :model="queryParams" class="filter-form">
-          <el-form-item label="操作类型">
-            <el-select
-              v-model="queryParams.action_type"
-              placeholder="全部"
-              clearable
-              style="width: 150px"
-            >
-              <el-option label="创建" value="CREATE" />
-              <el-option label="更新" value="UPDATE" />
-              <el-option label="删除" value="DELETE" />
-              <el-option label="访问" value="ACCESS" />
-              <el-option label="登录" value="LOGIN" />
-              <el-option label="退出" value="LOGOUT" />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="资源路径">
-            <el-input
-              v-model="queryParams.resource_type"
-              placeholder="如: /api/v1/secrets"
-              clearable
-              style="width: 200px"
-            />
-          </el-form-item>
-
-          <el-form-item label="状态">
-            <el-select
-              v-model="queryParams.status"
-              placeholder="全部"
-              clearable
-              style="width: 120px"
-            >
-              <el-option label="成功" value="success" />
-              <el-option label="失败" value="failed" />
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="时间范围">
-            <el-date-picker
-              v-model="dateRange"
-              type="datetimerange"
-              range-separator="至"
-              start-placeholder="开始时间"
-              end-placeholder="结束时间"
-              format="YYYY-MM-DD HH:mm:ss"
-              value-format="YYYY-MM-DDTHH:mm:ssZ"
-              :shortcuts="dateShortcuts"
-              style="width: 400px"
-            />
-          </el-form-item>
-
-          <el-form-item>
-            <el-button type="primary" @click="handleSearch">查询</el-button>
-            <el-button @click="handleReset">重置</el-button>
-          </el-form-item>
-        </el-form>
+    <!-- 顶部操作栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <h2 class="page-title">审计日志</h2>
       </div>
+    </div>
 
-      <!-- 审计日志列表 -->
-      <el-table
-        :data="auditLogs"
-        v-loading="loading"
-        stripe
-        style="width: 100%"
-      >
-        <el-table-column prop="username" label="用户" width="120" />
-        <el-table-column prop="action_type" label="操作" width="100">
+    <!-- 搜索过滤条件 -->
+    <div class="filter-bar">
+      <el-form :inline="true" :model="queryParams" class="filter-form">
+        <el-form-item label="操作类型" class="filter-item action-type">
+          <el-select
+            v-model="queryParams.action_type"
+            placeholder="全部"
+            clearable
+            class="filter-select"
+          >
+            <el-option label="创建" value="CREATE" />
+            <el-option label="更新" value="UPDATE" />
+            <el-option label="删除" value="DELETE" />
+            <el-option label="访问" value="ACCESS" />
+            <el-option label="登录" value="LOGIN" />
+            <el-option label="退出" value="LOGOUT" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="资源路径" class="filter-item resource-path">
+          <el-input
+            v-model="queryParams.resource_type"
+            placeholder="如: /api/v1/secrets"
+            clearable
+            class="filter-input"
+          />
+        </el-form-item>
+
+        <el-form-item label="状态" class="filter-item status">
+          <el-select
+            v-model="queryParams.status"
+            placeholder="全部"
+            clearable
+            class="filter-select"
+          >
+            <el-option label="成功" value="success" />
+            <el-option label="失败" value="failed" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="时间范围" class="filter-item date-range">
+          <el-date-picker
+            v-model="dateRange"
+            type="datetimerange"
+            range-separator="至"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DDTHH:mm:ssZ"
+            :shortcuts="dateShortcuts"
+            class="filter-range"
+          />
+        </el-form-item>
+
+        <el-form-item class="filter-item filter-actions">
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <!-- 审计日志列表表格 -->
+    <el-card class="table-card" shadow="never">
+      <div class="table-wrapper">
+        <el-table
+          v-loading="loading"
+          :data="auditLogs"
+          stripe
+          style="width: 100%"
+        >
+          <el-table-column prop="username" label="用户" width="120" />
+          <el-table-column prop="action_type" label="操作" width="100">
           <template #default="{ row }">
             <el-tag :type="getActionType(row.action_type)">
               {{ getActionText(row.action_type) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="resource_type"
-          label="资源路径"
-          width="280"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="resource_name"
-          label="资源名称"
-          width="180"
-          show-overflow-tooltip
-        />
+          <el-table-column
+            prop="resource_type"
+            label="资源路径"
+            min-width="220"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="resource_name"
+            label="资源名称"
+            min-width="160"
+            show-overflow-tooltip
+          />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 'success' ? 'success' : 'danger'">
@@ -107,15 +109,16 @@
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
           </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="handleViewDetail(row)">
-              详情
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          </el-table-column>
+          <el-table-column label="操作" width="100" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" link @click="handleViewDetail(row)">
+                详情
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
       <!-- 分页 -->
       <div class="pagination-container">
@@ -399,35 +402,104 @@ onMounted(() => {
 <style scoped>
 .audit-log {
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.card-header {
+/* 顶部操作栏 */
+.toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: var(--spacing-lg);
 }
 
-.section-title {
-  margin: 0;
-  font-size: var(--font-size-lg);
+.toolbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.page-title {
+  font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
+  margin: 0;
 }
 
-.filter-section {
-  margin-bottom: var(--spacing-lg);
+/* 筛选栏 */
+.filter-bar {
+  margin-bottom: var(--spacing-md);
+  overflow-x: auto;
 }
 
 .filter-form {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--spacing-sm);
+  align-items: flex-end;
 }
 
+.filter-item {
+  margin-bottom: 0;
+}
+
+.filter-select,
+.filter-input,
+.filter-range {
+  width: 100%;
+}
+
+.filter-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+/* 各筛选项在一行中的宽度比例设置 */
+.action-type,
+.status {
+  flex: 0 0 140px;
+  min-width: 120px;
+}
+
+.resource-path {
+  flex: 1 1 260px;
+  min-width: 180px;
+}
+
+.date-range {
+  flex: 0 0 320px;
+  min-width: 240px;
+}
+
+/* 表格卡片 */
+.table-card {
+  border-radius: var(--radius-md);
+  flex: 1;
+  min-height: 0;
+}
+
+.table-card :deep(.el-card__body) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.table-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* 分页 */
 .pagination-container {
-  margin-top: var(--spacing-lg);
   display: flex;
   justify-content: flex-end;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
 }
 
 .details-json {
@@ -438,5 +510,14 @@ onMounted(() => {
   overflow-x: auto;
   max-height: 300px;
   margin: 0;
+}
+
+/* 小屏下表单和表格的自适应布局 */
+@media (max-width: 1024px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
 }
 </style>

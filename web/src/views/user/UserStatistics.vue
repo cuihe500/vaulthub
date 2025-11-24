@@ -105,9 +105,9 @@
 import { getUserStatistics } from '@/api/statistics'
 import { Refresh as RefreshIcon } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
-import TrendChart from './components/TrendChart.vue'
-import TypePieChart from './components/TypePieChart.vue'
-import ActivityHeatmap from './components/ActivityHeatmap.vue'
+import TrendChart from '@/components/business/TrendChart.vue'
+import TypePieChart from '@/components/business/TypePieChart.vue'
+import ActivityHeatmap from '@/components/business/ActivityHeatmap.vue'
 
 export default {
   name: 'UserStatistics',

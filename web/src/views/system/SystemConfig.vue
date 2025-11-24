@@ -1,21 +1,24 @@
 <template>
   <div class="system-config">
-    <el-card class="config-card">
-      <template #header>
-        <div class="card-header">
-          <span>系统配置</span>
-          <el-button type="primary" @click="handleReload">
-            <el-icon><Refresh /></el-icon>
-            刷新配置
-          </el-button>
-        </div>
-      </template>
+    <!-- 顶部操作栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <h2 class="page-title">系统配置</h2>
+      </div>
+      <div class="toolbar-right">
+        <el-button type="primary" :icon="Refresh" @click="handleReload">
+          刷新配置
+        </el-button>
+      </div>
+    </div>
 
+    <!-- 配置列表表格 -->
+    <el-card class="table-card" shadow="never">
       <el-table
         v-loading="loading"
         :data="configs"
-        border
         stripe
+        style="width: 100%"
       >
         <el-table-column prop="config_key" label="配置键" width="300" />
         <el-table-column prop="config_value" label="配置值" show-overflow-tooltip />
@@ -24,7 +27,6 @@
           <template #default="{ row }">
             <el-button
               type="primary"
-              size="small"
               link
               @click="handleEdit(row)"
             >
@@ -133,16 +135,37 @@ onMounted(() => {
 
 <style scoped>
 .system-config {
-  padding: var(--spacing-lg);
+  width: 100%;
+  height: 100%;
 }
 
-.config-card {
-  max-width: 1400px;
-}
-
-.card-header {
+/* 顶部操作栏 */
+.toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.page-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* 表格卡片 */
+.table-card {
+  border-radius: var(--radius-md);
 }
 </style>
