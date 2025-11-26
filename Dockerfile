@@ -59,6 +59,7 @@ RUN addgroup -S vaulthub && adduser -S vaulthub -G vaulthub \
 COPY --from=backend-builder /tmp/vaulthub ./vaulthub
 COPY --from=frontend-builder /app/web/dist ./web/dist
 COPY configs/config.toml.example ./configs/config.toml
+COPY configs/rbac_model.conf ./configs/rbac_model.conf
 COPY internal/database/migrations ./internal/database/migrations
 
 ENV GIN_MODE=release \

@@ -1,0 +1,211 @@
+# VaultHub Docker Compose 配置
+# 使用方式:
+#   开发环境: docker-compose up -d
+#   生产环境: docker-compose -f docker-compose.yml up -d
+#   停止服务: docker-compose down
+#   查看日志: docker-compose logs -f vaulthub
+#
+# 注意：
+# 1. 镜像从 ghcr.io/cuihe500/vaulthub:latest 拉取，无需本地构建
+# 2. 生产环境必须修改以下配置：
+#    - DATABASE_PASSWORD（数据库密码）
+#    - SECURITY_JWT_SECRET（JWT签名密钥）
+#    - SECURITY_ENCRYPTION_KEY（数据加密密钥，必须32字节）
+#    - SECURITY_ADMIN_PASSWORD（管理员密码）
+# 3. MariaDB 的 DB_ROOT_PASSWORD 和 DB_PASSWORD 也必须修改
+
+services:
+  # VaultHub 主应用
+  vaulthub:
+    # 从 GitHub Container Registry 拉取镜像
+    image: ghcr.io/cuihe500/vaulthub:latest
+    container_name: vaulthub
+    restart: unless-stopped
+
+    # 端口映射：主机端口:容器端口
+    ports:
+      - "8080:8080"
+
+    # 环境变量配置（完整配置，无需外部 .env 文件）
+    environment:
+      # ==================== 服务器配置 ====================
+      SERVER_HOST: "0.0.0.0"
+      SERVER_PORT: "8080"
+      SERVER_MODE: "release"
+
+      # ==================== 数据库配置 ====================
+      DATABASE_DRIVER: "mysql"
+      DATABASE_HOST: "mariadb"
+      DATABASE_PORT: "3306"
+      DATABASE_NAME: "vaulthub"
+      DATABASE_USER: "vaulthub"
+      DATABASE_PASSWORD: "vaulthub_password"  # 生产环境必须修改
+
+      # ==================== Redis 配置 ====================
+      REDIS_MODE: "standalone"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      REDIS_DB: "0"
+
+      # ==================== 安全配置 ====================
+      # JWT 签名密钥（生产环境必须修改为强随机字符串）
+      SECURITY_JWT_SECRET: "change-me-in-production"
+      # JWT 令牌过期时间（小时）
+      SECURITY_JWT_EXPIRATION: "24"
+      # 数据加密密钥（生产环境必须修改，必须是32字节）
+      SECURITY_ENCRYPTION_KEY: "change-me-must-be-32-bytes!!"
+      # Casbin 权限模型文件路径
+      SECURITY_CASBIN_MODEL_PATH: "./configs/rbac_model.conf"
+      # 超级管理员账号（首次启动自动创建）
+      SECURITY_ADMIN_USERNAME: "admin"
+      # 超级管理员密码（生产环境必须修改为强密码）
+      SECURITY_ADMIN_PASSWORD: "Admin@123456"
+
+      # ==================== 日志配置 ====================
+      # 日志级别: debug, info, warn, error, fatal
+      LOGGER_LEVEL: "info"
+      # 日志编码格式: json, console
+      LOGGER_ENCODING: "json"
+      # 日志输出路径（逗号分隔，不是 JSON 格式）
+      LOGGER_OUTPUT_PATHS: "stdout"
+      # 错误日志输出路径（逗号分隔，不是 JSON 格式）
+      LOGGER_ERROR_OUTPUT_PATHS: "stderr"
+
+      # ==================== 其他配置 ====================
+      # 时区设置
+      TZ: "Asia/Shanghai"
+      # Gin 框架模式
+      GIN_MODE: "release"
+      # VaultHub 配置文件路径
+      VAULTHUB_CONFIG: "/app/configs/config.toml"
+      # VaultHub 前端静态资源目录
+      VAULTHUB_STATIC_DIR: "/app/web/dist"
+
+    # 数据卷挂载
+    volumes:
+      # 配置文件持久化
+      - vaulthub-config:/app/configs
+      # 日志持久化（可选）
+      # - vaulthub-logs:/var/log/vaulthub
+
+    # 依赖服务：确保数据库和 Redis 先启动
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # 网络配置
+    networks:
+      - vaulthub-network
+
+  # MariaDB 数据库
+  mariadb:
+    image: mariadb:11
+    container_name: vaulthub-mariadb
+    restart: unless-stopped
+
+    # 端口映射（可选：如需从主机直接访问数据库）
+    # ports:
+    #   - "3306:3306"
+
+    # 环境变量
+    environment:
+      MYSQL_ROOT_PASSWORD: "root_password_change_me"  # 生产环境必须修改
+      MYSQL_DATABASE: "vaulthub"
+      MYSQL_USER: "vaulthub"
+      MYSQL_PASSWORD: "vaulthub_password"  # 生产环境必须修改
+      TZ: "Asia/Shanghai"
+
+    # 数据卷挂载
+    volumes:
+      # 数据持久化
+      - mariadb-data:/var/lib/mysql
+      # 初始化脚本（可选）
+      # - ../scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    # 网络配置
+    networks:
+      - vaulthub-network
+
+    # 命令行参数：优化 MariaDB 配置
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max_connections=200
+      - --innodb_buffer_pool_size=256M
+      - --innodb_log_file_size=64M
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: vaulthub-redis
+    restart: unless-stopped
+
+    # 端口映射（可选：如需从主机直接访问 Redis）
+    # ports:
+    #   - "6379:6379"
+
+    # 环境变量
+    environment:
+      TZ: "Asia/Shanghai"
+
+    # 数据卷挂载
+    volumes:
+      # 数据持久化（AOF 模式）
+      - redis-data:/data
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+    # 网络配置
+    networks:
+      - vaulthub-network
+
+    # 命令行参数：启用 AOF 持久化
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - "everysec"
+
+# 数据卷定义
+volumes:
+  vaulthub-config:
+    name: vaulthub-config
+    driver: local
+  mariadb-data:
+    name: vaulthub-mariadb-data
+    driver: local
+  redis-data:
+    name: vaulthub-redis-data
+    driver: local
+
+# 网络定义
+networks:
+  vaulthub-network:
+    name: vaulthub-network
+    driver: bridge

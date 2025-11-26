@@ -54,41 +54,50 @@ VaultHub 的配置分为两类：
 ### 核心配置项
 
 ```toml
-[app]
+[server]
+host = "0.0.0.0"
 port = 8080
-mode = "release"  # debug / release
-timezone = "Asia/Shanghai"
+mode = "release"  # debug / release / test
 
 [database]
+driver = "mysql"
 host = "localhost"
 port = 3306
-database = "vaulthub"
-username = "vaulthub"
+name = "vaulthub"
+user = "vaulthub"
 password = "your_password"
-max_open_conns = 100
 
 [redis]
+mode = "standalone"  # standalone / sentinel / cluster
 host = "localhost"
 port = 6379
 password = ""
+db = 0
 
-[jwt]
-secret = "your_jwt_secret"  # 必须修改
-expire = 3600  # 秒
+[security]
+jwt_secret = "your_jwt_secret_change_in_production"  # 必须修改为强随机字符串
+jwt_expiration = 24  # JWT过期时间（小时）
+encryption_key = "must-be-exactly-32-bytes-long!!"  # 必须是32字节
+casbin_model_path = "./configs/rbac_model.conf"
+admin_username = "admin"
+admin_password = "Admin@123456"  # 首次启动时创建超级管理员
+
+[logger]
+level = "info"  # debug / info / warn / error / fatal
+encoding = "console"  # console / json
+output_paths = ["stdout"]
+error_output_paths = ["stderr"]
+
 ```
 
 **重要**: 生成强随机密钥
 
 ```bash
+# 生成JWT密钥（任意长度）
 openssl rand -base64 64
-```
 
-### 主密钥配置
-
-主密钥通过环境变量设置，不要写入配置文件：
-
-```bash
-export MASTER_KEY="your_master_encryption_key"
+# 生成32字节加密密钥（必须恰好32字节）
+openssl rand -base64 32
 ```
 
 ## API 使用
@@ -209,125 +218,6 @@ curl -X POST http://localhost:8080/api/v1/secrets/{uuid}/rotate \
 | 1003 | 权限不足 |
 | 1004 | 资源不存在 |
 | 2001 | 数据库错误 |
-
-## 部署
-
-### 单机部署
-
-#### 1. 安装依赖
-
-```bash
-# Ubuntu/Debian
-sudo apt install -y mariadb-server redis-server
-
-# 创建数据库
-sudo mysql -u root -p << EOF
-CREATE DATABASE vaulthub CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'vaulthub'@'localhost' IDENTIFIED BY 'password';
-GRANT ALL PRIVILEGES ON vaulthub.* TO 'vaulthub'@'localhost';
-FLUSH PRIVILEGES;
-EOF
-```
-
-#### 2. 部署应用
-
-```bash
-# 编译
-make build
-
-# 配置 systemd
-sudo cp scripts/vaulthub.service /etc/systemd/system/
-sudo systemctl enable vaulthub
-sudo systemctl start vaulthub
-```
-
-#### 3. 配置 Nginx
-
-```nginx
-upstream vaulthub {
-    server 127.0.0.1:8080;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name vault.example.com;
-
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
-
-    location / {
-        proxy_pass http://vaulthub;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-### 备份
-
-#### 数据库备份
-
-```bash
-#!/bin/bash
-mysqldump -u vaulthub -p vaulthub \
-  --single-transaction \
-  | gzip > backup-$(date +%Y%m%d).sql.gz
-```
-
-#### 主密钥备份
-
-主密钥必须安全存储，建议：
-- 密钥分片存储（Shamir's Secret Sharing）
-- 离线保存在保险柜
-- 异地备份
-
-## 故障排查
-
-### 无法启动
-
-```bash
-# 查看日志
-sudo journalctl -u vaulthub -n 50
-
-# 检查配置
-./build/vaulthub --config configs/config.toml
-
-# 检查端口
-sudo lsof -i :8080
-```
-
-### 数据库连接失败
-
-```bash
-# 测试连接
-mysql -h localhost -u vaulthub -p vaulthub
-
-# 检查数据库状态
-sudo systemctl status mariadb
-```
-
-### 密钥解密失败
-
-**原因**: 主密钥不正确或数据损坏
-
-**解决**:
-- 确认 MASTER_KEY 环境变量正确
-- 从备份恢复数据
-
-### API 响应缓慢
-
-```bash
-# 检查数据库慢查询
-mysql -u vaulthub -p -e "SHOW PROCESSLIST;"
-
-# 检查 Redis
-redis-cli --latency
-
-# 优化连接池
-# configs/config.toml
-[database]
-max_open_conns = 200
-```
 
 ### 更多问题
 

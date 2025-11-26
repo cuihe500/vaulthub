@@ -1,0 +1,241 @@
+# VaultHub Kubernetes Deployment
+# 命名空间：根据实际环境调整
+#
+# 注意：
+# 1. 生产环境必须修改 Secret 中的敏感配置：
+#    - DATABASE_PASSWORD（数据库密码）
+#    - SECURITY_JWT_SECRET（JWT签名密钥）
+#    - SECURITY_ENCRYPTION_KEY（数据加密密钥，必须32字节）
+#    - SECURITY_ADMIN_PASSWORD（管理员密码）
+# 2. 根据实际情况修改 Ingress 中的域名和证书配置
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vaulthub
+---
+# Secret: 存储敏感配置信息
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vaulthub-secret
+  namespace: vaulthub
+type: Opaque
+stringData:
+  # 数据库认证配置（与ConfigMap中的DATABASE_HOST、DATABASE_PORT共同构成完整连接）
+  # 注意: 代码会自动从这些独立字段构建DSN连接串，不支持直接设置DATABASE_DSN环境变量
+  DATABASE_USER: "vaulthub"
+  DATABASE_PASSWORD: "your-secure-db-password"  # 生产环境必须修改
+  DATABASE_NAME: "vaulthub"
+
+  # Redis 配置
+  REDIS_PASSWORD: ""
+
+  # 安全配置
+  SECURITY_JWT_SECRET: "change-me-to-a-strong-random-string-in-production"  # 生产环境必须修改
+  SECURITY_ENCRYPTION_KEY: "change-me-must-be-exactly-32-bytes-long!"  # 生产环境必须修改，必须32字节
+  # 超级管理员账号（首次启动自动创建）
+  SECURITY_ADMIN_USERNAME: "admin"
+  # 超级管理员密码（生产环境必须修改为强密码）
+  SECURITY_ADMIN_PASSWORD: "Admin@123456"
+---
+# ConfigMap: 存储非敏感配置
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vaulthub-config
+  namespace: vaulthub
+data:
+  # 服务器配置
+  SERVER_HOST: "0.0.0.0"
+  SERVER_PORT: "8080"
+  SERVER_MODE: "release"
+
+  # 数据库配置
+  DATABASE_DRIVER: "mysql"
+  DATABASE_HOST: "mariadb"
+  DATABASE_PORT: "3306"
+
+  # Redis 配置
+  REDIS_MODE: "standalone"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+
+  # 安全配置
+  # JWT 令牌过期时间（小时）
+  SECURITY_JWT_EXPIRATION: "24"
+  # Casbin 权限模型文件路径
+  SECURITY_CASBIN_MODEL_PATH: "./configs/rbac_model.conf"
+
+  # 日志配置
+  LOGGER_LEVEL: "info"
+  LOGGER_ENCODING: "json"
+  # 日志输出路径（逗号分隔，不是 JSON 格式）
+  LOGGER_OUTPUT_PATHS: "stdout"
+  # 错误日志输出路径（逗号分隔，不是 JSON 格式）
+  LOGGER_ERROR_OUTPUT_PATHS: "stderr"
+
+  # 时区
+  TZ: "Asia/Shanghai"
+---
+# PersistentVolumeClaim: 持久化存储配置文件和数据
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaulthub-config-data
+  namespace: vaulthub
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+# Deployment: VaultHub 应用部署
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaulthub
+  namespace: vaulthub
+  labels:
+    app: vaulthub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaulthub
+  template:
+    metadata:
+      labels:
+        app: vaulthub
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: vaulthub
+        # 从 GitHub Container Registry 拉取镜像
+        image: ghcr.io/cuihe500/vaulthub:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+
+        # 环境变量：从 ConfigMap 和 Secret 注入
+        envFrom:
+        - configMapRef:
+            name: vaulthub-config
+        - secretRef:
+            name: vaulthub-secret
+
+        # 额外的环境变量
+        env:
+        - name: VAULTHUB_CONFIG
+          value: "/app/configs/config.toml"
+        - name: VAULTHUB_STATIC_DIR
+          value: "/app/web/dist"
+        - name: GIN_MODE
+          value: "release"
+
+        # 数据卷挂载
+        volumeMounts:
+        - name: config-data
+          mountPath: /app/configs
+
+        # 健康检查：启动探针
+        startupProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+
+        # 健康检查：存活探针
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # 健康检查：就绪探针
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        # 资源限制
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+      volumes:
+      - name: config-data
+        persistentVolumeClaim:
+          claimName: vaulthub-config-data
+---
+# Service: 集群内服务发现
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaulthub
+  namespace: vaulthub
+  labels:
+    app: vaulthub
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: vaulthub
+---
+# Ingress: 外部访问入口（HTTPS + 证书）
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaulthub
+  namespace: vaulthub
+  annotations:
+    # 使用 cert-manager 自动签发 SSL 证书
+    cert-manager.io/cluster-issuer: cloudflare-issuer
+    # 强制 HTTPS 重定向
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # 客户端请求体大小限制
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    # 超时设置
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - vaulthub.yourdomain.com
+    secretName: vaulthub-tls
+  rules:
+  - host: vaulthub.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vaulthub
+            port:
+              number: 8080
